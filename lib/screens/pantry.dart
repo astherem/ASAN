@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:asan/theme.dart';
-import 'package:asan/widgets/app_bar.dart';
-import 'package:asan/widgets/alert_dialog.dart';
-import 'package:asan/widgets/date_field.dart';
-import 'package:asan/widgets/dropdown_menu.dart';
-import 'package:asan/widgets/expansion_tile.dart';
-import 'package:asan/widgets/filled_icon_button.dart';
-import 'package:asan/widgets/filter_list.dart';
-import 'package:asan/widgets/full_screen_dialog_header.dart';
-import 'package:asan/widgets/primary_button.dart';
-import 'package:asan/widgets/search_bar.dart';
-import 'package:asan/widgets/text_field.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
+import 'package:asan/styles/theme.dart';
+
+import 'package:asan/widgets/buttons.dart';
+import 'package:asan/widgets/communication.dart';
+import 'package:asan/widgets/containment.dart';
+import 'package:asan/widgets/inputs.dart';
+import 'package:asan/widgets/navigations.dart';
+import 'package:asan/widgets/selections.dart';
 
 class PantryScreen extends StatefulWidget {
   const PantryScreen({super.key});
@@ -76,7 +74,7 @@ class _PantryScreenState extends State<PantryScreen> {
     return Scaffold(
       appBar: AsanAppBar(
         screenTitle: 'Pantry',
-        icon: Icons.add_rounded,
+        icon: const Icon(Symbols.add_rounded),
         onIconPressed: () {
           _showAddPantryItemDialog(context);
         },
@@ -94,7 +92,7 @@ class _PantryScreenState extends State<PantryScreen> {
                 ),
                 const SizedBox(width: AsanSpacing.sm),
                 FilledIconButton(
-                  icon: Icons.tune_rounded,
+                  icon: const Icon(Symbols.tune_rounded),
                   onPressed: _showFilters,
                 ),
               ],
@@ -107,6 +105,7 @@ class _PantryScreenState extends State<PantryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SizedBox(height: AsanSpacing.md),
             if (_searchQuery.isEmpty || 'September 1'.contains(_searchQuery))
               AsanExpansionTile(title: 'September 1', itemCount: 2),
           ],

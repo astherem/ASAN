@@ -1,11 +1,14 @@
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
-import 'package:asan/groceries.dart';
-import 'package:asan/meal_plan.dart';
-import 'package:asan/pantry.dart';
-import 'package:asan/recipes.dart';
-import 'package:asan/theme.dart';
-import 'package:asan/widgets/navigation_bar.dart';
+
+import 'package:asan/screens/groceries.dart';
+import 'package:asan/screens/meal_plan.dart';
+import 'package:asan/screens/pantry.dart';
+import 'package:asan/screens/recipes.dart';
+
+import 'package:asan/styles/theme.dart';
+
+import 'package:asan/widgets/navigations.dart';
 
 void main() {
   runApp(

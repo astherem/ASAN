@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:asan/theme.dart';
-import 'package:asan/widgets/app_bar.dart';
-import 'package:asan/widgets/filled_icon_button.dart';
-import 'package:asan/widgets/filter_list.dart';
-import 'package:asan/widgets/full_screen_dialog_header.dart';
-import 'package:asan/widgets/list_tile.dart';
-import 'package:asan/widgets/search_bar.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
+import 'package:asan/styles/theme.dart';
+
+import 'package:asan/widgets/buttons.dart';
+import 'package:asan/widgets/containment.dart';
+import 'package:asan/widgets/inputs.dart';
+import 'package:asan/widgets/navigations.dart';
+import 'package:asan/widgets/selections.dart';
 
 class GroceriesScreen extends StatefulWidget {
   const GroceriesScreen({super.key});
@@ -63,7 +65,7 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
     return Scaffold(
       appBar: AsanAppBar(
         screenTitle: 'Groceries',
-        icon: Icons.add_rounded,
+        icon: const Icon(Symbols.add_rounded),
         onIconPressed: () => _showAddGroceryDialog(context),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(38 + AsanSpacing.md),
@@ -79,7 +81,7 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
                 ),
                 const SizedBox(width: AsanSpacing.sm),
                 FilledIconButton(
-                  icon: Icons.tune_rounded,
+                  icon: const Icon(Symbols.tune_rounded),
                   onPressed: _showFilters,
                 ),
               ],

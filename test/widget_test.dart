@@ -13,6 +13,8 @@ void main() {
     await tester.pumpWidget(const Asan());
 
     expect(find.text('Pantry'), findsOneWidget);
+    await tester.tap(find.text('Pantry'));
+    await tester.pump();
     expect(find.text('Your pantry items'), findsOneWidget);
 
     await tester.tap(find.text('Recipes'));
