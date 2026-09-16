@@ -67,7 +67,6 @@ class _AsanTextFieldState extends State<AsanTextField> {
         Text(
           widget.label,
           style: AsanTextTheme.labelSmall.copyWith(
-            height: 16 / 12,
             color: AsanColorScheme.secondary,
             fontWeight: FontWeight.bold,
           ),
@@ -93,14 +92,10 @@ class _AsanTextFieldState extends State<AsanTextField> {
             controller: _controller,
             focusNode: _focusNode,
             onChanged: widget.onChanged,
-            style: AsanTextTheme.bodyMedium.copyWith(
-              height: 22 / 16,
-              color: textColor,
-            ),
+            style: AsanTextTheme.bodyMedium.copyWith(color: textColor),
             decoration: InputDecoration(
               hintText: widget.hintText,
               hintStyle: AsanTextTheme.bodyMedium.copyWith(
-                height: 22 / 16,
                 color: AsanColorScheme.inactive,
               ),
               border: InputBorder.none,

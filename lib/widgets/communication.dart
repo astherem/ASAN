@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:asan/styles/theme.dart';
 
+import 'package:asan/widgets/buttons.dart';
+
 // BADGE
 class NotificationBadge extends StatelessWidget {
   final int count;
@@ -42,25 +44,13 @@ class AsanAlertDialog {
           style: AsanTextTheme.bodyMedium,
         ),
         actions: [
-          TextButton(
+          AsanTextButton.black(
+            label: 'Keep Editing',
             onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Keep Editing',
-              style: AsanTextTheme.labelSmall.copyWith(
-                color: AsanColorScheme.secondary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ),
-          TextButton(
+          AsanTextButton.red(
+            label: 'Discard',
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              'Discard',
-              style: AsanTextTheme.labelSmall.copyWith(
-                color: AsanColorScheme.error,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ),
         ],
       ),

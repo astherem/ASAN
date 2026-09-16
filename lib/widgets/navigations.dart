@@ -88,7 +88,6 @@ class FullScreenDialogHeader extends StatelessWidget
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AsanSpacing.md),
       child: SizedBox(
-        width: double.infinity,
         height: 34,
         child: Stack(
           alignment: Alignment.center,
@@ -101,7 +100,11 @@ class FullScreenDialogHeader extends StatelessWidget
                   width: 34,
                   height: 34,
                 ),
-                icon: const Icon(Symbols.chevron_left_rounded, size: 34, weight: 600),
+                icon: const Icon(
+                  Symbols.chevron_left_rounded,
+                  size: 34,
+                  weight: 600,
+                ),
                 onPressed:
                     onBackPressed ??
                     () {
@@ -154,7 +157,11 @@ class AsanNavigationBar extends StatelessWidget {
             child: _NavigationItem(
               label: 'Recipes',
               icon: const Icon(Symbols.import_contacts_rounded, size: 30),
-              activeIcon: const Icon(Symbols.import_contacts_rounded, size: 30, fill: 1),
+              activeIcon: const Icon(
+                Symbols.import_contacts_rounded,
+                size: 30,
+                fill: 1,
+              ),
               isSelected: selectedIndex == 0,
               onPressed: () => onDestinationSelected(0),
             ),

@@ -27,10 +27,8 @@ class PrimaryButton extends StatelessWidget {
           label ?? '',
           style: AsanTextTheme.bodyMedium.copyWith(
             fontWeight: FontWeight.bold,
-            height: 22 / 16,
             color: AsanColorScheme.onPrimary,
           ),
-          textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         );
@@ -44,11 +42,9 @@ class PrimaryButton extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           height: height,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: buttonChild,
-            ),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Center(child: buttonChild),
           ),
         ),
       ),
@@ -81,10 +77,8 @@ class AsanOutlinedButton extends StatelessWidget {
           label ?? '',
           style: AsanTextTheme.bodyMedium.copyWith(
             fontWeight: FontWeight.bold,
-            height: 22 / 16,
             color: AsanColorScheme.secondary,
           ),
-          textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         );
@@ -101,11 +95,9 @@ class AsanOutlinedButton extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           height: height,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: buttonChild,
-            ),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Center(child: buttonChild),
           ),
         ),
       ),
@@ -114,6 +106,65 @@ class AsanOutlinedButton extends StatelessWidget {
 }
 
 // TEXT
+class AsanTextButton extends StatelessWidget {
+  final String? label;
+  final Widget? child;
+  final VoidCallback? onPressed;
+  final Color color;
+
+  const AsanTextButton({
+    super.key,
+    this.label,
+    this.child,
+    this.onPressed,
+    this.color = AsanColorScheme.primary,
+  }) : assert(label != null || child != null);
+
+  const AsanTextButton.green({
+    super.key,
+    this.label,
+    this.child,
+    this.onPressed,
+  }) : color = AsanColorScheme.primary,
+       assert(label != null || child != null);
+
+  const AsanTextButton.black({
+    super.key,
+    this.label,
+    this.child,
+    this.onPressed,
+  }) : color = AsanColorScheme.secondary,
+       assert(label != null || child != null);
+
+  const AsanTextButton.red({super.key, this.label, this.child, this.onPressed})
+    : color = AsanColorScheme.error,
+      assert(label != null || child != null);
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        padding: const EdgeInsets.all(8),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: const RoundedRectangleBorder(),
+      ),
+      child:
+          child ??
+          Text(
+            label!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AsanTextTheme.labelSmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+    );
+  }
+}
 
 // =============================== ICON BUTTONS ===============================
 
@@ -190,7 +241,6 @@ class _ButtonBadge extends StatelessWidget {
           color: AsanColorScheme.surface,
           fontSize: 9,
           fontWeight: FontWeight.bold,
-          height: 11 / 9,
         ),
       ),
     );
@@ -355,7 +405,6 @@ class AsanFilterChip extends StatelessWidget {
                       ? AsanColorScheme.surface
                       : AsanColorScheme.inactive,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  height: 22 / 16,
                 ),
               ),
               if (isSelected) ...[
@@ -378,11 +427,7 @@ class ActiveFilterChip extends StatelessWidget {
   final String label;
   final VoidCallback? onRemoved;
 
-  const ActiveFilterChip({
-    super.key,
-    required this.label,
-    this.onRemoved,
-  });
+  const ActiveFilterChip({super.key, required this.label, this.onRemoved});
 
   @override
   Widget build(BuildContext context) {
@@ -392,28 +437,25 @@ class ActiveFilterChip extends StatelessWidget {
       child: InkWell(
         onTap: onRemoved,
         borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          height: 32,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: AsanTextTheme.labelSmall.copyWith(
-                    color: AsanColorScheme.surface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(width: AsanSpacing.xs),
-                const Icon(
-                  Icons.close_rounded,
-                  size: 16,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: AsanTextTheme.labelSmall.copyWith(
                   color: AsanColorScheme.surface,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: AsanSpacing.xs),
+              const Icon(
+                Icons.close_rounded,
+                size: 16,
+                color: AsanColorScheme.surface,
+              ),
+            ],
           ),
         ),
       ),

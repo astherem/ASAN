@@ -38,7 +38,7 @@ double dropdownSheetInitialSize(
   const maximumSize = 0.9;
   const itemHeight = 38.0;
   const itemGap = 8.0;
-  const fixedHeight = 106.0;
+  const fixedHeight = 122.0;
   final contentHeight =
       fixedHeight +
       (showSearch ? 70 : 0) +
@@ -117,9 +117,11 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
         ? AsanColorScheme.inactive
         : AsanColorScheme.onSurface;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    return SizedBox(
+      height: 63,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
         Text(
           widget.label,
           style: AsanTextTheme.labelSmall.copyWith(
@@ -170,7 +172,8 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
             ),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -210,6 +213,19 @@ class _AsanDropdownListState extends State<AsanDropdownList> {
           ? 0
           : selectedIndex * (38 + AsanSpacing.sm),
     );
+    if (widget.scrollController != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final controller = widget.scrollController!;
+        final selectedIndex = widget.items.indexOf(widget.selectedValue ?? '');
+        if (!controller.hasClients || selectedIndex < 0) return;
+
+        final offset = selectedIndex * (38 + AsanSpacing.sm);
+        controller.jumpTo(
+          offset.clamp(0, controller.position.maxScrollExtent).toDouble(),
+        );
+      });
+    }
   }
 
   @override
@@ -227,85 +243,71 @@ class _AsanDropdownListState extends State<AsanDropdownList> {
 
     return SafeArea(
       top: false,
-      child: SizedBox(
-        height: double.infinity,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                width: 32,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AsanColorScheme.inactive,
-                  borderRadius: BorderRadius.circular(100),
-                ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Container(
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AsanColorScheme.inactive,
+                borderRadius: BorderRadius.circular(100),
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(AsanSpacing.lg, AsanSpacing.sm, AsanSpacing.lg, AsanSpacing.md),
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 22,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const SizedBox(width: 22, height: 22),
-                          Text(
-                            widget.title,
-                            style: AsanTextTheme.bodyMedium.copyWith(
-                              height: 22 / 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.close_rounded, size: 24, weight: 600),
-                            ),
-                          ),
-                        ],
-                      ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AsanSpacing.lg,
+              vertical: AsanSpacing.md,
+            ),
+            child: _SheetHeader(
+              title: widget.title,
+              onClose: () => Navigator.pop(context),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AsanSpacing.lg,
+                0,
+                AsanSpacing.lg,
+                AsanSpacing.md,
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: AsanSpacing.sm),
+                  if (widget.showSearch) ...[
+                    AsanSearchBar(
+                      hintText: widget.searchHint,
+                      onChanged: (value) =>
+                          setState(() => _searchQuery = value),
                     ),
                     const SizedBox(height: AsanSpacing.md),
-                    if (widget.showSearch) ...[
-                      AsanSearchBar(
-                        hintText: widget.searchHint,
-                        onChanged: (value) =>
-                            setState(() => _searchQuery = value),
-                      ),
-                      const SizedBox(height: AsanSpacing.md),
-                    ],
-                    Expanded(
-                      child: ListView.separated(
-                        controller:
-                            widget.scrollController ?? _scrollController,
-                        padding: EdgeInsets.zero,
-                        itemCount: filteredItems.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: AsanSpacing.sm),
-                        itemBuilder: (context, index) {
-                          final item = filteredItems[index];
-                          final isSelected = item == widget.selectedValue;
-                          return _DropdownListItem(
-                            label: item,
-                            isSelected: isSelected,
-                            onPressed: () => Navigator.pop(context, item),
-                          );
-                        },
-                      ),
-                    ),
                   ],
-                ),
+                  Expanded(
+                    child: ListView.separated(
+                      controller: widget.scrollController ?? _scrollController,
+                      padding: EdgeInsets.zero,
+                      itemCount: filteredItems.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: AsanSpacing.sm),
+                      itemBuilder: (context, index) {
+                        final item = filteredItems[index];
+                        final isSelected = item == widget.selectedValue;
+                        return _DropdownListItem(
+                          label: item,
+                          isSelected: isSelected,
+                          onPressed: () => Navigator.pop(context, item),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -349,7 +351,6 @@ class _DropdownListItem extends StatelessWidget {
                 Text(
                   label,
                   style: AsanTextTheme.bodyMedium.copyWith(
-                    height: 22 / 16,
                     fontWeight: isSelected
                         ? FontWeight.bold
                         : FontWeight.normal,
@@ -479,7 +480,6 @@ class _AsanFilterListState extends State<AsanFilterList> {
       top: false,
       bottom: false,
       child: Container(
-        height: double.infinity,
         decoration: const BoxDecoration(
           color: AsanColorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -498,7 +498,10 @@ class _AsanFilterListState extends State<AsanFilterList> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.lg, vertical: AsanSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AsanSpacing.lg,
+                vertical: AsanSpacing.md,
+              ),
               child: _SheetHeader(
                 title: 'Select Filters',
                 onClose: () => Navigator.pop(context),
@@ -543,7 +546,6 @@ class _AsanFilterListState extends State<AsanFilterList> {
                         'Food Group',
                         style: AsanTextTheme.labelSmall.copyWith(
                           fontWeight: FontWeight.bold,
-                          height: 16 / 12,
                         ),
                       ),
                     ),
@@ -633,7 +635,6 @@ class _SheetHeader extends StatelessWidget {
           Text(
             title,
             style: AsanTextTheme.bodyMedium.copyWith(
-              height: 22 / 16,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -641,7 +642,7 @@ class _SheetHeader extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints.tightFor(width: 22, height: 22),
             onPressed: onClose,
-            icon: const Icon(Icons.close_rounded, size: 24, weight: 600),
+            icon: const Icon(Icons.close_rounded, size: 22, weight: 600),
           ),
         ],
       ),
@@ -677,10 +678,7 @@ class _FilterSection extends StatelessWidget {
       children: [
         Text(
           title,
-          style: AsanTextTheme.labelSmall.copyWith(
-            height: 16 / 12,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AsanTextTheme.labelSmall.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: AsanSpacing.sm),
         ...options.indexed.map(
@@ -728,7 +726,6 @@ class _FilterSection extends StatelessWidget {
                       child: Text(
                         entry.$2,
                         style: AsanTextTheme.bodyMedium.copyWith(
-                          height: 22 / 16,
                           color:
                               (selectedValues?.contains(entry.$2) ??
                                   entry.$2 == selected)
@@ -752,7 +749,7 @@ class _FilterSection extends StatelessWidget {
                         onPressed: onDirectionChanged,
                         icon: IconTheme(
                           data: const IconThemeData(
-                            size: 24,
+                            size: 22,
                             color: AsanColorScheme.secondary,
                           ),
                           child: ascending
@@ -863,16 +860,12 @@ class _AsanDateFieldState extends State<AsanDateField> {
         ? AsanColorScheme.inactive
         : (_isActive ? AsanColorScheme.primary : AsanColorScheme.inactive);
 
-    return SizedBox(
-      width: double.infinity,
-      height: 62,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
           Text(
             widget.label,
             style: AsanTextTheme.labelSmall.copyWith(
-              height: 16 / 12,
               color: AsanColorScheme.secondary,
               fontWeight: FontWeight.bold,
             ),
@@ -907,7 +900,6 @@ class _AsanDateFieldState extends State<AsanDateField> {
                             ? widget.hintText ?? ''
                             : _formatDate(_selectedDate!),
                         style: AsanTextTheme.bodyMedium.copyWith(
-                          height: 22 / 16,
                           color: hasValue
                               ? AsanColorScheme.onSurface
                               : AsanColorScheme.inactive,
@@ -932,8 +924,7 @@ class _AsanDateFieldState extends State<AsanDateField> {
               ),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -1033,11 +1024,12 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
         ),
         minChildSize: 0.5,
         maxChildSize: 0.9,
-        builder: (context, _) => AsanDropdownList(
+        builder: (context, scrollController) => AsanDropdownList(
           title: 'Select Month',
           items: _months,
           selectedValue: _months[_visibleMonth.month - 1],
           showSearch: false,
+          scrollController: scrollController,
         ),
       ),
     );
@@ -1067,11 +1059,12 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
         ),
         minChildSize: 0.5,
         maxChildSize: 0.9,
-        builder: (context, _) => AsanDropdownList(
+        builder: (context, scrollController) => AsanDropdownList(
           title: 'Select Year',
           items: years,
           selectedValue: '${_visibleMonth.year}',
           showSearch: false,
+          scrollController: scrollController,
         ),
       ),
     );
@@ -1133,11 +1126,10 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _ActionButton(label: 'Cancel', onPressed: widget.onCancel),
+              AsanTextButton.black(label: 'Cancel', onPressed: widget.onCancel),
               const SizedBox(width: 16),
-              _ActionButton(
+              AsanTextButton.green(
                 label: 'Select',
-                color: AsanColorScheme.primary,
                 onPressed: () => widget.onDateSelected?.call(_selectedDate),
               ),
             ],

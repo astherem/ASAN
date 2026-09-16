@@ -105,7 +105,8 @@ class _PantryScreenState extends State<PantryScreen> {
         },
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(
-            38 + AsanSpacing.md +
+            38 +
+                AsanSpacing.md +
                 (_activeFilterLabels.isEmpty ? 0 : 32 + AsanSpacing.md),
           ),
           child: Padding(
@@ -240,73 +241,68 @@ class _AddPantryItemFormState extends State<AddPantryItemForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          AsanTextField(
+            label: 'Item Name',
+            hintText: 'Enter item name',
+            controller: _itemController,
+          ),
+          const SizedBox(height: AsanSpacing.md),
+          AsanDropdownMenu(
+            label: 'Food Group',
+            items: asanFoodGroups,
+            value: _foodGroup,
+            hintText: 'Select a food group',
+            onChanged: (value) {
+              if (value != null) setState(() => _foodGroup = value);
+            },
+          ),
+          const SizedBox(height: AsanSpacing.md),
+          Row(
             children: [
-              AsanTextField(
-                label: 'Item Name',
-                hintText: 'Enter item name',
-                controller: _itemController,
+              Expanded(
+                child: AsanTextField(
+                  label: 'Quantity',
+                  hintText: 'Enter quantity',
+                  controller: _quantityController,
+                ),
               ),
-              const SizedBox(height: AsanSpacing.md),
-              AsanDropdownMenu(
-                label: 'Food Group',
-                items: asanFoodGroups,
-                value: _foodGroup,
-                hintText: 'Select a food group',
-                onChanged: (value) {
-                  if (value != null) setState(() => _foodGroup = value);
-                },
-              ),
-              const SizedBox(height: AsanSpacing.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: AsanTextField(
-                      label: 'Quantity',
-                      hintText: 'Enter quantity',
-                      controller: _quantityController,
-                    ),
-                  ),
-                  const SizedBox(width: AsanSpacing.md),
-                  Expanded(
-                    child: AsanTextField(
-                      label: 'Unit',
-                      hintText: 'Enter unit',
-                      controller: _unitController,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AsanSpacing.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: AsanDateField(
-                      label: 'Purchase Date',
-                      initialDate: _purchaseDate,
-                      hintText: todayHint,
-                      onChanged: (date) => _purchaseDate = date,
-                    ),
-                  ),
-                  const SizedBox(width: AsanSpacing.md),
-                  Expanded(
-                    child: AsanDateField(
-                      label: 'Expiry Date',
-                      initialDate: _expiryDate,
-                      hintText: todayHint,
-                      onChanged: (date) => _expiryDate = date,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AsanSpacing.md),
-              AsanTextField(
-                label: 'Notes',
-                hintText: 'Add notes',
-                controller: _notesController,
+              const SizedBox(width: AsanSpacing.md),
+              Expanded(
+                child: AsanTextField(
+                  label: 'Unit',
+                  hintText: 'Enter unit',
+                  controller: _unitController,
+                ),
               ),
             ],
+          ),
+          const SizedBox(height: AsanSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: AsanDateField(
+                  label: 'Purchase Date',
+                  initialDate: _purchaseDate,
+                  hintText: todayHint,
+                  onChanged: (date) => _purchaseDate = date,
+                ),
+              ),
+              const SizedBox(width: AsanSpacing.md),
+              Expanded(
+                child: AsanDateField(
+                  label: 'Expiry Date',
+                  initialDate: _expiryDate,
+                  hintText: todayHint,
+                  onChanged: (date) => _expiryDate = date,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AsanSpacing.md),
+          AsanTextField(
+            label: 'Notes',
+            hintText: 'Add notes',
+            controller: _notesController,
           ),
           const Spacer(),
           PrimaryButton(

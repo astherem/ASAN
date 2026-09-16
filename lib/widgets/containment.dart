@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/styles/theme.dart';
+
 import 'package:asan/widgets/buttons.dart';
 
 // LIST TILE
@@ -61,16 +62,13 @@ class _AsanListTileState extends State<AsanListTile> {
                         widget.itemName,
                         style: AsanTextTheme.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
-                          height: 22 / 16,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: AsanSpacing.md),
                     Text(
                       '${widget.quantity} ${widget.unit}',
-                      style: AsanTextTheme.bodyMedium.copyWith(height: 22 / 16),
+                      style: AsanTextTheme.bodyMedium,
                     ),
                   ],
                 ),
@@ -81,9 +79,7 @@ class _AsanListTileState extends State<AsanListTile> {
                     Expanded(
                       child: Text(
                         widget.category,
-                        style: AsanTextTheme.labelSmall.copyWith(
-                          height: 16 / 12,
-                        ),
+                        style: AsanTextTheme.labelSmall,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -91,13 +87,13 @@ class _AsanListTileState extends State<AsanListTile> {
                     const SizedBox(width: AsanSpacing.md),
                     Text(
                       widget.purchasedDate,
-                      style: AsanTextTheme.labelSmall.copyWith(height: 16 / 12),
+                      style: AsanTextTheme.labelSmall,
                     ),
                   ],
                 ),
               ],
             ),
-          ),
+            ),
         ],
       ),
     );
@@ -178,7 +174,6 @@ class _AsanExpansionTileState extends State<AsanExpansionTile> {
                               widget.title,
                               style: AsanTextTheme.bodyMedium.copyWith(
                                 fontWeight: FontWeight.bold,
-                                height: 22 / 16,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -190,7 +185,6 @@ class _AsanExpansionTileState extends State<AsanExpansionTile> {
                             style: AsanTextTheme.bodyMedium.copyWith(
                               color: AsanColorScheme.inactive,
                               fontWeight: FontWeight.bold,
-                              height: 22 / 16,
                             ),
                           ),
                         ],
