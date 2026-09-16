@@ -1,9 +1,32 @@
 import 'package:flutter/material.dart';
 
 import 'package:asan/styles/theme.dart';
+
 import 'package:asan/widgets/buttons.dart';
 import 'package:asan/widgets/containment.dart';
 import 'package:asan/widgets/inputs.dart';
+
+const asanFoodGroups = [
+  'Beverages',
+  'Bread & Bakery',
+  'Cans & Jars',
+  'Condiments & Sauces',
+  'Dairy',
+  'Deli',
+  'Frozen Foods',
+  'Fruit',
+  'Grains & Cereals',
+  'Herbs & Spices',
+  'Meat',
+  'Oils & Vinegars',
+  'Poultry',
+  'Seafood',
+  'Snacks',
+  'Spices & Seasonings',
+  'Soups & Broths',
+  'Vegetables',
+  'Other',
+];
 
 // DROPDOWN MENU
 double dropdownSheetInitialSize(
@@ -100,8 +123,8 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
         Text(
           widget.label,
           style: AsanTextTheme.labelSmall.copyWith(
-            height: 16 / 12,
             color: AsanColorScheme.secondary,
+            fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 8),
@@ -131,7 +154,6 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
                     child: Text(
                       widget.value ?? widget.hintText ?? '',
                       style: AsanTextTheme.bodyMedium.copyWith(
-                        height: 22 / 16,
                         color: textColor,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -140,7 +162,7 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
                   const SizedBox(width: 8),
                   const Icon(
                     Icons.arrow_drop_down_rounded,
-                    size: 28,
+                    size: 24,
                     color: AsanColorScheme.inactive,
                   ),
                 ],
@@ -166,7 +188,7 @@ class AsanDropdownList extends StatefulWidget {
     required this.title,
     required this.items,
     this.selectedValue,
-    this.searchHint = 'search food group...',
+    this.searchHint = 'Search food group...',
     this.showSearch = true,
     this.scrollController,
   });
@@ -222,7 +244,7 @@ class _AsanDropdownListState extends State<AsanDropdownList> {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                padding: const EdgeInsets.fromLTRB(AsanSpacing.lg, AsanSpacing.sm, AsanSpacing.lg, AsanSpacing.md),
                 child: Column(
                   children: [
                     SizedBox(
@@ -244,7 +266,7 @@ class _AsanDropdownListState extends State<AsanDropdownList> {
                             child: IconButton(
                               padding: EdgeInsets.zero,
                               onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.close_rounded, size: 22),
+                              icon: const Icon(Icons.close_rounded, size: 24, weight: 600),
                             ),
                           ),
                         ],
@@ -344,63 +366,111 @@ class _DropdownListItem extends StatelessWidget {
 
 // FILTER MENU
 double filterSheetInitialSize(BuildContext context) {
-  const contentHeight = 700.0;
+  const contentHeight = 820.0;
   final availableHeight = MediaQuery.sizeOf(context).height;
   final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
   return ((contentHeight + bottomInset) / availableHeight)
       .clamp(0.5, 0.9)
-      .toDouble();  
+      .toDouble();
 }
 
 class AsanFilterSelection {
   final String sortBy;
   final bool sortAscending;
-  final String purchaseStatus;
+  final Set<String> purchaseStatuses;
+  final Set<String> expirationStatuses;
   final Set<String> foodGroups;
 
   const AsanFilterSelection({
     required this.sortBy,
     required this.sortAscending,
-    required this.purchaseStatus,
+    required this.purchaseStatuses,
+    required this.expirationStatuses,
     required this.foodGroups,
   });
+
+  AsanFilterSelection copyWith({
+    String? sortBy,
+    bool? sortAscending,
+    Set<String>? purchaseStatuses,
+    Set<String>? expirationStatuses,
+    Set<String>? foodGroups,
+  }) {
+    return AsanFilterSelection(
+      sortBy: sortBy ?? this.sortBy,
+      sortAscending: sortAscending ?? this.sortAscending,
+      purchaseStatuses: purchaseStatuses ?? this.purchaseStatuses,
+      expirationStatuses: expirationStatuses ?? this.expirationStatuses,
+      foodGroups: foodGroups ?? this.foodGroups,
+    );
+  }
 }
+
+enum AsanFilterMenuType { pantry, groceries }
 
 class AsanFilterList extends StatefulWidget {
   final ScrollController? scrollController;
+  final AsanFilterMenuType menuType;
 
-  const AsanFilterList({super.key, this.scrollController});
+  const AsanFilterList({
+    super.key,
+    this.scrollController,
+    required this.menuType,
+  });
 
   @override
   State<AsanFilterList> createState() => _AsanFilterListState();
 }
 
 class _AsanFilterListState extends State<AsanFilterList> {
-  String _sortBy = 'Food group';
-  bool _sortAscending = true;
-  String _purchaseStatus = 'Unpurchased';
-  final Set<String> _foodGroups = {'Cans & Jars', 'Grains & Cereals', 'Meat'};
+  String get _defaultSortBy => widget.menuType == AsanFilterMenuType.pantry
+      ? 'Expiration date'
+      : 'Food group';
 
-  static const _groups = [
-    'Beverages',
-    'Bread & Bakery',
-    'Cans & Jars',
-    'Condiments & Sauces',
-    'Dairy',
-    'Deli',
-    'Fruit',
-    'Grains & Cereals',
-    'Herbs & Spices',
-    'Meat',
-  ];
+  List<String> get _sortOptions => widget.menuType == AsanFilterMenuType.pantry
+      ? const [
+          'Expiration date',
+          'Food group',
+          'Item name',
+          'Purchase date',
+          'Date added',
+        ]
+      : const ['Food group', 'Item name', 'Date added'];
+
+  String get _statusTitle => widget.menuType == AsanFilterMenuType.pantry
+      ? 'Expiration Status'
+      : 'Purchase Status';
+
+  String get _defaultStatus => widget.menuType == AsanFilterMenuType.pantry
+      ? 'Expiring soon'
+      : 'Not purchased';
+
+  List<String> get _statusOptions =>
+      widget.menuType == AsanFilterMenuType.pantry
+      ? const ['Expiring soon', 'Not expired', 'Expired']
+      : const ['Not purchased', 'Purchased'];
+
+  bool _sortAscending = true;
+  String _sortBy = '';
+  final Set<String> _statuses = {};
+  final Set<String> _foodGroups = {};
 
   void _reset() {
     setState(() {
-      _sortBy = 'Food group';
+      _sortBy = _defaultSortBy;
       _sortAscending = true;
-      _purchaseStatus = 'Unpurchased';
+      _statuses
+        ..clear()
+        ..add(_defaultStatus);
       _foodGroups.clear();
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _sortBy = _defaultSortBy;
+    _statuses.add(_defaultStatus);
   }
 
   @override
@@ -416,7 +486,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
         ),
         child: Column(
           children: [
-            Padding(  
+            Padding(
               padding: const EdgeInsets.all(16),
               child: Container(
                 width: 32,
@@ -427,36 +497,46 @@ class _AsanFilterListState extends State<AsanFilterList> {
                 ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.lg, vertical: AsanSpacing.md),
+              child: _SheetHeader(
+                title: 'Select Filters',
+                onClose: () => Navigator.pop(context),
+              ),
+            ),
             Expanded(
               child: SingleChildScrollView(
                 controller: widget.scrollController,
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.lg),
                 child: Column(
                   children: [
-                    _SheetHeader(
-                      title: 'Select Filters',
-                      onClose: () => Navigator.pop(context),
-                    ),
-                    const SizedBox(height: AsanSpacing.md),
                     _FilterSection(
                       title: 'Sort By',
-                      options: const ['Food group', 'Item name', 'Date added'],
+                      options: _sortOptions,
                       selected: _sortBy,
                       ascending: _sortAscending,
                       onDirectionChanged: () =>
                           setState(() => _sortAscending = !_sortAscending),
                       onSelected: (value) => setState(() => _sortBy = value),
-          ),
-                    const AsanDivider(),
-                    _FilterSection(
-                      title: 'Purchase Status',
-                      options: const ['Unpurchased', 'Purchased'],
-                      selected: _purchaseStatus,
-                      isCheckbox: true,
-                      onSelected: (value) =>
-                          setState(() => _purchaseStatus = value),
                     ),
+                    const SizedBox(height: AsanSpacing.md),
                     const AsanDivider(),
+                    const SizedBox(height: AsanSpacing.md),
+                    _FilterSection(
+                      title: _statusTitle,
+                      options: _statusOptions,
+                      selected: '',
+                      selectedValues: _statuses,
+                      isCheckbox: true,
+                      onSelected: (value) => setState(() {
+                        _statuses.contains(value)
+                            ? _statuses.remove(value)
+                            : _statuses.add(value);
+                      }),
+                    ),
+                    const SizedBox(height: AsanSpacing.md),
+                    const AsanDivider(),
+                    const SizedBox(height: AsanSpacing.md),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -474,48 +554,16 @@ class _AsanFilterListState extends State<AsanFilterList> {
                         alignment: WrapAlignment.start,
                         spacing: AsanSpacing.sm,
                         runSpacing: AsanSpacing.sm,
-                        children: _groups.map((group) {
+                        children: asanFoodGroups.map((group) {
                           final selected = _foodGroups.contains(group);
-                          return InkWell(
-                            onTap: () => setState(() {
+                          return AsanFilterChip(
+                            label: group,
+                            isSelected: selected,
+                            onPressed: () => setState(() {
                               selected
                                   ? _foodGroups.remove(group)
                                   : _foodGroups.add(group);
                             }),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? AsanColorScheme.secondary
-                                    : AsanColorScheme.container,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    group,
-                                    style: AsanTextTheme.bodyMedium.copyWith(
-                                      color: selected
-                                          ? AsanColorScheme.surface
-                                          : AsanColorScheme.inactive,
-                                      fontWeight: selected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                    ),
-                                  ),
-                                  if (selected) ...[
-                                    const SizedBox(width: AsanSpacing.xs),
-                                    const Icon(
-                                      Icons.close_rounded,
-                                      size: 22,
-                                      color: AsanColorScheme.surface,
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
                           );
                         }).toList(),
                       ),
@@ -525,7 +573,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+              padding: const EdgeInsets.all(24),
               child: Row(
                 children: [
                   Expanded(
@@ -545,7 +593,14 @@ class _AsanFilterListState extends State<AsanFilterList> {
                         AsanFilterSelection(
                           sortBy: _sortBy,
                           sortAscending: _sortAscending,
-                          purchaseStatus: _purchaseStatus,
+                          purchaseStatuses:
+                              widget.menuType == AsanFilterMenuType.groceries
+                              ? Set.unmodifiable(_statuses)
+                              : const {},
+                          expirationStatuses:
+                              widget.menuType == AsanFilterMenuType.pantry
+                              ? Set.unmodifiable(_statuses)
+                              : const {},
                           foodGroups: Set.unmodifiable(_foodGroups),
                         ),
                       ),
@@ -586,7 +641,7 @@ class _SheetHeader extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints.tightFor(width: 22, height: 22),
             onPressed: onClose,
-            icon: const Icon(Icons.close_rounded, size: 22),
+            icon: const Icon(Icons.close_rounded, size: 24, weight: 600),
           ),
         ],
       ),
@@ -598,6 +653,7 @@ class _FilterSection extends StatelessWidget {
   final String title;
   final List<String> options;
   final String selected;
+  final Set<String>? selectedValues;
   final ValueChanged<String> onSelected;
   final bool ascending;
   final VoidCallback? onDirectionChanged;
@@ -607,6 +663,7 @@ class _FilterSection extends StatelessWidget {
     required this.title,
     required this.options,
     required this.selected,
+    this.selectedValues,
     required this.onSelected,
     this.ascending = true,
     this.onDirectionChanged,
@@ -626,70 +683,85 @@ class _FilterSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AsanSpacing.sm),
-        ...options.map(
-          (option) => InkWell(
-            onTap: () => onSelected(option),
-            child: SizedBox(
-              height: 30,
-              child: Row(
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: option == selected
-                          ? AsanColorScheme.secondary
-                          : Colors.transparent,
-                      shape: isCheckbox ? BoxShape.rectangle : BoxShape.circle,
-                      borderRadius: isCheckbox
-                          ? BorderRadius.circular(4)
-                          : null,
-                      border: option == selected
-                          ? null
-                          : Border.all(color: AsanColorScheme.inactive),
-                    ),
-                    child: option == selected
-                        ? const Icon(
-                            Icons.check_rounded,
-                            size: 15,
-                            color: AsanColorScheme.surface,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: AsanSpacing.md),
-                  Expanded(
-                    child: Text(
-                      option,
-                      style: AsanTextTheme.bodyMedium.copyWith(
-                        height: 22 / 16,
-                        color: option == selected
+        ...options.indexed.map(
+          (entry) => Padding(
+            padding: EdgeInsets.only(top: entry.$1 == 0 ? 0 : AsanSpacing.sm),
+            child: InkWell(
+              onTap: () => onSelected(entry.$2),
+              child: SizedBox(
+                height: 30,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color:
+                            (selectedValues?.contains(entry.$2) ??
+                                entry.$2 == selected)
                             ? AsanColorScheme.secondary
-                            : AsanColorScheme.inactive,
-                        fontWeight: option == selected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                            : Colors.transparent,
+                        shape: isCheckbox
+                            ? BoxShape.rectangle
+                            : BoxShape.circle,
+                        borderRadius: isCheckbox
+                            ? BorderRadius.circular(4)
+                            : null,
+                        border:
+                            (selectedValues?.contains(entry.$2) ??
+                                entry.$2 == selected)
+                            ? null
+                            : Border.all(color: AsanColorScheme.inactive),
                       ),
+                      child:
+                          (selectedValues?.contains(entry.$2) ??
+                              entry.$2 == selected)
+                          ? const Icon(
+                              Icons.check_rounded,
+                              size: 15,
+                              color: AsanColorScheme.surface,
+                            )
+                          : null,
                     ),
-                  ),
-                  if (option == selected && onDirectionChanged != null)
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints.tightFor(
-                        width: 22,
-                        height: 22,
-                      ),
-                      onPressed: onDirectionChanged,
-                      icon: IconTheme(
-                        data: const IconThemeData(
-                          size: 22,
-                          color: AsanColorScheme.secondary,
+                    const SizedBox(width: AsanSpacing.md),
+                    Expanded(
+                      child: Text(
+                        entry.$2,
+                        style: AsanTextTheme.bodyMedium.copyWith(
+                          height: 22 / 16,
+                          color:
+                              (selectedValues?.contains(entry.$2) ??
+                                  entry.$2 == selected)
+                              ? AsanColorScheme.secondary
+                              : AsanColorScheme.inactive,
+                          fontWeight:
+                              (selectedValues?.contains(entry.$2) ??
+                                  entry.$2 == selected)
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
-                        child: ascending
-                            ? const Icon(Icons.arrow_upward_rounded)
-                            : const Icon(Icons.arrow_downward_rounded),
                       ),
                     ),
-                ],
+                    if (entry.$2 == selected && onDirectionChanged != null)
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 22,
+                          height: 22,
+                        ),
+                        onPressed: onDirectionChanged,
+                        icon: IconTheme(
+                          data: const IconThemeData(
+                            size: 24,
+                            color: AsanColorScheme.secondary,
+                          ),
+                          child: ascending
+                              ? const Icon(Icons.arrow_upward_rounded)
+                              : const Icon(Icons.arrow_downward_rounded),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -802,6 +874,7 @@ class _AsanDateFieldState extends State<AsanDateField> {
             style: AsanTextTheme.labelSmall.copyWith(
               height: 16 / 12,
               color: AsanColorScheme.secondary,
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
@@ -849,7 +922,7 @@ class _AsanDateFieldState extends State<AsanDateField> {
                       height: 22,
                       child: Center(
                         child: IconTheme(
-                          data: IconThemeData(size: 14, color: iconColor),
+                          data: IconThemeData(size: 16, color: iconColor),
                           child: const Icon(Icons.calendar_today_rounded),
                         ),
                       ),
@@ -1084,13 +1157,13 @@ class _NavigationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 28,
-      height: 28,
+      width: 38,
+      height: 38,
       child: IconButton(
         padding: EdgeInsets.zero,
         onPressed: onPressed,
         icon: IconTheme(
-          data: const IconThemeData(size: 22, color: AsanColorScheme.secondary),
+          data: const IconThemeData(size: 24, color: AsanColorScheme.secondary),
           child: icon,
         ),
       ),
@@ -1106,16 +1179,35 @@ class _MonthSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Text(
-          label,
-          style: AsanTextTheme.bodyMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AsanColorScheme.secondary,
+    return SizedBox(
+      width: 87,
+      height: 38,
+      child: Material(
+        color: AsanColorScheme.container,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AsanTextTheme.bodyMedium.copyWith(
+                      color: AsanColorScheme.secondary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_drop_down_rounded,
+                  size: 24,
+                  color: AsanColorScheme.inactive,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1143,43 +1235,70 @@ class _CalendarGrid extends StatelessWidget {
     final firstDay = DateTime(month.year, month.month, 1);
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     final leadingEmpty = firstDay.weekday % 7;
-    final cells = <Widget>[];
+    final dates = <DateTime?>[];
 
     for (var i = 0; i < leadingEmpty; i++) {
-      cells.add(const SizedBox(width: 32, height: 32));
+      dates.add(null);
     }
 
     for (var day = 1; day <= daysInMonth; day++) {
-      final date = DateTime(month.year, month.month, day);
-      final isSelected =
-          date.year == selectedDate.year &&
-          date.month == selectedDate.month &&
-          date.day == selectedDate.day;
-      final isOutsideRange = date.isBefore(firstDate) || date.isAfter(lastDate);
+      dates.add(DateTime(month.year, month.month, day));
+    }
 
-      cells.add(
-        InkWell(
-          onTap: isOutsideRange ? null : () => onDateSelected(date),
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: isSelected ? AsanColorScheme.primary : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '$day',
-              style: AsanTextTheme.bodyMedium.copyWith(
-                color: isSelected
-                    ? AsanColorScheme.onPrimary
-                    : isOutsideRange
-                    ? AsanColorScheme.inactive
-                    : AsanColorScheme.secondary,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
+    while (dates.length < 42) {
+      dates.add(null);
+    }
+
+    final today = DateUtils.dateOnly(DateTime.now());
+    final rows = <Widget>[];
+    for (var row = 0; row < 6; row++) {
+      final rowDates = dates.skip(row * 7).take(7);
+      rows.add(
+        SizedBox(
+          height: 40,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: rowDates.map((date) {
+              if (date == null) {
+                return const SizedBox(width: 40, height: 40);
+              }
+
+              final isSelected = DateUtils.isSameDay(date, selectedDate);
+              final isToday = DateUtils.isSameDay(date, today);
+              final isOutsideRange =
+                  date.isBefore(firstDate) || date.isAfter(lastDate);
+
+              return InkWell(
+                onTap: isOutsideRange ? null : () => onDateSelected(date),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AsanColorScheme.primary
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${date.day}',
+                    style: AsanTextTheme.bodyMedium.copyWith(
+                      color: isSelected
+                          ? AsanColorScheme.onPrimary
+                          : isToday
+                          ? AsanColorScheme.primary
+                          : isOutsideRange
+                          ? AsanColorScheme.inactive
+                          : AsanColorScheme.secondary,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ),
       );
@@ -1187,25 +1306,36 @@ class _CalendarGrid extends StatelessWidget {
 
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(
-            7,
-            (index) => SizedBox(
-              width: 32,
-              child: Center(
-                child: Text(
-                  ['S', 'M', 'T', 'W', 'T', 'F', 'S'][index],
-                  style: AsanTextTheme.labelSmall.copyWith(
-                    color: AsanColorScheme.inactive,
+        SizedBox(
+          height: 16,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+                .map(
+                  (day) => SizedBox(
+                    width: 40,
+                    child: Center(
+                      child: Text(
+                        day,
+                        style: AsanTextTheme.labelSmall.copyWith(
+                          color: AsanColorScheme.inactive,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
+                )
+                .toList(),
           ),
         ),
         const SizedBox(height: 8),
-        Wrap(spacing: 0, runSpacing: 0, children: cells),
+        Column(
+          children: [
+            for (var index = 0; index < rows.length; index++) ...[
+              if (index > 0) const SizedBox(height: 1),
+              rows[index],
+            ],
+          ],
+        ),
       ],
     );
   }

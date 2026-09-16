@@ -18,9 +18,15 @@ class GroceriesScreen extends StatefulWidget {
 
 class _GroceriesScreenState extends State<GroceriesScreen> {
   String _searchQuery = '';
+  AsanFilterSelection? _activeFilters;
 
-  void _showFilters() {
-    showModalBottomSheet<AsanFilterSelection>(
+  List<String> get _activeFilterLabels => [
+    ...?_activeFilters?.purchaseStatuses,
+    ...?_activeFilters?.foodGroups,
+  ];
+
+  Future<void> _showFilters() async {
+    final selection = await showModalBottomSheet<AsanFilterSelection>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -29,10 +35,29 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
         initialChildSize: filterSheetInitialSize(context),
         minChildSize: 0.5,
         maxChildSize: 0.9,
-        builder: (context, scrollController) =>
-            AsanFilterList(scrollController: scrollController),
+        builder: (context, scrollController) => AsanFilterList(
+          scrollController: scrollController,
+          menuType: AsanFilterMenuType.groceries,
+        ),
       ),
     );
+    if (selection != null && mounted) {
+      setState(() => _activeFilters = selection);
+    }
+  }
+
+  void _removeFilter(String label) {
+    final filters = _activeFilters;
+    if (filters == null) return;
+
+    final purchaseStatuses = {...filters.purchaseStatuses}..remove(label);
+    final foodGroups = {...filters.foodGroups}..remove(label);
+    setState(() {
+      _activeFilters = filters.copyWith(
+        purchaseStatuses: purchaseStatuses,
+        foodGroups: foodGroups,
+      );
+    });
   }
 
   void _showAddGroceryDialog(BuildContext context) {
@@ -68,22 +93,52 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
         icon: const Icon(Symbols.add_rounded),
         onIconPressed: () => _showAddGroceryDialog(context),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(38 + AsanSpacing.md),
+          preferredSize: Size.fromHeight(
+            38 + AsanSpacing.md +
+                (_activeFilterLabels.isEmpty ? 0 : 32 + AsanSpacing.md),
+          ),
           child: Padding(
             padding: const EdgeInsets.only(top: AsanSpacing.md),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: AsanSearchBar(
-                    hintText: 'Search groceries',
-                    onChanged: (query) => setState(() => _searchQuery = query),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AsanSearchBar(
+                        hintText: 'Search groceries...',
+                        onChanged: (query) =>
+                            setState(() => _searchQuery = query),
+                      ),
+                    ),
+                    const SizedBox(width: AsanSpacing.sm),
+                    FilledIconButton(
+                      icon: const Icon(Symbols.tune_rounded),
+                      isActive: _activeFilterLabels.isNotEmpty,
+                      badgeCount: _activeFilterLabels.length,
+                      onPressed: _showFilters,
+                    ),
+                  ],
+                ),
+                if (_activeFilterLabels.isNotEmpty) ...[
+                  const SizedBox(height: AsanSpacing.md),
+                  SizedBox(
+                    height: 32,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _activeFilterLabels.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(width: AsanSpacing.sm),
+                      itemBuilder: (context, index) {
+                        final label = _activeFilterLabels[index];
+                        return ActiveFilterChip(
+                          label: label,
+                          onRemoved: () => _removeFilter(label),
+                        );
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(width: AsanSpacing.sm),
-                FilledIconButton(
-                  icon: const Icon(Symbols.tune_rounded),
-                  onPressed: _showFilters,
-                ),
+                ],
               ],
             ),
           ),
@@ -94,7 +149,6 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Your grocery list', style: AsanTextTheme.bodyMedium),
             const SizedBox(height: AsanSpacing.md),
             if (_searchQuery.isEmpty ||
                 'ground pork meat'.contains(_searchQuery.toLowerCase()))

@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/styles/theme.dart';
+import 'package:asan/widgets/buttons.dart';
 
 // LIST TILE
-class AsanListTile extends StatelessWidget {
+class AsanListTile extends StatefulWidget {
   final String itemName;
   final String quantity;
   final String unit;
   final String category;
   final String purchasedDate;
   final bool isChecked;
-  final ValueChanged<bool?>? onChanged;
+  final ValueChanged<bool>? onChanged;
 
   const AsanListTile({
     super.key,
@@ -25,29 +26,27 @@ class AsanListTile extends StatelessWidget {
   });
 
   @override
+  State<AsanListTile> createState() => _AsanListTileState();
+}
+
+class _AsanListTileState extends State<AsanListTile> {
+  late bool _isChecked = widget.isChecked;
+
+  void _toggleChecked(bool value) {
+    setState(() {
+      _isChecked = value;
+    });
+    widget.onChanged?.call(value);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 50,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 22,
-            height: 22,
-            child: Checkbox(
-              value: isChecked,
-              onChanged: onChanged,
-              side: const BorderSide(
-                color: AsanColorScheme.secondary,
-                width: 1,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
+          CheckboxButton(value: _isChecked, onChanged: _toggleChecked),
           const SizedBox(width: AsanSpacing.md),
           Expanded(
             child: Column(
@@ -59,7 +58,7 @@ class AsanListTile extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        itemName,
+                        widget.itemName,
                         style: AsanTextTheme.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
                           height: 22 / 16,
@@ -70,7 +69,7 @@ class AsanListTile extends StatelessWidget {
                     ),
                     const SizedBox(width: AsanSpacing.md),
                     Text(
-                      '$quantity $unit',
+                      '${widget.quantity} ${widget.unit}',
                       style: AsanTextTheme.bodyMedium.copyWith(height: 22 / 16),
                     ),
                   ],
@@ -81,7 +80,7 @@ class AsanListTile extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        category,
+                        widget.category,
                         style: AsanTextTheme.labelSmall.copyWith(
                           height: 16 / 12,
                         ),
@@ -91,7 +90,7 @@ class AsanListTile extends StatelessWidget {
                     ),
                     const SizedBox(width: AsanSpacing.md),
                     Text(
-                      purchasedDate,
+                      widget.purchasedDate,
                       style: AsanTextTheme.labelSmall.copyWith(height: 16 / 12),
                     ),
                   ],
@@ -117,7 +116,7 @@ class AsanExpansionTile extends StatefulWidget {
     required this.title,
     required this.itemCount,
     this.children = const [],
-    this.initiallyExpanded = false,
+    this.initiallyExpanded = true,
   });
 
   @override

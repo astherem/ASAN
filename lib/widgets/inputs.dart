@@ -69,6 +69,7 @@ class _AsanTextFieldState extends State<AsanTextField> {
           style: AsanTextTheme.labelSmall.copyWith(
             height: 16 / 12,
             color: AsanColorScheme.secondary,
+            fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 8),

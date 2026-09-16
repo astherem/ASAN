@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:asan/styles/theme.dart';
 
 // BADGE
@@ -10,21 +11,18 @@ class NotificationBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 17,
-      height: 16,
-      padding: const EdgeInsets.all(1),
+      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 1),
       decoration: BoxDecoration(
         color: AsanColorScheme.secondary,
         borderRadius: BorderRadius.circular(100),
       ),
       alignment: Alignment.center,
       child: Text(
-        count > 9 ? '9+' : '$count',
+        count > 99 ? '99+' : '$count',
         style: AsanTextTheme.labelSmall.copyWith(
           color: AsanColorScheme.onSecondary,
           fontWeight: FontWeight.bold,
-          fontSize: 12,
-          height: 14 / 12,
         ),
         textAlign: TextAlign.center,
       ),
@@ -40,15 +38,15 @@ class AsanAlertDialog {
       builder: (context) => AlertDialog(
         title: Text('Discard changes?', style: AsanTextTheme.headlineSmall),
         content: Text(
-          'Your changes will be lost.',
+          'You have changes that won’t be saved if you close.',
           style: AsanTextTheme.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
-              'Cancel',
-              style: AsanTextTheme.bodyMedium.copyWith(
+              'Keep Editing',
+              style: AsanTextTheme.labelSmall.copyWith(
                 color: AsanColorScheme.secondary,
                 fontWeight: FontWeight.bold,
               ),
@@ -58,7 +56,7 @@ class AsanAlertDialog {
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               'Discard',
-              style: AsanTextTheme.bodyMedium.copyWith(
+              style: AsanTextTheme.labelSmall.copyWith(
                 color: AsanColorScheme.error,
                 fontWeight: FontWeight.bold,
               ),
