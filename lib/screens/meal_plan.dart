@@ -39,7 +39,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AsanAppBar(
-        screenTitle: 'Meals',
+        screenTitle: 'Meal Plan',
         icon: const Icon(Symbols.add_rounded),
         onIconPressed: () => _showAddMealDialog(context),
         bottom: PreferredSize(

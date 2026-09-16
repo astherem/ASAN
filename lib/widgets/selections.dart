@@ -122,56 +122,56 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-        Text(
-          widget.label,
-          style: AsanTextTheme.labelSmall.copyWith(
-            color: AsanColorScheme.secondary,
-            fontWeight: FontWeight.bold,
+          Text(
+            widget.label,
+            style: AsanTextTheme.labelSmall.copyWith(
+              color: AsanColorScheme.secondary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          height: 38,
-          decoration: BoxDecoration(
-            color: hasBorder
-                ? AsanColorScheme.surface
-                : AsanColorScheme.container,
-            borderRadius: BorderRadius.circular(8),
-            border: hasBorder
-                ? Border.all(
-                    color: widget.hasError
-                        ? AsanColorScheme.error
-                        : AsanColorScheme.primary,
-                  )
-                : null,
-          ),
-          child: InkWell(
-            onTap: _openList,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.value ?? widget.hintText ?? '',
-                      style: AsanTextTheme.bodyMedium.copyWith(
-                        color: textColor,
+          const SizedBox(height: 8),
+          Container(
+            height: 38,
+            decoration: BoxDecoration(
+              color: hasBorder
+                  ? AsanColorScheme.surface
+                  : AsanColorScheme.container,
+              borderRadius: BorderRadius.circular(8),
+              border: hasBorder
+                  ? Border.all(
+                      color: widget.hasError
+                          ? AsanColorScheme.error
+                          : AsanColorScheme.primary,
+                    )
+                  : null,
+            ),
+            child: InkWell(
+              onTap: _openList,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.value ?? widget.hintText ?? '',
+                        style: AsanTextTheme.bodyMedium.copyWith(
+                          color: textColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.arrow_drop_down_rounded,
-                    size: 24,
-                    color: AsanColorScheme.inactive,
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.arrow_drop_down_rounded,
+                      size: 24,
+                      color: AsanColorScheme.inactive,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         ],
       ),
     );
@@ -863,67 +863,67 @@ class _AsanDateFieldState extends State<AsanDateField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-          Text(
-            widget.label,
-            style: AsanTextTheme.labelSmall.copyWith(
-              color: AsanColorScheme.secondary,
-              fontWeight: FontWeight.bold,
-            ),
+        Text(
+          widget.label,
+          style: AsanTextTheme.labelSmall.copyWith(
+            color: AsanColorScheme.secondary,
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 8),
-          Material(
-            color: hasBorder
-                ? AsanColorScheme.surface
-                : AsanColorScheme.container,
+        ),
+        const SizedBox(height: 8),
+        Material(
+          color: hasBorder
+              ? AsanColorScheme.surface
+              : AsanColorScheme.container,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            onTap: _openPicker,
             borderRadius: BorderRadius.circular(8),
-            child: InkWell(
-              onTap: _openPicker,
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                height: 38,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: hasBorder
-                      ? Border.all(
-                          color: widget.hasError
-                              ? AsanColorScheme.error
-                              : AsanColorScheme.primary,
-                        )
-                      : null,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _selectedDate == null
-                            ? widget.hintText ?? ''
-                            : _formatDate(_selectedDate!),
-                        style: AsanTextTheme.bodyMedium.copyWith(
-                          color: hasValue
-                              ? AsanColorScheme.onSurface
-                              : AsanColorScheme.inactive,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+            child: Container(
+              height: 38,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: hasBorder
+                    ? Border.all(
+                        color: widget.hasError
+                            ? AsanColorScheme.error
+                            : AsanColorScheme.primary,
+                      )
+                    : null,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _selectedDate == null
+                          ? widget.hintText ?? ''
+                          : _formatDate(_selectedDate!),
+                      style: AsanTextTheme.bodyMedium.copyWith(
+                        color: hasValue
+                            ? AsanColorScheme.onSurface
+                            : AsanColorScheme.inactive,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: Center(
+                      child: IconTheme(
+                        data: IconThemeData(size: 16, color: iconColor),
+                        child: const Icon(Icons.calendar_today_rounded),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: Center(
-                        child: IconTheme(
-                          data: IconThemeData(size: 16, color: iconColor),
-                          child: const Icon(Icons.calendar_today_rounded),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
+        ),
       ],
     );
   }
@@ -1329,36 +1329,6 @@ class _CalendarGrid extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final String label;
-  final Color color;
-  final VoidCallback? onPressed;
-
-  const _ActionButton({
-    required this.label,
-    this.color = AsanColorScheme.secondary,
-    this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Text(
-          label,
-          style: AsanTextTheme.labelSmall.copyWith(
-            color: color,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
     );
   }
 }

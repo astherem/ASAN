@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -20,6 +21,33 @@ class PantryScreen extends StatefulWidget {
 class _PantryScreenState extends State<PantryScreen> {
   String _searchQuery = '';
   AsanFilterSelection? _activeFilters;
+  late final ScrollController _contentScrollController;
+  late final ScrollController _filterScrollController;
+  bool _isContentScrolled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _contentScrollController = ScrollController()
+      ..addListener(_handleContentScroll);
+    _filterScrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _contentScrollController
+      ..removeListener(_handleContentScroll)
+      ..dispose();
+    _filterScrollController.dispose();
+    super.dispose();
+  }
+
+  void _handleContentScroll() {
+    final isScrolled = _contentScrollController.offset > 0;
+    if (isScrolled != _isContentScrolled) {
+      setState(() => _isContentScrolled = isScrolled);
+    }
+  }
 
   List<String> get _activeFilterLabels => [
     ...?_activeFilters?.expirationStatuses,
@@ -99,6 +127,7 @@ class _PantryScreenState extends State<PantryScreen> {
     return Scaffold(
       appBar: AsanAppBar(
         screenTitle: 'Pantry',
+        forceElevated: _isContentScrolled,
         icon: const Icon(Symbols.add_rounded),
         onIconPressed: () {
           _showAddPantryItemDialog(context);
@@ -106,11 +135,15 @@ class _PantryScreenState extends State<PantryScreen> {
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(
             38 +
-                AsanSpacing.md +
-                (_activeFilterLabels.isEmpty ? 0 : 32 + AsanSpacing.md),
+                AsanSpacing.sm +
+                (_activeFilterLabels.isEmpty ? 0 : 40 + AsanSpacing.md) +
+                AsanSpacing.lg,
           ),
           child: Padding(
-            padding: const EdgeInsets.only(top: AsanSpacing.md),
+            padding: const EdgeInsets.only(
+              top: AsanSpacing.sm,
+              bottom: AsanSpacing.lg,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -135,19 +168,33 @@ class _PantryScreenState extends State<PantryScreen> {
                 if (_activeFilterLabels.isNotEmpty) ...[
                   const SizedBox(height: AsanSpacing.md),
                   SizedBox(
-                    height: 32,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _activeFilterLabels.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(width: AsanSpacing.sm),
-                      itemBuilder: (context, index) {
-                        final label = _activeFilterLabels[index];
-                        return ActiveFilterChip(
-                          label: label,
-                          onRemoved: () => _removeFilter(label),
-                        );
-                      },
+                    height: 40,
+                    child: ScrollConfiguration(
+                      behavior: ScrollConfiguration.of(context).copyWith(
+                        dragDevices: {
+                          PointerDeviceKind.touch,
+                          PointerDeviceKind.mouse,
+                          PointerDeviceKind.trackpad,
+                        },
+                      ),
+                      child: ListView.separated(
+                        controller: _filterScrollController,
+                        primary: false,
+                        clipBehavior: Clip.none,
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        scrollDirection: Axis.horizontal,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: _activeFilterLabels.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(width: AsanSpacing.sm),
+                        itemBuilder: (context, index) {
+                          final label = _activeFilterLabels[index];
+                          return ActiveFilterChip(
+                            label: label,
+                            onRemoved: () => _removeFilter(label),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
@@ -156,14 +203,19 @@ class _PantryScreenState extends State<PantryScreen> {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(AsanSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: ListView.separated(
+        controller: _contentScrollController,
+        padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
+        itemCount: _searchQuery.isEmpty || 'September 1'.contains(_searchQuery)
+            ? 6
+            : 0,
+        itemBuilder: (context, index) =>
+            const AsanExpansionTile(title: 'September 1', itemCount: 2),
+        separatorBuilder: (context, index) => const Column(
           children: [
-            const SizedBox(height: AsanSpacing.md),
-            if (_searchQuery.isEmpty || 'September 1'.contains(_searchQuery))
-              AsanExpansionTile(title: 'September 1', itemCount: 2),
+            SizedBox(height: AsanSpacing.md),
+            AsanDivider(),
+            SizedBox(height: AsanSpacing.md),
           ],
         ),
       ),

@@ -13,6 +13,7 @@ class AsanAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onIconPressed;
   final double actionRightPadding;
   final PreferredSizeWidget? bottom;
+  final bool forceElevated;
 
   const AsanAppBar({
     super.key,
@@ -21,44 +22,66 @@ class AsanAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onIconPressed,
     this.actionRightPadding = AsanSpacing.lg,
     this.bottom,
+    this.forceElevated = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: AsanSpacing.md,
-      ).copyWith(left: AsanSpacing.lg, right: actionRightPadding),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        boxShadow: forceElevated
+            ? const [
+                BoxShadow(
+                  color: AsanColorScheme.shadow,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
       child: AppBar(
         centerTitle: false,
-        titleSpacing: 0,
+        titleSpacing: AsanSpacing.lg,
+        toolbarHeight: kToolbarHeight,
         elevation: 0,
-        scrolledUnderElevation: 4,
-        shadowColor: AsanColorScheme.shadow,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
         ),
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.none,
         title: Text(screenTitle, style: AsanTextTheme.headlineSmall),
-        bottom: bottom,
+        bottom: bottom == null
+            ? null
+            : PreferredSize(
+                preferredSize: bottom!.preferredSize,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AsanSpacing.lg),
+                  child: bottom!,
+                ),
+              ),
         actions: icon == null
             ? null
             : [
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 34,
-                    height: 34,
-                  ),
-                  icon: IconTheme(
-                    data: const IconThemeData(
-                      size: 32,
-                      color: AsanColorScheme.secondary,
-                      weight: 600,
+                Padding(
+                  padding: EdgeInsets.only(right: actionRightPadding),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 34,
+                      height: 34,
                     ),
-                    child: icon!,
+                    icon: IconTheme(
+                      data: const IconThemeData(
+                        size: 32,
+                        color: AsanColorScheme.secondary,
+                        weight: 600,
+                      ),
+                      child: icon!,
+                    ),
+                    onPressed: onIconPressed,
                   ),
-                  onPressed: onIconPressed,
                 ),
               ],
       ),
@@ -66,9 +89,8 @@ class AsanAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(
-    kToolbarHeight + (AsanSpacing.md * 2) + (bottom?.preferredSize.height ?? 0),
-  );
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0));
 }
 
 // FULLSCREEN DIALOG HEADER
