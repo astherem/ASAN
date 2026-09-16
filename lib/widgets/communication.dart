@@ -5,16 +5,16 @@ import 'package:asan/styles/theme.dart';
 import 'package:asan/widgets/buttons.dart';
 
 // BADGE
-class NotificationBadge extends StatelessWidget {
+class AsanBadge extends StatelessWidget {
   final int count;
 
-  const NotificationBadge({super.key, required this.count});
+  const AsanBadge({super.key, required this.count});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 1),
+      constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
         color: AsanColorScheme.secondary,
         borderRadius: BorderRadius.circular(100),
@@ -23,7 +23,8 @@ class NotificationBadge extends StatelessWidget {
       child: Text(
         count > 99 ? '99+' : '$count',
         style: AsanTextTheme.labelSmall.copyWith(
-          color: AsanColorScheme.onSecondary,
+          color: AsanColorScheme.surface,
+          fontSize: 9,
           fontWeight: FontWeight.bold,
         ),
         textAlign: TextAlign.center,

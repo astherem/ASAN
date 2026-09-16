@@ -5,18 +5,14 @@ import 'package:asan/screens/groceries.dart';
 import 'package:asan/screens/meal_plan.dart';
 import 'package:asan/screens/pantry.dart';
 import 'package:asan/screens/recipes.dart';
+import 'package:asan/models/pantry_item.dart';
 
 import 'package:asan/styles/theme.dart';
 
 import 'package:asan/widgets/navigations.dart';
 
 void main() {
-  runApp(
-    DevicePreview(
-      enabled: true,
-      builder: (context) => const Asan(),
-    ),
-  );
+  runApp(DevicePreview(enabled: true, builder: (context) => const Asan()));
 }
 
 class Asan extends StatefulWidget {
@@ -28,6 +24,8 @@ class Asan extends StatefulWidget {
 
 class _AsanState extends State<Asan> {
   int _selectedIndex = 0;
+  int _groceriesItemCount = 0;
+  final List<PantryItem> _receivedPantryItems = [];
 
   @override
   Widget build(BuildContext context) {
@@ -63,15 +61,23 @@ class _AsanState extends State<Asan> {
       home: Scaffold(
         body: IndexedStack(
           index: _selectedIndex,
-          children: const [
-            RecipesScreen(),
-            MealPlanScreen(),
-            PantryScreen(),
-            GroceriesScreen(),
+          children: [
+            const RecipesScreen(),
+            const MealPlanScreen(),
+            PantryScreen(incomingItems: _receivedPantryItems),
+            GroceriesScreen(
+              onItemCountChanged: (count) {
+                setState(() => _groceriesItemCount = count);
+              },
+              onItemChecked: (item) {
+                setState(() => _receivedPantryItems.add(item));
+              },
+            ),
           ],
         ),
         bottomNavigationBar: AsanNavigationBar(
           selectedIndex: _selectedIndex,
+          groceriesBadgeCount: _groceriesItemCount,
           onDestinationSelected: (index) {
             setState(() {
               _selectedIndex = index;

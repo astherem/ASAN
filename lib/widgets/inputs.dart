@@ -9,6 +9,7 @@ class AsanTextField extends StatefulWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final bool hasError;
+  final bool required;
 
   const AsanTextField({
     super.key,
@@ -17,6 +18,7 @@ class AsanTextField extends StatefulWidget {
     this.controller,
     this.onChanged,
     this.hasError = false,
+    this.required = false,
   });
 
   @override
@@ -64,12 +66,25 @@ class _AsanTextFieldState extends State<AsanTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          widget.label,
-          style: AsanTextTheme.labelSmall.copyWith(
-            color: AsanColorScheme.secondary,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            Text(
+              widget.label,
+              style: AsanTextTheme.labelSmall.copyWith(
+                color: AsanColorScheme.secondary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (widget.required) ...[
+              const SizedBox(width: 4),
+              Text(
+                '(Required)',
+                style: AsanTextTheme.labelSmall.copyWith(
+                  color: AsanColorScheme.inactive,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
         Container(
@@ -82,9 +97,9 @@ class _AsanTextFieldState extends State<AsanTextField> {
             borderRadius: BorderRadius.circular(8),
             border: hasBorder
                 ? Border.all(
-                    color: widget.hasError
-                        ? AsanColorScheme.error
-                        : AsanColorScheme.primary,
+                    color: isActive
+                      ? AsanColorScheme.primary
+                      : AsanColorScheme.error,
                   )
                 : null,
           ),

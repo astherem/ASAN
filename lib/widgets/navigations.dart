@@ -260,9 +260,9 @@ class _NavigationItem extends StatelessWidget {
               ),
               if (badgeCount > 0)
                 Positioned(
-                  right: -7,
-                  top: -4,
-                  child: NotificationBadge(count: badgeCount),
+                  right: -8,
+                  top: -8,
+                  child: AsanBadge(count: badgeCount),
                 ),
             ],
           ),

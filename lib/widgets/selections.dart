@@ -59,6 +59,7 @@ class AsanDropdownMenu extends StatefulWidget {
   final String? hintText;
   final ValueChanged<String?>? onChanged;
   final bool hasError;
+  final bool required;
 
   const AsanDropdownMenu({
     super.key,
@@ -68,6 +69,7 @@ class AsanDropdownMenu extends StatefulWidget {
     this.hintText,
     this.onChanged,
     this.hasError = false,
+    this.required = false,
   });
 
   @override
@@ -122,12 +124,25 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            widget.label,
-            style: AsanTextTheme.labelSmall.copyWith(
-              color: AsanColorScheme.secondary,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              Text(
+                widget.label,
+                style: AsanTextTheme.labelSmall.copyWith(
+                  color: AsanColorScheme.secondary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (widget.required) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '(Required)',
+                  style: AsanTextTheme.labelSmall.copyWith(
+                    color: AsanColorScheme.inactive,
+                  ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 8),
           Container(
@@ -139,9 +154,9 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
               borderRadius: BorderRadius.circular(8),
               border: hasBorder
                   ? Border.all(
-                      color: widget.hasError
-                          ? AsanColorScheme.error
-                          : AsanColorScheme.primary,
+                      color: _isOpen
+                          ? AsanColorScheme.primary
+                          : AsanColorScheme.error,
                     )
                   : null,
             ),
@@ -412,11 +427,13 @@ enum AsanFilterMenuType { pantry, groceries }
 class AsanFilterList extends StatefulWidget {
   final ScrollController? scrollController;
   final AsanFilterMenuType menuType;
+  final AsanFilterSelection? initialSelection;
 
   const AsanFilterList({
     super.key,
     this.scrollController,
     required this.menuType,
+    this.initialSelection,
   });
 
   @override
@@ -429,27 +446,23 @@ class _AsanFilterListState extends State<AsanFilterList> {
       : 'Food group';
 
   List<String> get _sortOptions => widget.menuType == AsanFilterMenuType.pantry
-      ? const [
-          'Expiration date',
-          'Food group',
-          'Item name',
-          'Purchase date',
-          'Date added',
-        ]
-      : const ['Food group', 'Item name', 'Date added'];
+      ? const ['Expiration date', 'Food group', 'Item name', 'Purchase date']
+      : const ['Food group', 'Item name'];
 
   String get _statusTitle => widget.menuType == AsanFilterMenuType.pantry
-      ? 'Expiration Status'
+      ? 'Status'
       : 'Purchase Status';
-
-  String get _defaultStatus => widget.menuType == AsanFilterMenuType.pantry
-      ? 'Expiring soon'
-      : 'Not purchased';
 
   List<String> get _statusOptions =>
       widget.menuType == AsanFilterMenuType.pantry
-      ? const ['Expiring soon', 'Not expired', 'Expired']
-      : const ['Not purchased', 'Purchased'];
+      ? const [
+          'Expiring soon',
+          'Not expired',
+          'Expired',
+          'No expiration date',
+          'Consumed',
+        ]
+      : const ['Purchased', 'Not purchased'];
 
   bool _sortAscending = true;
   String _sortBy = '';
@@ -460,9 +473,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
     setState(() {
       _sortBy = _defaultSortBy;
       _sortAscending = true;
-      _statuses
-        ..clear()
-        ..add(_defaultStatus);
+      _statuses.clear();
       _foodGroups.clear();
     });
   }
@@ -470,8 +481,15 @@ class _AsanFilterListState extends State<AsanFilterList> {
   @override
   void initState() {
     super.initState();
-    _sortBy = _defaultSortBy;
-    _statuses.add(_defaultStatus);
+    final selection = widget.initialSelection;
+    _sortBy = selection?.sortBy ?? _defaultSortBy;
+    _sortAscending = selection?.sortAscending ?? true;
+    _statuses.addAll(
+      widget.menuType == AsanFilterMenuType.pantry
+          ? selection?.expirationStatuses ?? const {}
+          : selection?.purchaseStatuses ?? const {},
+    );
+    _foodGroups.addAll(selection?.foodGroups ?? const {});
   }
 
   @override
@@ -525,21 +543,23 @@ class _AsanFilterListState extends State<AsanFilterList> {
                     const SizedBox(height: AsanSpacing.md),
                     const AsanDivider(),
                     const SizedBox(height: AsanSpacing.md),
-                    _FilterSection(
-                      title: _statusTitle,
-                      options: _statusOptions,
-                      selected: '',
-                      selectedValues: _statuses,
-                      isCheckbox: true,
-                      onSelected: (value) => setState(() {
-                        _statuses.contains(value)
-                            ? _statuses.remove(value)
-                            : _statuses.add(value);
-                      }),
-                    ),
-                    const SizedBox(height: AsanSpacing.md),
-                    const AsanDivider(),
-                    const SizedBox(height: AsanSpacing.md),
+                    if (_statusOptions.isNotEmpty) ...[
+                      _FilterSection(
+                        title: _statusTitle,
+                        options: _statusOptions,
+                        selected: '',
+                        selectedValues: _statuses,
+                        isCheckbox: true,
+                        onSelected: (value) => setState(() {
+                          _statuses.contains(value)
+                              ? _statuses.remove(value)
+                              : _statuses.add(value);
+                        }),
+                      ),
+                      const SizedBox(height: AsanSpacing.md),
+                      const AsanDivider(),
+                      const SizedBox(height: AsanSpacing.md),
+                    ],
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(

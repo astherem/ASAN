@@ -12,6 +12,8 @@ class AsanListTile extends StatefulWidget {
   final String unit;
   final String category;
   final String purchasedDate;
+  final String notes;
+  final VoidCallback? onTap;
   final bool isChecked;
   final ValueChanged<bool>? onChanged;
 
@@ -22,6 +24,8 @@ class AsanListTile extends StatefulWidget {
     required this.unit,
     required this.category,
     required this.purchasedDate,
+    this.notes = '',
+    this.onTap,
     this.isChecked = false,
     this.onChanged,
   });
@@ -42,59 +46,89 @@ class _AsanListTileState extends State<AsanListTile> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 50,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          CheckboxButton(value: _isChecked, onChanged: _toggleChecked),
-          const SizedBox(width: AsanSpacing.md),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+    final textColor = _isChecked
+        ? AsanColorScheme.inactive
+        : AsanColorScheme.onSurface;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 50),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CheckboxButton(value: _isChecked, onChanged: _toggleChecked),
+              const SizedBox(width: AsanSpacing.md),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Text(
-                        widget.itemName,
-                        style: AsanTextTheme.bodyMedium.copyWith(
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.itemName,
+                            style: AsanTextTheme.bodyMedium.copyWith(
+                              color: textColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
+                        const SizedBox(width: AsanSpacing.md),
+                        Text(
+                          '${widget.quantity} ${widget.unit}',
+                          style: AsanTextTheme.bodyMedium.copyWith(
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (widget.category.isNotEmpty ||
+                        widget.purchasedDate.isNotEmpty) ...[
+                      const SizedBox(height: AsanSpacing.xs),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.category,
+                              style: AsanTextTheme.labelSmall.copyWith(
+                                color: textColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: AsanSpacing.md),
+                          Text(
+                            widget.purchasedDate,
+                            style: AsanTextTheme.labelSmall.copyWith(
+                              color: textColor,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: AsanSpacing.md),
-                    Text(
-                      '${widget.quantity} ${widget.unit}',
-                      style: AsanTextTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AsanSpacing.xs),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.category,
-                        style: AsanTextTheme.labelSmall,
+                    ],
+                    if (widget.notes.isNotEmpty) ...[
+                      const SizedBox(height: AsanSpacing.xs),
+                      Text(
+                        widget.notes,
+                        style: AsanTextTheme.labelSmall.copyWith(
+                          color: textColor,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: AsanSpacing.md),
-                    Text(
-                      widget.purchasedDate,
-                      style: AsanTextTheme.labelSmall,
-                    ),
+                    ],
                   ],
                 ),
-              ],
-            ),
-            ),
-        ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -130,25 +164,6 @@ class _AsanExpansionTileState extends State<AsanExpansionTile> {
 
   @override
   Widget build(BuildContext context) {
-    final tileChildren = widget.children.isEmpty
-        ? <Widget>[
-            const AsanListTile(
-              itemName: 'ground pork',
-              quantity: '1/4',
-              unit: 'kg',
-              category: 'meat',
-              purchasedDate: 'bought August 10',
-            ),
-            const AsanListTile(
-              itemName: 'broccoli',
-              quantity: '2',
-              unit: 'heads',
-              category: 'vegetables',
-              purchasedDate: 'bought August 10',
-            ),
-          ]
-        : widget.children;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -211,7 +226,7 @@ class _AsanExpansionTileState extends State<AsanExpansionTile> {
           firstChild: const SizedBox.shrink(),
           secondChild: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: tileChildren,
+            children: widget.children,
           ),
           crossFadeState: _isExpanded
               ? CrossFadeState.showSecond
@@ -238,10 +253,6 @@ class AsanDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Divider(
-      height: thickness,
-      thickness: thickness,
-      color: color,
-    );
+    return Divider(height: thickness, thickness: thickness, color: color);
   }
 }
