@@ -1,27 +1,14 @@
-<!--
-  This is your project's front page. Replace every placeholder below.
-  It is the first thing your instructor and any future employer will read, and
-  the live link in it is how your project gets opened for grading.
-
-  New here? Read START-HERE.md first. Delete this comment when you are done.
--->
-
 # Asan
 
-> One sentence: what this app does, and who it is for.
+> Asan is a meal planning and pantry management mobile app for students and busy households who want to plan meals, organize ingredients, and reduce food waste with less effort.
 
-**Live demo:** https://benicemalig.github.io/ASAN/ <!-- GitHub Pages is set up already; replace if you host elsewhere -->
+**Live demo:** https://benicemalig.github.io/ASAN/
 
 **Demo video:** `docs/demo.mp4` (link it here once it exists)
 
 **Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University
 
 **Author:** Benice Asheret Malig
-
-This repository lives in the author's own GitHub account and is public on
-purpose. There is no `student.json` here and there should not be one: see
-`docs/06-security-and-privacy.md` for what a public repo means for secrets and
-personal data.
 
 ---
 
@@ -40,11 +27,10 @@ A repo without screenshots reads as abandoned, whatever the code says.
 
 ## What it does
 
-Three to five bullets. What can a user actually do?
-
-- ...
-- ...
-- ...
+- Discover, save, and add recipes.
+- Plan and manage meals for the week.
+- Track pantry items and monitor expiration dates.
+- Create grocery lists based on planned meals.
 
 ## Built with
 
@@ -119,4 +105,4 @@ it.
 
 ## Licence
 
-MIT, see [LICENSE](LICENSE). Change it if you want different terms.
+MIT, see [LICENSE](LICENSE).
