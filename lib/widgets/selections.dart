@@ -422,7 +422,7 @@ class AsanFilterSelection {
   }
 }
 
-enum AsanFilterMenuType { pantry, groceries }
+enum AsanFilterMenuType { pantry, groceries, recipes, meals }
 
 class AsanFilterList extends StatefulWidget {
   final ScrollController? scrollController;

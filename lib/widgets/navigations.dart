@@ -14,6 +14,8 @@ class AsanAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double actionRightPadding;
   final PreferredSizeWidget? bottom;
   final bool forceElevated;
+  final Color backgroundColor;
+  final Color foregroundColor;
 
   const AsanAppBar({
     super.key,
@@ -23,6 +25,8 @@ class AsanAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actionRightPadding = AsanSpacing.lg,
     this.bottom,
     this.forceElevated = false,
+    this.backgroundColor = AsanColorScheme.surface,
+    this.foregroundColor = AsanColorScheme.secondary,
   });
 
   @override
@@ -46,11 +50,12 @@ class AsanAppBar extends StatelessWidget implements PreferredSizeWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
+        backgroundColor: backgroundColor,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
         ),
         clipBehavior: Clip.none,
-        title: Text(screenTitle, style: AsanTextTheme.headlineSmall),
+        title: Text(screenTitle, style: AsanTextTheme.headlineSmall.copyWith(color: foregroundColor)),
         bottom: bottom == null
             ? null
             : PreferredSize(
@@ -73,7 +78,7 @@ class AsanAppBar extends StatelessWidget implements PreferredSizeWidget {
                       height: 34,
                     ),
                     icon: IconTheme(
-                      data: const IconThemeData(
+                      data: IconThemeData(
                         size: 32,
                         color: AsanColorScheme.secondary,
                         weight: 600,

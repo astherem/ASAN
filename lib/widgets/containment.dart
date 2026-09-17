@@ -239,6 +239,62 @@ class _AsanExpansionTileState extends State<AsanExpansionTile> {
 }
 
 // RECIPE CARD
+class RecipeCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final String imageUrl;
+  final VoidCallback? onTap;
+
+  const RecipeCard({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.imageUrl,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                imageUrl,
+                height: 120,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: AsanSpacing.sm),
+            Text(
+              title,
+              style: AsanTextTheme.bodyMedium.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: AsanSpacing.xs),
+            Text(
+              description,
+              style: AsanTextTheme.labelSmall.copyWith(
+                color: AsanColorScheme.inactive,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 // DIVIDER
 class AsanDivider extends StatelessWidget {

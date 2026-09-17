@@ -1,10 +1,10 @@
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 
-import 'package:asan/screens/groceries.dart';
-import 'package:asan/screens/meal_plan.dart';
-import 'package:asan/screens/pantry.dart';
-import 'package:asan/screens/recipes.dart';
+import 'package:asan/screens/groceries_screen.dart';
+import 'package:asan/screens/meal_plan_screen.dart';
+import 'package:asan/screens/pantry_screen.dart';
+import 'package:asan/screens/recipes_screen.dart';
 import 'package:asan/models/pantry_item.dart';
 
 import 'package:asan/styles/theme.dart';
