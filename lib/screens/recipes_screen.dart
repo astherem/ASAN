@@ -27,10 +27,40 @@ class _RecipesScreenState extends State<RecipesScreen> {
   final List<Recipes> _items = [];
   String _searchQuery = '';
   AsanFilterSelection? _activeFilters;
+  int _selectedView = 0;
   late final ScrollController _contentScrollController;
   late final ScrollController _filterScrollController;
   bool _isContentScrolled = false;
   int _receivedItemCount = 0;
+  final Set<String> _savedRecipeTitles = {};
+
+  static const _views = ['Explore', 'Saved', 'My Recipes'];
+  static const _exploreRecipes = [
+    _ExploreRecipe(
+      title: 'Recipe 1',
+      mealCategory: 'Meal Category',
+      imageUrl:
+          'https://images.pexels.com/photos/24866519/pexels-photo-24866519.jpeg',
+    ),
+    _ExploreRecipe(
+      title: 'Recipe 2',
+      mealCategory: 'Meal Category',
+      imageUrl:
+          'https://images.pexels.com/photos/26076240/pexels-photo-26076240.jpeg',
+    ),
+    _ExploreRecipe(
+      title: 'Recipe 3',
+      mealCategory: 'Meal Category',
+      imageUrl:
+          'https://images.pexels.com/photos/32214637/pexels-photo-32214637.jpeg',
+    ),
+    _ExploreRecipe(
+      title: 'Recipe 4',
+      mealCategory: 'Meal Category',
+      imageUrl:
+          'https://images.pexels.com/photos/15486347/pexels-photo-15486347.jpeg',
+    ),
+  ];
 
   @override
   void initState() {
@@ -125,7 +155,6 @@ class _RecipesScreenState extends State<RecipesScreen> {
       appBar: AsanAppBar(
         backgroundColor: AsanColorScheme.primary,
         screenTitle: 'Recipes',
-        forceElevated: _isContentScrolled,
         icon: const Icon(Symbols.add_rounded),
         onIconPressed: () {
           _showAddRecipeDialog(context);
@@ -201,28 +230,134 @@ class _RecipesScreenState extends State<RecipesScreen> {
           ),
         ),
       ),
-      body: ListView.separated(
+      body: CustomScrollView(
         controller: _contentScrollController,
+        slivers: [
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _SegmentedButtonHeaderDelegate(
+              selectedIndex: _selectedView,
+              views: _views,
+              onChanged: (index) => setState(() => _selectedView = index),
+            ),
+          ),
+          ..._buildSelectedView(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildSelectedView() {
+    if (_selectedView < 2) {
+      final recipes = _selectedView == 0
+          ? _filteredExploreRecipes
+          : _filteredExploreRecipes
+                .where((recipe) => _savedRecipeTitles.contains(recipe.title))
+                .toList();
+      return [_buildExploreView(recipes)];
+    }
+
+    return [
+      SliverPadding(
         padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
-        itemCount: _groupedItems.length,
-        itemBuilder: (context, index) {
-          final group = _groupedItems[index];
-          return AsanExpansionTile(
-            key: ValueKey(group.key),
-            title: group.key,
-            itemCount: group.value.length,
-            children: group.value.map(_buildListTile).toList(),
+        sliver: SliverList.separated(
+          itemCount: _groupedItems.length,
+          itemBuilder: (context, index) {
+            final group = _groupedItems[index];
+            return AsanExpansionTile(
+              key: ValueKey(group.key),
+              title: group.key,
+              itemCount: group.value.length,
+              children: group.value.map(_buildListTile).toList(),
+            );
+          },
+          separatorBuilder: (context, index) => const Column(
+            children: [
+              SizedBox(height: AsanSpacing.md),
+              AsanDivider(),
+              SizedBox(height: AsanSpacing.md),
+            ],
+          ),
+        ),
+      ),
+    ];
+  }
+
+  SliverPadding _buildExploreView(List<_ExploreRecipe> recipes) {
+    if (recipes.isEmpty) {
+      return SliverPadding(
+        padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
+        sliver: SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: AsanSpacing.lg),
+            child: Text(
+              _selectedView == 1
+                  ? 'Your saved recipes will appear here.'
+                  : 'No recipes match your search.',
+              style: AsanTextTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
+      sliver: SliverGrid(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final recipe = recipes[index];
+          final isSaved = _savedRecipeTitles.contains(recipe.title);
+          return Stack(
+            children: [
+              RecipeCard(
+                title: recipe.title,
+                mealCategory: recipe.mealCategory,
+                imageUrl: recipe.imageUrl,
+              ),
+              Positioned(
+                top: 4,
+                right: 4,
+                child: IconButton.filledTonal(
+                  tooltip: isSaved ? 'Remove from saved' : 'Save recipe',
+                  icon: Icon(
+                    isSaved
+                        ? Symbols.bookmark_rounded
+                        : Symbols.bookmark_border_rounded,
+                    fill: isSaved ? 1 : 0,
+                  ),
+                  onPressed: () => setState(() {
+                    if (isSaved) {
+                      _savedRecipeTitles.remove(recipe.title);
+                    } else {
+                      _savedRecipeTitles.add(recipe.title);
+                    }
+                  }),
+                ),
+              ),
+            ],
           );
-        },
-        separatorBuilder: (context, index) => const Column(
-          children: [
-            SizedBox(height: AsanSpacing.md),
-            AsanDivider(),
-            SizedBox(height: AsanSpacing.md),
-          ],
+        }, childCount: recipes.length),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: AsanSpacing.md,
+          mainAxisSpacing: AsanSpacing.lg,
+          childAspectRatio: 0.72,
         ),
       ),
     );
+  }
+
+  List<_ExploreRecipe> get _filteredExploreRecipes {
+    final query = _searchQuery.trim().toLowerCase();
+    return _exploreRecipes
+        .where(
+          (recipe) =>
+              query.isEmpty ||
+              recipe.title.toLowerCase().contains(query) ||
+              recipe.mealCategory.toLowerCase().contains(query),
+        )
+        .toList();
   }
 
   List<MapEntry<String, List<Recipes>>> get _groupedItems {
@@ -391,4 +526,64 @@ class _RecipesScreenState extends State<RecipesScreen> {
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
+}
+
+class _SegmentedButtonHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final int selectedIndex;
+  final List<String> views;
+  final ValueChanged<int> onChanged;
+
+  _SegmentedButtonHeaderDelegate({
+    required this.selectedIndex,
+    required this.views,
+    required this.onChanged,
+  });
+
+  static const double _height = 40 + (AsanSpacing.md * 2);
+
+  @override
+  double get minExtent => _height;
+
+  @override
+  double get maxExtent => _height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return ColoredBox(
+      color: AsanColorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AsanSpacing.lg,
+          vertical: AsanSpacing.md,
+        ),
+        child: AsanSegmentedButton(
+          views: views,
+          selectedIndex: selectedIndex,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _SegmentedButtonHeaderDelegate oldDelegate) {
+    return oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.views != views;
+  }
+}
+
+class _ExploreRecipe {
+  final String title;
+  final String mealCategory;
+  final String imageUrl;
+
+  const _ExploreRecipe({
+    required this.title,
+    required this.mealCategory,
+    required this.imageUrl,
+  });
 }

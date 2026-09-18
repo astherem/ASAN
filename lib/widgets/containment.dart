@@ -241,14 +241,14 @@ class _AsanExpansionTileState extends State<AsanExpansionTile> {
 // RECIPE CARD
 class RecipeCard extends StatelessWidget {
   final String title;
-  final String description;
+  final String mealCategory;
   final String imageUrl;
   final VoidCallback? onTap;
 
   const RecipeCard({
     super.key,
     required this.title,
-    required this.description,
+    required this.mealCategory,
     required this.imageUrl,
     this.onTap,
   });
@@ -265,12 +265,14 @@ class RecipeCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                imageUrl,
-                height: 120,
-                fit: BoxFit.cover,
-              ),
-            ),
+              child: AspectRatio(
+                aspectRatio: 1.0,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                ),
+              ), // Closed AspectRatio
+            ), // Closed ClipRRect
             const SizedBox(height: AsanSpacing.sm),
             Text(
               title,
@@ -282,13 +284,13 @@ class RecipeCard extends StatelessWidget {
             ),
             const SizedBox(height: AsanSpacing.xs),
             Text(
-              description,
+              mealCategory,
               style: AsanTextTheme.labelSmall.copyWith(
                 color: AsanColorScheme.inactive,
-              ),
+                  ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-            ),
+            ), // Closed Text (Rogue parenthesis removed from below here)
           ],
         ),
       ),
