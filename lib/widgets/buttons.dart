@@ -8,6 +8,7 @@
   class PrimaryButton extends StatelessWidget {
     final String? label;
     final Widget? child;
+    final Widget? icon;
     final VoidCallback? onPressed;
     final double height;
 
@@ -15,23 +16,41 @@
       super.key,
       this.label,
       this.child,
+      this.icon,
       this.onPressed,
       this.height = 42,
     });
 
     @override
     Widget build(BuildContext context) {
-      final buttonChild =
-          child ??
-          Text(
-            label ?? '',
-            style: AsanTextTheme.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AsanColorScheme.onPrimary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          );
+      final labelText = Text (
+          label ?? '',
+          style: AsanTextTheme.bodyMedium.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AsanColorScheme.onPrimary,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+
+          final buttonChild =
+            child ??
+            (icon == null
+                ? labelText
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconTheme(
+                        data: const IconThemeData(
+                          size: 18,
+                          color: AsanColorScheme.onPrimary,
+                        ),
+                        child: icon!,
+                      ),
+                      const SizedBox(width: AsanSpacing.xs),
+                      Flexible(child: labelText),
+                    ],
+                  ));
 
       return Material(
         color: AsanColorScheme.primary,
@@ -56,6 +75,7 @@
   class SecondaryButton extends StatelessWidget {
     final String? label;
     final Widget? child;
+    final Widget? icon;
     final VoidCallback? onPressed;
     final double height;
 
@@ -63,6 +83,7 @@
       super.key,
       this.label,
       this.child,
+      this.icon,
       this.onPressed,
       this.height = 42,
     });
@@ -71,15 +92,38 @@
     Widget build(BuildContext context) {
       final buttonChild =
           child ??
-          Text(
-            label ?? '',
-            style: AsanTextTheme.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AsanColorScheme.onSecondary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          );
+          (icon == null
+              ? Text(
+                  label ?? '',
+                  style: AsanTextTheme.bodyMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AsanColorScheme.onSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconTheme(
+                      data: const IconThemeData(
+                        size: 18,
+                        color: AsanColorScheme.onSecondary,
+                      ),
+                      child: icon!,
+                    ),
+                    const SizedBox(width: AsanSpacing.xs),
+                    Text(
+                      label ?? '',
+                      style: AsanTextTheme.bodyMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AsanColorScheme.onSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ));
 
       return Material(
         color: AsanColorScheme.secondary,

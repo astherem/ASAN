@@ -8,6 +8,7 @@ class AsanTextField extends StatefulWidget {
   final String? hintText;
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  final TextInputType? keyboardType;
   final bool hasError;
   final bool required;
 
@@ -17,6 +18,7 @@ class AsanTextField extends StatefulWidget {
     this.hintText,
     this.controller,
     this.onChanged,
+    this.keyboardType,
     this.hasError = false,
     this.required = false,
   });
@@ -107,6 +109,7 @@ class _AsanTextFieldState extends State<AsanTextField> {
             controller: _controller,
             focusNode: _focusNode,
             onChanged: widget.onChanged,
+            keyboardType: widget.keyboardType,
             style: AsanTextTheme.bodyMedium.copyWith(color: textColor),
             decoration: InputDecoration(
               hintText: widget.hintText,

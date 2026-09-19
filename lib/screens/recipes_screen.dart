@@ -39,24 +39,28 @@ class _RecipesScreenState extends State<RecipesScreen> {
     _ExploreRecipe(
       title: 'Recipe 1',
       mealCategory: 'Meal Category',
+      totalTime: '25 mins',
       imageUrl:
           'https://images.pexels.com/photos/24866519/pexels-photo-24866519.jpeg',
     ),
     _ExploreRecipe(
       title: 'Recipe 2',
       mealCategory: 'Meal Category',
+      totalTime: '25 mins',
       imageUrl:
           'https://images.pexels.com/photos/26076240/pexels-photo-26076240.jpeg',
     ),
     _ExploreRecipe(
       title: 'Recipe 3',
       mealCategory: 'Meal Category',
+      totalTime: '25 mins',
       imageUrl:
           'https://images.pexels.com/photos/32214637/pexels-photo-32214637.jpeg',
     ),
     _ExploreRecipe(
       title: 'Recipe 4',
       mealCategory: 'Meal Category',
+      totalTime: '25 mins',
       imageUrl:
           'https://images.pexels.com/photos/15486347/pexels-photo-15486347.jpeg',
     ),
@@ -99,8 +103,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
   }
 
   List<String> get _activeFilterLabels => [
-    ...?_activeFilters?.expirationStatuses,
-    ...?_activeFilters?.foodGroups,
+    ...?_activeFilters?.totalTimeRanges,
+    ...?_activeFilters?.mealCategories,
   ];
 
   Future<void> _showFilters() async {
@@ -129,11 +133,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
     final filters = _activeFilters;
     if (filters == null) return;
 
-    final foodGroups = {...filters.foodGroups}..remove(label);
     setState(() {
       _activeFilters = filters.copyWith(
-        expirationStatuses: {...filters.expirationStatuses}..remove(label),
-        foodGroups: foodGroups,
+        purchaseStatuses: {...filters.purchaseStatuses}..remove(label),
+        totalTimeRanges: {...filters.totalTimeRanges}..remove(label),
+        mealCategories: {...filters.mealCategories}..remove(label),
       );
     });
   }
@@ -260,25 +264,35 @@ class _RecipesScreenState extends State<RecipesScreen> {
     return [
       SliverPadding(
         padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
-        sliver: SliverList.separated(
-          itemCount: _groupedItems.length,
-          itemBuilder: (context, index) {
-            final group = _groupedItems[index];
-            return AsanExpansionTile(
-              key: ValueKey(group.key),
-              title: group.key,
-              itemCount: group.value.length,
-              children: group.value.map(_buildListTile).toList(),
-            );
-          },
-          separatorBuilder: (context, index) => const Column(
-            children: [
-              SizedBox(height: AsanSpacing.md),
-              AsanDivider(),
-              SizedBox(height: AsanSpacing.md),
-            ],
-          ),
-        ),
+        sliver: _items.isEmpty
+            ? SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: AsanSpacing.lg),
+                  child: Text(
+                    'No recipes added yet.',
+                    style: AsanTextTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              )
+            : SliverGrid(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final recipe = _groupedRecipesFlat[index];
+                  return RecipeCard(
+                    recipeName: recipe.name,
+                    mealCategory: recipe.mealCategory ?? 'Uncategorized',
+                    totalTime: recipe.formattedTotalTime,
+                    showBookmark: false,
+                    onTap: () => _showEditItemDialog(recipe),
+                  );
+                }, childCount: _groupedRecipesFlat.length),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: AsanSpacing.md,
+                  mainAxisSpacing: AsanSpacing.lg,
+                  childAspectRatio: 163 / 213,
+                ),
+              ),
       ),
     ];
   }
@@ -308,41 +322,26 @@ class _RecipesScreenState extends State<RecipesScreen> {
         delegate: SliverChildBuilderDelegate((context, index) {
           final recipe = recipes[index];
           final isSaved = _savedRecipeTitles.contains(recipe.title);
-          return Stack(
-            children: [
-              RecipeCard(
-                title: recipe.title,
-                mealCategory: recipe.mealCategory,
-                imageUrl: recipe.imageUrl,
-              ),
-              Positioned(
-                top: 4,
-                right: 4,
-                child: IconButton.filledTonal(
-                  tooltip: isSaved ? 'Remove from saved' : 'Save recipe',
-                  icon: Icon(
-                    isSaved
-                        ? Symbols.bookmark_rounded
-                        : Symbols.bookmark_border_rounded,
-                    fill: isSaved ? 1 : 0,
-                  ),
-                  onPressed: () => setState(() {
-                    if (isSaved) {
-                      _savedRecipeTitles.remove(recipe.title);
-                    } else {
-                      _savedRecipeTitles.add(recipe.title);
-                    }
-                  }),
-                ),
-              ),
-            ],
+          return RecipeCard(
+            recipeName: recipe.title,
+            mealCategory: recipe.mealCategory,
+            imageUrl: recipe.imageUrl,
+            totalTime: recipe.totalTime,
+            isSaved: isSaved,
+            onIconPressed: () => setState(() {
+              if (isSaved) {
+                _savedRecipeTitles.remove(recipe.title);
+              } else {
+                _savedRecipeTitles.add(recipe.title);
+              }
+            }),
           );
         }, childCount: recipes.length),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: AsanSpacing.md,
           mainAxisSpacing: AsanSpacing.lg,
-          childAspectRatio: 0.72,
+          childAspectRatio: 163 / 213,
         ),
       ),
     );
@@ -367,55 +366,42 @@ class _RecipesScreenState extends State<RecipesScreen> {
         .where(
           (item) =>
               (query.isEmpty || item.name.toLowerCase().contains(query)) &&
-              (filters?.expirationStatuses.isEmpty ?? true
+                (filters?.totalTimeRanges.isEmpty ?? true
                   ? true
-                  : filters!.expirationStatuses.contains(
-                      _expirationStatus(item),
-                    )),
+                  : filters!.totalTimeRanges.contains(
+                    _asanTotalTimeOptions(item.totalTime),
+                  )),
         )
         .where(
-          (item) => filters?.foodGroups.isEmpty ?? true
+          (item) => filters?.mealCategories.isEmpty ?? true
               ? true
-              : filters!.foodGroups.contains(item.foodGroup),
+              : filters!.mealCategories.contains(item.mealCategory),
         )
         .toList();
-    final sortBy = filters?.sortBy ?? 'Expiration date';
+    final sortBy = filters?.sortBy ?? 'Meal category';
     items.sort((first, second) {
       final result = switch (sortBy) {
-        'Food group' => (first.foodGroup ?? 'Uncategorized').compareTo(
-          second.foodGroup ?? 'Uncategorized',
+        'Meal Category' => (first.mealCategory ?? 'Uncategorized').compareTo(
+          second.mealCategory ?? 'Uncategorized',
         ),
-        'Item name' => first.name.toLowerCase().compareTo(
+        'Recipe name' => first.name.toLowerCase().compareTo(
           second.name.toLowerCase(),
         ),
-        'Purchase date' => _compareDates(
-          first.purchaseDate,
-          second.purchaseDate,
-        ),
-        _ => _compareDates(first.expiryDate, second.expiryDate),
+        'Total time' => first.totalTime.compareTo(second.totalTime),
+        _ => first.name.toLowerCase().compareTo(second.name.toLowerCase()),
       };
       return (filters?.sortAscending ?? true) ? result : -result;
     });
 
     final groups = <String, List<Recipes>>{};
     for (final item in items) {
-      final label = item.consumed
-          ? 'Consumed'
-          : switch (sortBy) {
-              'Food group' => item.foodGroup ?? 'Uncategorized',
-              'Item name' =>
-                item.name.trim().isEmpty
-                    ? '#'
-                    : item.name.trim()[0].toUpperCase(),
-              'Purchase date' =>
-                item.purchaseDate == null
-                    ? 'No purchase date'
-                    : _formatDate(item.purchaseDate!),
-              _ =>
-                item.expiryDate == null
-                    ? 'No expiration date'
-                    : _formatDate(item.expiryDate!),
-            };
+      final label = switch (sortBy) {
+        'Meal Category' => item.mealCategory ?? 'Uncategorized',
+        'Recipe name' => item.name.trim().isEmpty
+            ? '#'
+            : item.name.trim()[0].toUpperCase(),
+        _ => item.mealCategory ?? 'Uncategorized',
+      };
       (groups[label] ??= []).add(item);
     }
     final entries = groups.entries.toList();
@@ -428,38 +414,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
     return entries;
   }
 
-  Widget _buildListTile(Recipes item) => AsanListTile(
-    key: ValueKey(item),
-    itemName: item.name,
-    quantity: item.quantity,
-    unit: item.unit,
-    category: item.consumed
-        ? item.foodGroup ?? 'Uncategorized'
-        : _activeSort == 'Food group'
-        ? 'expires ${_formatDate(item.expiryDate)}'
-        : item.foodGroup ?? 'Uncategorized',
-    purchasedDate: item.consumed
-        ? 'consumed ${_formatConsumedDate(item.consumedDate)}'
-        : _activeSort == 'Item name' || _activeSort == 'Purchase date'
-        ? 'expires ${_formatDate(item.expiryDate)}'
-        : item.purchaseDate == null
-        ? ''
-        : 'bought ${_formatDate(item.purchaseDate!)}',
-    notes: item.notes,
-    isChecked: item.consumed,
-    onChanged: (checked) {
-      final index = _items.indexOf(item);
-      if (index != -1) {
-        setState(
-          () => _items[index] = item.copyWith(
-            consumed: checked,
-            consumedDate: checked ? DateTime.now() : null,
-          ),
-        );
-      }
-    },
-    onTap: () => _showEditItemDialog(item),
-  );
+  List<Recipes> get _groupedRecipesFlat =>
+      _groupedItems.expand((entry) => entry.value).toList();
 
   Future<void> _showEditItemDialog(Recipes item) async {
     final updatedItem = await showDialog<Recipes>(
@@ -473,59 +429,13 @@ class _RecipesScreenState extends State<RecipesScreen> {
     }
   }
 
-  String get _activeSort => _activeFilters?.sortBy ?? 'Expiration date';
-
-  String _expirationStatus(Recipes item) {
-    if (item.consumed) return 'Consumed';
-    if (item.expiryDate == null) return 'No expiration date';
-    final today = DateTime.now();
-    final date = DateTime(
-      item.expiryDate!.year,
-      item.expiryDate!.month,
-      item.expiryDate!.day,
-    );
-    final days = date
-        .difference(DateTime(today.year, today.month, today.day))
-        .inDays;
-    if (days < 0) return 'Expired';
-    if (days <= 7) return 'Expiring soon';
-    return 'Not expired';
+  String _asanTotalTimeOptions(int minutes) {
+    if (minutes <= 15) return '15 minutes or less';
+    if (minutes <= 30) return '30 minutes or less';
+    if (minutes <= 60) return '1 hour or less';
+    return 'More than 1 hour';
   }
 
-  int _compareDates(DateTime? first, DateTime? second) {
-    if (first == null && second == null) return 0;
-    if (first == null) return 1;
-    if (second == null) return -1;
-    return first.compareTo(second);
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'No expiration date';
-    return _formatCalendarDate(date);
-  }
-
-  String _formatConsumedDate(DateTime? date) {
-    if (date == null) return 'date unavailable';
-    return _formatCalendarDate(date);
-  }
-
-  String _formatCalendarDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
 }
 
 class _SegmentedButtonHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -579,11 +489,13 @@ class _SegmentedButtonHeaderDelegate extends SliverPersistentHeaderDelegate {
 class _ExploreRecipe {
   final String title;
   final String mealCategory;
+  final String totalTime;
   final String imageUrl;
 
   const _ExploreRecipe({
     required this.title,
     required this.mealCategory,
+    required this.totalTime,
     required this.imageUrl,
   });
 }

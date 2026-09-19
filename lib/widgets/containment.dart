@@ -137,17 +137,22 @@ class _AsanListTileState extends State<AsanListTile> {
 // EXPANSION TILE
 class AsanExpansionTile extends StatefulWidget {
   final String title;
-  final int itemCount;
+  final Widget? titleWidget;
+  final int? itemCount;
   final List<Widget> children;
   final bool initiallyExpanded;
 
   const AsanExpansionTile({
     super.key,
-    required this.title,
-    required this.itemCount,
+    this.title = '',
+    this.titleWidget,
+    this.itemCount,
     this.children = const [],
     this.initiallyExpanded = true,
-  });
+  }) : assert(
+         title != '' || titleWidget != null,
+         'Provide either title or titleWidget',
+       );
 
   @override
   State<AsanExpansionTile> createState() => _AsanExpansionTileState();
@@ -164,64 +169,101 @@ class _AsanExpansionTileState extends State<AsanExpansionTile> {
 
   @override
   Widget build(BuildContext context) {
+    final chevron = Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: _toggleExpanded,
+        customBorder: const CircleBorder(),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: AnimatedRotation(
+            turns: _isExpanded ? 0.5 : 0,
+            duration: const Duration(milliseconds: 180),
+            child: const Icon(
+              Symbols.keyboard_arrow_down_rounded,
+              size: 24,
+              weight: 600,
+              color: AsanColorScheme.secondary,
+            ),
+          ),
+        ),
+      ),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          child: InkWell(
-            onTap: _toggleExpanded,
+        if (widget.titleWidget != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AsanSpacing.xs),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: widget.titleWidget!),
+                const SizedBox(width: AsanSpacing.sm),
+                chevron,
+              ],
+            ),
+          )
+        else
+          Material(
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AsanSpacing.xs),
-              child: SizedBox(
-                height: 22,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              widget.title,
-                              style: AsanTextTheme.bodyMedium.copyWith(
-                                fontWeight: FontWeight.bold,
+            child: InkWell(
+              onTap: _toggleExpanded,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AsanSpacing.xs),
+                child: SizedBox(
+                  height: 22,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                widget.title,
+                                style: AsanTextTheme.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          const SizedBox(width: AsanSpacing.xs),
-                          Text(
-                            '(${widget.itemCount} items)',
-                            style: AsanTextTheme.bodyMedium.copyWith(
-                              color: AsanColorScheme.inactive,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                            if (widget.itemCount != null) ...[
+                              const SizedBox(width: AsanSpacing.xs),
+                              Text(
+                                '(${widget.itemCount} items)',
+                                style: AsanTextTheme.bodyMedium.copyWith(
+                                  color: AsanColorScheme.inactive,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: AsanSpacing.sm),
-                    AnimatedRotation(
-                      turns: _isExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 180),
-                      child: const Icon(
-                        Symbols.keyboard_arrow_down_rounded,
-                        size: 24,
-                        weight: 600,
-                        color: AsanColorScheme.secondary,
+                      const SizedBox(width: AsanSpacing.sm),
+                      AnimatedRotation(
+                        turns: _isExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 180),
+                        child: const Icon(
+                          Symbols.keyboard_arrow_down_rounded,
+                          size: 24,
+                          weight: 600,
+                          color: AsanColorScheme.secondary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
         AnimatedCrossFade(
           firstChild: const SizedBox.shrink(),
           secondChild: Column(
@@ -240,16 +282,24 @@ class _AsanExpansionTileState extends State<AsanExpansionTile> {
 
 // RECIPE CARD
 class RecipeCard extends StatelessWidget {
-  final String title;
+  final String recipeName;
   final String mealCategory;
-  final String imageUrl;
+  final String? imageUrl;
+  final String totalTime;
+  final bool isSaved;
+  final bool showBookmark;
+  final VoidCallback? onIconPressed;
   final VoidCallback? onTap;
 
   const RecipeCard({
     super.key,
-    required this.title,
+    required this.recipeName,
     required this.mealCategory,
-    required this.imageUrl,
+    this.imageUrl,
+    required this.totalTime,
+    this.isSaved = false,
+    this.showBookmark = true,
+    this.onIconPressed,
     this.onTap,
   });
 
@@ -261,21 +311,83 @@ class RecipeCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: AspectRatio(
-                aspectRatio: 1.0,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
+              child: SizedBox(
+                width: 163,
+                height: 163,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (imageUrl == null || imageUrl!.isEmpty)
+                      Container(
+                        color: AsanColorScheme.container,
+                        child: const Icon(
+                          Symbols.restaurant_rounded,
+                          size: 36,
+                          color: AsanColorScheme.inactive,
+                        ),
+                      )
+                    else
+                      Image.network(imageUrl!, fit: BoxFit.cover),
+                    Padding(
+                      padding: const EdgeInsets.all(AsanSpacing.sm),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (showBookmark)
+                            TonalIconButton.round(
+                              icon: Icon(
+                                Symbols.bookmark_rounded,
+                                fill: isSaved ? 1 : 0,
+                                color: isSaved
+                                    ? AsanColorScheme.primary
+                                    : AsanColorScheme.secondary,
+                              ),
+                              onPressed: onIconPressed,
+                            ),
+                          const Spacer(),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AsanColorScheme.surface,
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Symbols.schedule_rounded,
+                                    size: 16,
+                                    color: AsanColorScheme.secondary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    totalTime,
+                                    style: AsanTextTheme.labelSmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ), // Closed AspectRatio
-            ), // Closed ClipRRect
+              ),
+            ),
             const SizedBox(height: AsanSpacing.sm),
             Text(
-              title,
+              recipeName,
               style: AsanTextTheme.bodyMedium.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -285,12 +397,10 @@ class RecipeCard extends StatelessWidget {
             const SizedBox(height: AsanSpacing.xs),
             Text(
               mealCategory,
-              style: AsanTextTheme.labelSmall.copyWith(
-                color: AsanColorScheme.inactive,
-                  ),
-              maxLines: 2,
+              style: AsanTextTheme.labelSmall,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
-            ), // Closed Text (Rogue parenthesis removed from below here)
+            ),
           ],
         ),
       ),

@@ -6,28 +6,6 @@ import 'package:asan/widgets/buttons.dart';
 import 'package:asan/widgets/containment.dart';
 import 'package:asan/widgets/inputs.dart';
 
-const asanFoodGroups = [
-  'Beverages',
-  'Bread & Bakery',
-  'Cans & Jars',
-  'Condiments & Sauces',
-  'Dairy',
-  'Deli',
-  'Frozen Foods',
-  'Fruit',
-  'Grains & Cereals',
-  'Herbs & Spices',
-  'Meat',
-  'Oils & Vinegars',
-  'Poultry',
-  'Seafood',
-  'Snacks',
-  'Spices & Seasonings',
-  'Soups & Broths',
-  'Vegetables',
-  'Other',
-];
-
 // DROPDOWN MENU
 double dropdownSheetInitialSize(
   BuildContext context, {
@@ -381,6 +359,51 @@ class _DropdownListItem extends StatelessWidget {
 }
 
 // FILTER MENU
+
+const asanFoodGroups = [
+  'Beverages',
+  'Bread & Bakery',
+  'Cans & Jars',
+  'Condiments & Sauces',
+  'Dairy',
+  'Deli',
+  'Frozen Foods',
+  'Fruit',
+  'Grains & Cereals',
+  'Herbs & Spices',
+  'Meat',
+  'Oils & Vinegars',
+  'Poultry',
+  'Seafood',
+  'Snacks',
+  'Spices & Seasonings',
+  'Soups & Broths',
+  'Vegetables',
+  'Others',
+];
+
+const asanMealCategories = [
+  'Main Dish',
+  'Side Dish',
+  'Dessert',
+  'Pastry',
+  'Snack',
+  'Appetizer',
+  'Salad',
+  'Soup',
+  'Drink',
+  'Bread',
+  'Sauce',
+  'Others',
+];
+
+const asanTotalTimeOptions = [
+  '15 minutes or less',
+  '30 minutes or less',
+  '1 hour or less',
+  'More than 1 hour',
+];
+
 double filterSheetInitialSize(BuildContext context) {
   const contentHeight = 820.0;
   final availableHeight = MediaQuery.sizeOf(context).height;
@@ -396,6 +419,8 @@ class AsanFilterSelection {
   final Set<String> purchaseStatuses;
   final Set<String> expirationStatuses;
   final Set<String> foodGroups;
+  final Set<String> totalTimeRanges;
+  final Set<String> mealCategories;
 
   const AsanFilterSelection({
     required this.sortBy,
@@ -403,6 +428,8 @@ class AsanFilterSelection {
     required this.purchaseStatuses,
     required this.expirationStatuses,
     required this.foodGroups,
+    this.totalTimeRanges = const {},
+    this.mealCategories = const {},
   });
 
   AsanFilterSelection copyWith({
@@ -411,6 +438,8 @@ class AsanFilterSelection {
     Set<String>? purchaseStatuses,
     Set<String>? expirationStatuses,
     Set<String>? foodGroups,
+    Set<String>? totalTimeRanges,
+    Set<String>? mealCategories,
   }) {
     return AsanFilterSelection(
       sortBy: sortBy ?? this.sortBy,
@@ -418,6 +447,8 @@ class AsanFilterSelection {
       purchaseStatuses: purchaseStatuses ?? this.purchaseStatuses,
       expirationStatuses: expirationStatuses ?? this.expirationStatuses,
       foodGroups: foodGroups ?? this.foodGroups,
+      totalTimeRanges: totalTimeRanges ?? this.totalTimeRanges,
+      mealCategories: mealCategories ?? this.mealCategories,
     );
   }
 }
@@ -441,13 +472,28 @@ class AsanFilterList extends StatefulWidget {
 }
 
 class _AsanFilterListState extends State<AsanFilterList> {
-  String get _defaultSortBy => widget.menuType == AsanFilterMenuType.pantry
-      ? 'Expiration date'
-      : 'Food group';
+  bool get _isRecipes => widget.menuType == AsanFilterMenuType.recipes;
 
-  List<String> get _sortOptions => widget.menuType == AsanFilterMenuType.pantry
-      ? const ['Expiration date', 'Food group', 'Item name', 'Purchase date']
-      : const ['Food group', 'Item name'];
+  String get _defaultSortBy => switch (widget.menuType) {
+    AsanFilterMenuType.pantry => 'Expiration date',
+    AsanFilterMenuType.recipes => 'Meal category',
+    _ => 'Food group',
+  };
+
+  List<String> get _sortOptions => switch (widget.menuType) {
+    AsanFilterMenuType.pantry => const [
+      'Expiration date',
+      'Food group',
+      'Item name',
+      'Purchase date',
+    ],
+    AsanFilterMenuType.recipes => const [
+      'Meal category',
+      'Recipe name',
+      'Total time',
+    ],
+    _ => const ['Food group', 'Item name'],
+  };
 
   String get _statusTitle => widget.menuType == AsanFilterMenuType.pantry
       ? 'Status'
@@ -468,6 +514,8 @@ class _AsanFilterListState extends State<AsanFilterList> {
   String _sortBy = '';
   final Set<String> _statuses = {};
   final Set<String> _foodGroups = {};
+  final Set<String> _totalTimeRanges = {};
+  final Set<String> _mealCategories = {};
 
   void _reset() {
     setState(() {
@@ -475,6 +523,8 @@ class _AsanFilterListState extends State<AsanFilterList> {
       _sortAscending = true;
       _statuses.clear();
       _foodGroups.clear();
+      _totalTimeRanges.clear();
+      _mealCategories.clear();
     });
   }
 
@@ -490,6 +540,8 @@ class _AsanFilterListState extends State<AsanFilterList> {
           : selection?.purchaseStatuses ?? const {},
     );
     _foodGroups.addAll(selection?.foodGroups ?? const {});
+    _totalTimeRanges.addAll(selection?.totalTimeRanges ?? const {});
+    _mealCategories.addAll(selection?.mealCategories ?? const {});
   }
 
   @override
@@ -543,7 +595,41 @@ class _AsanFilterListState extends State<AsanFilterList> {
                     const SizedBox(height: AsanSpacing.md),
                     const AsanDivider(),
                     const SizedBox(height: AsanSpacing.md),
-                    if (_statusOptions.isNotEmpty) ...[
+                    if (_isRecipes) ...[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Total Time',
+                          style: AsanTextTheme.labelSmall.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AsanSpacing.sm),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          alignment: WrapAlignment.start,
+                          spacing: AsanSpacing.sm,
+                          runSpacing: AsanSpacing.sm,
+                          children: asanTotalTimeOptions.map((range) {
+                            final selected = _totalTimeRanges.contains(range);
+                            return AsanFilterChip(
+                              label: range,
+                              isSelected: selected,
+                              onPressed: () => setState(() {
+                                selected
+                                    ? _totalTimeRanges.remove(range)
+                                    : _totalTimeRanges.add(range);
+                              }),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: AsanSpacing.md),
+                      const AsanDivider(),
+                      const SizedBox(height: AsanSpacing.md),
+                    ] else if (_statusOptions.isNotEmpty) ...[
                       _FilterSection(
                         title: _statusTitle,
                         options: _statusOptions,
@@ -563,7 +649,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Food Group',
+                        _isRecipes ? 'Meal Category' : 'Food Group',
                         style: AsanTextTheme.labelSmall.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -576,18 +662,24 @@ class _AsanFilterListState extends State<AsanFilterList> {
                         alignment: WrapAlignment.start,
                         spacing: AsanSpacing.sm,
                         runSpacing: AsanSpacing.sm,
-                        children: asanFoodGroups.map((group) {
-                          final selected = _foodGroups.contains(group);
-                          return AsanFilterChip(
-                            label: group,
-                            isSelected: selected,
-                            onPressed: () => setState(() {
-                              selected
-                                  ? _foodGroups.remove(group)
-                                  : _foodGroups.add(group);
-                            }),
-                          );
-                        }).toList(),
+                        children:
+                            (_isRecipes ? asanMealCategories : asanFoodGroups)
+                                .map((group) {
+                                  final selectedSet = _isRecipes
+                                      ? _mealCategories
+                                      : _foodGroups;
+                                  final selected = selectedSet.contains(group);
+                                  return AsanFilterChip(
+                                    label: group,
+                                    isSelected: selected,
+                                    onPressed: () => setState(() {
+                                      selected
+                                          ? selectedSet.remove(group)
+                                          : selectedSet.add(group);
+                                    }),
+                                  );
+                                })
+                                .toList(),
                       ),
                     ),
                   ],
@@ -623,7 +715,15 @@ class _AsanFilterListState extends State<AsanFilterList> {
                               widget.menuType == AsanFilterMenuType.pantry
                               ? Set.unmodifiable(_statuses)
                               : const {},
-                          foodGroups: Set.unmodifiable(_foodGroups),
+                          foodGroups: _isRecipes
+                              ? const {}
+                              : Set.unmodifiable(_foodGroups),
+                          totalTimeRanges: _isRecipes
+                              ? Set.unmodifiable(_totalTimeRanges)
+                              : const {},
+                          mealCategories: _isRecipes
+                              ? Set.unmodifiable(_mealCategories)
+                              : const {},
                         ),
                       ),
                     ),

@@ -1,10 +1,11 @@
-import 'package:flutter/gestures.dart';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:asan/styles/theme.dart';
-
 import 'package:asan/models/recipes.dart';
+
+import 'package:asan/styles/theme.dart';
 
 import 'package:asan/widgets/buttons.dart';
 import 'package:asan/widgets/communication.dart';
@@ -29,7 +30,17 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
 
   Future<void> _handleBackPressed() async {
     final formState = _formKey.currentState;
-    if (formState == null || !formState.hasChanges) {
+    if (formState == null) {
+      if (context.mounted) Navigator.pop(context);
+      return;
+    }
+
+    if (formState.currentStep > 0) {
+      formState.goToPreviousStep();
+      return;
+    }
+
+    if (!formState.hasChanges) {
       if (context.mounted) Navigator.pop(context);
       return;
     }
@@ -77,184 +88,757 @@ class AddRecipeForm extends StatefulWidget {
 }
 
 class _AddRecipeFormState extends State<AddRecipeForm> {
+  static const int stepCount = 5;
+  static const _stepTitles = [
+    'Basic Information',
+    'Ingredients',
+    'Instructions',
+    'More Details',
+    'Review',
+  ];
+
+  late final PageController _pageController;
   late final TextEditingController _itemController;
-  late final TextEditingController _quantityController;
-  late final TextEditingController _unitController;
   late final TextEditingController _notesController;
-  String? _foodGroup;
-  DateTime? _purchaseDate;
-  DateTime? _expiryDate;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _prepTimeController;
+  late final TextEditingController _cookTimeController;
+  late final TextEditingController _servingsController;
+  late final TextEditingController _caloriesController;
+  late final TextEditingController _fatsController;
+  late final TextEditingController _cholesterolController;
+  late final TextEditingController _sodiumController;
+  late final TextEditingController _carbohydratesController;
+  late final TextEditingController _proteinController;
+  String? _mealCategory;
   bool _itemHasError = false;
-  bool _foodGroupHasError = false;
+  bool _mealCategoryHasError = false;
+  int _currentStep = 0;
+  final ImagePicker _imagePicker = ImagePicker();
+  Uint8List? _imageBytes;
+
+  int get currentStep => _currentStep;
+
+  int get _prepTimeMinutes => int.tryParse(_prepTimeController.text.trim()) ?? 0;
+  int get _cookTimeMinutes => int.tryParse(_cookTimeController.text.trim()) ?? 0;
+  int get _totalTimeMinutes => _prepTimeMinutes + _cookTimeMinutes;
+
+  final List<_IngredientEntry> _ingredients = [_IngredientEntry()];
+  final List<_StepEntry> _steps = [_StepEntry()];
 
   bool get hasChanges => widget.initialItem == null
       ? _itemController.text.isNotEmpty ||
-            _quantityController.text.isNotEmpty ||
-            _unitController.text.isNotEmpty ||
             _notesController.text.isNotEmpty ||
-            _foodGroup != null ||
-            _purchaseDate != null ||
-            _expiryDate != null
+            _mealCategory != null ||
+            _descriptionController.text.isNotEmpty ||
+            _prepTimeController.text.isNotEmpty ||
+            _cookTimeController.text.isNotEmpty
       : _itemController.text.trim() != widget.initialItem!.name ||
-            _quantityController.text.trim() != widget.initialItem!.quantity ||
-            _unitController.text.trim() != widget.initialItem!.unit ||
             _notesController.text.trim() != widget.initialItem!.notes ||
-            _foodGroup != widget.initialItem!.foodGroup ||
-            _purchaseDate != widget.initialItem!.purchaseDate ||
-            _expiryDate != widget.initialItem!.expiryDate;
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
+            _mealCategory != widget.initialItem!.mealCategory ||
+            _descriptionController.text.trim() !=
+                widget.initialItem!.description ||
+            _prepTimeMinutes != (widget.initialItem!.prepTime) ||
+            _cookTimeMinutes != (widget.initialItem!.cookTime);
 
   @override
   void initState() {
     super.initState();
     final item = widget.initialItem;
+    _pageController = PageController();
     _itemController = TextEditingController(text: item?.name);
-    _quantityController = TextEditingController(text: item?.quantity);
-    _unitController = TextEditingController(text: item?.unit);
+    _descriptionController = TextEditingController(text: item?.description);
     _notesController = TextEditingController(text: item?.notes);
-    _foodGroup = item?.foodGroup;
-    _purchaseDate = item?.purchaseDate;
-    _expiryDate = item?.expiryDate;
+    _prepTimeController = TextEditingController(
+      text: item == null || item.prepTime == 0 ? '' : '${item.prepTime}',
+    );
+    _cookTimeController = TextEditingController(
+      text: item == null || item.cookTime == 0 ? '' : '${item.cookTime}',
+    );
+    _servingsController = TextEditingController(
+      text: item == null ? '' : '${item.servings}',
+    );
+    _caloriesController = TextEditingController(
+      text: item == null || item.calories == 0 ? '' : '${item.calories}',
+    );
+    _fatsController = TextEditingController(
+      text: item == null || item.fats == 0 ? '' : '${item.fats}',
+    );
+    _cholesterolController = TextEditingController(
+      text: item == null || item.cholesterol == 0 ? '' : '${item.cholesterol}',
+    );
+    _sodiumController = TextEditingController(
+      text: item == null || item.sodium == 0 ? '' : '${item.sodium}',
+    );
+    _carbohydratesController = TextEditingController(
+      text: item == null || item.carbohydrates == 0 ? '' : '${item.carbohydrates}',
+    );
+    _proteinController = TextEditingController(
+      text: item == null || item.protein == 0 ? '' : '${item.protein}',
+    );
+    _mealCategory = item?.mealCategory;
   }
 
   @override
   void dispose() {
+    _pageController.dispose();
     _itemController.dispose();
-    _quantityController.dispose();
-    _unitController.dispose();
+    _descriptionController.dispose();
     _notesController.dispose();
+    _prepTimeController.dispose();
+    _cookTimeController.dispose();
+    _servingsController.dispose();
+    _caloriesController.dispose();
+    _fatsController.dispose();
+    _cholesterolController.dispose();
+    _sodiumController.dispose();
+    _carbohydratesController.dispose();
+    _proteinController.dispose();
+    for (final entry in _ingredients) {
+      entry.dispose();
+    }
+    for (final entry in _steps) {
+      entry.dispose();
+    }
     super.dispose();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+  final XFile? file = await _imagePicker.pickImage(
+    source: source,
+    maxWidth: 1200,
+    imageQuality: 80,
+  );
+  if (file == null) return; // user cancelled, not an error
+
+  final bytes = await file.readAsBytes();
+  if (!mounted) return;
+  setState(() => _imageBytes = bytes);
+}
+
+  Future<void> _showImageSourcePicker() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AsanColorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(AsanSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Add Recipe Photo',
+                style: AsanTextTheme.bodyMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AsanSpacing.lg),
+              PrimaryButton(
+                label: 'Take Photo',
+                icon: const Icon(Symbols.photo_camera_rounded, size: 22),
+                onPressed: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              const SizedBox(height: AsanSpacing.md),
+              SecondaryButton(
+                label: 'Choose from Gallery',
+                icon: const Icon(Symbols.image_rounded, size: 22),
+                onPressed: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source != null) {
+      await _pickImage(source);
+    }
+  }
+
+  void _addIngredient() {
+    setState(() => _ingredients.add(_IngredientEntry()));
+  }
+
+  void _removeIngredient(int index) {
+    setState(() {
+      final removed = _ingredients.removeAt(index);
+      removed.dispose();
+    });
+  }
+
+  void _addStep() {
+    setState(() => _steps.add(_StepEntry()));
+  }
+
+  void _removeStep(int index) {
+    setState(() {
+      final removed = _steps.removeAt(index);
+      removed.dispose();
+    });
+  }
+
+  void goToPreviousStep() {
+    if (_currentStep == 0) return;
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _goToNextStep() {
+    if (_currentStep == 0) {
+      final name = _itemController.text.trim();
+      final hasMealCategory = _mealCategory != null;
+      setState(() {
+        _itemHasError = name.isEmpty;
+        _mealCategoryHasError = !hasMealCategory;
+      });
+      if (name.isEmpty || !hasMealCategory) return;
+    }
+
+    if (_currentStep == stepCount - 1) {
+      _submit();
+      return;
+    }
+
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final todayHint = _formatDate(DateTime.now());
+    final isLastStep = _currentStep == stepCount - 1;
 
-    return Padding(
-      padding: const EdgeInsets.all(AsanSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AsanTextField(
-            label: 'Item Name',
-            hintText: 'Enter item name',
-            controller: _itemController,
-            hasError: _itemHasError,
-            required: true,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AsanSpacing.lg,
+            0,
+            AsanSpacing.lg,
+            AsanSpacing.md,
           ),
-          const SizedBox(height: AsanSpacing.md),
-          AsanDropdownMenu(
-            label: 'Food Group',
-            items: asanFoodGroups,
-            value: _foodGroup,
-            hintText: 'Select a food group',
-            hasError: _foodGroupHasError,
-            required: true,
-            onChanged: (value) {
-              setState(() {
-                _foodGroup = value;
-                _foodGroupHasError = false;
-              });
-            },
+          child: _StepProgress(
+            stepCount: stepCount,
+            currentStep: _currentStep,
+            title: _stepTitles[_currentStep],
           ),
-          const SizedBox(height: AsanSpacing.md),
-          Row(
+        ),
+        Expanded(
+          child: PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: (index) => setState(() => _currentStep = index),
             children: [
-              Expanded(
-                child: AsanTextField(
-                  label: 'Quantity',
-                  hintText: 'Enter quantity',
-                  controller: _quantityController,
+              _buildBasicInformationStep(),
+              _buildIngredientsStep(),
+              _buildInstructionsStep(),
+              _buildMoreDetailsStep(),
+              _buildReviewStep(),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(AsanSpacing.lg),
+          child: Row(
+            children: [
+              if (_currentStep > 0) ...[
+                Expanded(
+                  child: AsanOutlinedButton(
+                    label: 'Back',
+                    height: 38,
+                    onPressed: goToPreviousStep,
+                  ),
                 ),
-              ),
-              const SizedBox(width: AsanSpacing.md),
+                const SizedBox(width: AsanSpacing.sm),
+              ],
               Expanded(
-                child: AsanTextField(
-                  label: 'Unit',
-                  hintText: 'Enter unit',
-                  controller: _unitController,
+                child: SecondaryButton(
+                  label: isLastStep ? widget.submitLabel : 'Next',
+                  height: 38,
+                  onPressed: _goToNextStep,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AsanSpacing.md),
-          Row(
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBasicInformationStep() {
+    return _StepBody(
+      children: [
+        _RecipeImagePicker(
+          imageBytes: _imageBytes,
+          onTap: _showImageSourcePicker,
+        ),
+        const SizedBox(height: AsanSpacing.md),
+        AsanTextField(
+          label: 'Recipe Name',
+          hintText: 'Enter recipe name',
+          controller: _itemController,
+          hasError: _itemHasError,
+          required: true,
+        ),
+        const SizedBox(height: AsanSpacing.md),
+        AsanDropdownMenu(
+          label: 'Meal Category',
+          items: asanMealCategories,
+          value: _mealCategory,
+          hintText: 'Select a meal category',
+          hasError: _mealCategoryHasError,
+          required: true,
+          onChanged: (value) {
+            setState(() {
+              _mealCategory = value;
+              _mealCategoryHasError = false;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIngredientsStep() {
+    return _StepBody(
+      children: [
+        for (var index = 0; index < _ingredients.length; index++) ...[
+          if (index > 0) ...[
+            const SizedBox(height: AsanSpacing.md),
+            const AsanDivider(),
+            const SizedBox(height: AsanSpacing.md),
+          ],
+          AsanExpansionTile(
+            key: ValueKey(_ingredients[index]),
+            titleWidget: AsanTextField(
+              label: 'Ingredient ${index + 1}',
+              hintText: 'Ingredient name',
+              controller: _ingredients[index].ingredientController,
+            ),
             children: [
-              Expanded(
-                child: AsanDateField(
-                  label: 'Purchase Date',
-                  initialDate: _purchaseDate,
-                  hintText: todayHint,
-                  onChanged: (date) => _purchaseDate = date,
-                ),
+              const SizedBox(height: AsanSpacing.sm),
+              AsanDropdownMenu(
+                label: 'Food Group',
+                items: asanFoodGroups,
+                value: _ingredients[index].foodGroup,
+                hintText: 'Select a food group',
+                hasError: _ingredients[index].foodGroupHasError,
+                required: true,
+                onChanged: (value) {
+                  setState(() {
+                    _ingredients[index].foodGroup = value;
+                    _ingredients[index].foodGroupHasError = false;
+                  });
+                },
               ),
-              const SizedBox(width: AsanSpacing.md),
-              Expanded(
-                child: AsanDateField(
-                  label: 'Expiry Date',
-                  initialDate: _expiryDate,
-                  hintText: todayHint,
-                  onChanged: (date) => _expiryDate = date,
-                ),
+              const SizedBox(height: AsanSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: AsanTextField(
+                      label: 'Quantity',
+                      hintText: 'Enter quantity',
+                      controller: _ingredients[index].quantityController,
+                    ),
+                  ),
+                  const SizedBox(width: AsanSpacing.sm),
+                  Expanded(
+                    child: AsanTextField(
+                      label: 'Unit',
+                      hintText: 'Enter unit',
+                      controller: _ingredients[index].unitController,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: AsanSpacing.sm),
+              AsanTextField(
+                label: 'Notes',
+                hintText: 'Add notes',
+                controller: _ingredients[index].notesController,
+              ),
+              if (_ingredients.length > 1) ...[
+                const SizedBox(height: AsanSpacing.sm),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: AsanTextButton.red(
+                    label: 'Remove Ingredient',
+                    onPressed: () => _removeIngredient(index),
+                  ),
+                ),
+              ],
+              const SizedBox(height: AsanSpacing.sm),
             ],
-          ),
-          const SizedBox(height: AsanSpacing.md),
-          AsanTextField(
-            label: 'Notes',
-            hintText: 'Add notes',
-            controller: _notesController,
-          ),
-          const Spacer(),
-          PrimaryButton(
-            label: widget.submitLabel,
-            height: 38,
-            onPressed: _submit,
           ),
         ],
-      ),
+        const SizedBox(height: AsanSpacing.md),
+        PrimaryButton(
+          label: 'Add Ingredient',
+          icon: const Icon(Symbols.add_rounded, size: 24),
+          onPressed: _addIngredient,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInstructionsStep() {
+    return _StepBody(
+      children: [
+        for (var index = 0; index < _steps.length; index++) ...[
+          if (index > 0) const SizedBox(height: AsanSpacing.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: AsanTextField(
+                  label: 'Step ${index + 1}',
+                  hintText: 'Add instruction',
+                  controller: _steps[index].instructionController,
+                ),
+              ),
+              if (_steps.length > 1) ...[
+                const SizedBox(width: AsanSpacing.md),
+                Padding(
+                  padding: const EdgeInsets.only(top: 24),
+                  child: TonalIconButton.square(
+                    size: 38,
+                    color: AsanColorScheme.error,
+                    icon: const Icon(Symbols.delete_rounded, size: 24, weight: 500),
+                    onPressed: () => _removeStep(index),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+        const SizedBox(height: AsanSpacing.md),
+        PrimaryButton(
+          label: 'Add Step',
+          icon: const Icon(Symbols.add_rounded, size: 24),
+          onPressed: _addStep,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMoreDetailsStep() {
+    return _StepBody(
+      children: [
+        AsanTextField(
+          label: 'Prep Time',
+          hintText: 'Enter prep time in minutes',
+          controller: _prepTimeController,
+          required: true,
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        AsanTextField(
+          label: 'Cook Time',
+          hintText: 'Enter cook time in minutes',
+          controller: _cookTimeController,
+          required: true,
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        AsanTextField(
+          label: 'Serving Size',
+          hintText: 'Enter the number of servings',
+          controller: _servingsController,
+          required: true,
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        AsanTextField(
+          label: 'Recipe Notes',
+          hintText: 'Add recipe notes',
+          controller: _notesController,
+        ),
+        const SizedBox(height: AsanSpacing.md),
+        AsanDivider(),
+        const SizedBox(height: AsanSpacing.md),
+        Text(
+          'Nutrition Information',
+          style: AsanTextTheme.bodyMedium.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        AsanTextField(
+          label: 'Calories',
+          hintText: 'Enter calories in kcal',
+          controller: _caloriesController,
+          keyboardType: TextInputType.number,
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        AsanTextField(
+          label: 'Fats',
+          hintText: 'Enter fats in grams',
+          controller: _fatsController,
+          keyboardType: TextInputType.number,
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        AsanTextField(
+          label: 'Colesterol',
+          hintText: 'Enter cholesterol in milligrams',
+          controller: _cholesterolController,
+          keyboardType: TextInputType.number,
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        AsanTextField(
+          label: 'Sodium',
+          hintText: 'Enter sodium in milligrams',
+          controller: _sodiumController,
+          keyboardType: TextInputType.number
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        AsanTextField(
+          label: 'Carbohydrates',
+          hintText: 'Enter carbohydrates in grams',
+          controller: _carbohydratesController,
+          keyboardType: TextInputType.number,
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        AsanTextField(
+          label: 'Protein',
+          hintText: 'Enter protein in grams',
+          controller: _proteinController,
+          keyboardType: TextInputType.number),
+      ],
+    );
+  }
+
+  Widget _buildReviewStep() {
+    return _StepBody(
+      children: [
+        _ReviewRow(
+          label: 'Recipe Name',
+          value: _itemController.text.trim(),
+        ),
+      ]
     );
   }
 
   void _submit() {
     final name = _itemController.text.trim();
-    final hasFoodGroup = _foodGroup != null;
+    final hasMealCategory = _mealCategory != null;
     setState(() {
       _itemHasError = name.isEmpty;
-      _foodGroupHasError = !hasFoodGroup;
+      _mealCategoryHasError = !hasMealCategory;
     });
-    if (name.isEmpty || !hasFoodGroup) return;
+    if (name.isEmpty || !hasMealCategory) return;
 
     Navigator.pop(
       context,
       Recipes(
         name: name,
-        quantity: _quantityController.text.trim(),
-        unit: _unitController.text.trim(),
-        foodGroup: _foodGroup,
-        purchaseDate: _purchaseDate,
-        expiryDate: _expiryDate,
+        description: _descriptionController.text.trim(),
+        mealCategory: _mealCategory,
         notes: _notesController.text.trim(),
-        consumed: widget.initialItem?.consumed ?? false,
-        consumedDate: widget.initialItem?.consumedDate,
+        prepTime: _prepTimeMinutes,
+        cookTime: _cookTimeMinutes,
+        totalTime: _totalTimeMinutes,
+        servings: int.tryParse(_servingsController.text.trim()) ?? 1,
+        calories: int.tryParse(_caloriesController.text.trim()) ?? 0,
+        fats: int.tryParse(_fatsController.text.trim()) ?? 0,
+        cholesterol: int.tryParse(_cholesterolController.text.trim()) ?? 0,
+        sodium: int.tryParse(_sodiumController.text.trim()) ?? 0,
+        carbohydrates: int.tryParse(_carbohydratesController.text.trim()) ?? 0,
+        protein: int.tryParse(_proteinController.text.trim()) ?? 0,
       ),
     );
+  }
+}
+
+class _StepBody extends StatelessWidget {
+  final List<Widget> children;
+
+  const _StepBody({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+}
+
+class _StepProgress extends StatelessWidget {
+  final int stepCount;
+  final int currentStep;
+  final String title;
+
+  const _StepProgress({
+    required this.stepCount,
+    required this.currentStep,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: List.generate(stepCount, (index) {
+            final isCompleted = index <= currentStep;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  right: index == stepCount - 1 ? 0 : AsanSpacing.xs,
+                ),
+                child: SizedBox(
+                  height: 4,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: isCompleted
+                          ? AsanColorScheme.primary
+                          : AsanColorScheme.container,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: AsanTextTheme.bodyMedium.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              'Step ${currentStep + 1} of $stepCount',
+              style: AsanTextTheme.labelSmall.copyWith(
+                color: AsanColorScheme.inactive,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _RecipeImagePicker extends StatelessWidget {
+  final Uint8List? imageBytes;
+  final VoidCallback onTap;
+
+  const _RecipeImagePicker({required this.imageBytes, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                width: double.infinity,
+                color: AsanColorScheme.container,
+                child: imageBytes == null
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Symbols.add_photo_alternate_rounded,
+                            size: 72,
+                            color: AsanColorScheme.inactive,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Add Recipe Image',
+                            style: AsanTextTheme.labelSmall.copyWith(
+                              color: AsanColorScheme.inactive,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Image.memory(imageBytes!, fit: BoxFit.cover),
+              ),
+            ),
+          ),
+          if (imageBytes != null)
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: TonalIconButton.round(
+                icon: const Icon(Symbols.edit_rounded, size: 16),
+                onPressed: onTap,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _ReviewRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AsanTextTheme.labelSmall.copyWith(
+            color: AsanColorScheme.inactive,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value.isEmpty ? '—' : value,
+          style: AsanTextTheme.bodyMedium,
+        ),
+      ],
+    );
+  }
+}
+
+class _IngredientEntry {
+  final TextEditingController ingredientController = TextEditingController();
+  final TextEditingController quantityController = TextEditingController();
+  final TextEditingController unitController = TextEditingController();
+  final TextEditingController notesController = TextEditingController();
+  String? foodGroup;
+  bool foodGroupHasError = false;
+
+  void dispose() {
+    ingredientController.dispose();
+    quantityController.dispose();
+    unitController.dispose();
+    notesController.dispose();
+  }
+}
+
+class _StepEntry {
+  final TextEditingController instructionController = TextEditingController();
+
+  void dispose() {
+    instructionController.dispose();
   }
 }
