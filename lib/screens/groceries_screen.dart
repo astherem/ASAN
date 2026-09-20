@@ -117,8 +117,12 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
                     if (context.mounted) Navigator.pop(context);
                     return;
                   }
-
-                  final shouldDiscard = await AsanAlertDialog.show(context);
+                  final shouldDiscard = await AsanAlertDialog.show(context,
+                    title: 'Discard Changes?',
+                    content: 'You have changes that won\'t be saved if you close. Are you sure you want to discard them?',
+                    cancelText: 'Cancel',
+                    destructiveText: 'Discard',
+                  );
                   if (shouldDiscard == true && context.mounted) {
                     Navigator.pop(context);
                   }
@@ -319,8 +323,12 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
                   if (context.mounted) Navigator.pop(context);
                   return;
                 }
-
-                final shouldDiscard = await AsanAlertDialog.show(context);
+                final shouldDiscard = await AsanAlertDialog.show(context,
+                  title: 'Discard Changes?',
+                  content: 'You have changes that won\'t be saved if you close. Are you sure you want to discard them?',
+                  cancelText: 'Cancel',
+                  destructiveText: 'Discard',
+                );
                 if (shouldDiscard == true && context.mounted) {
                   Navigator.pop(context);
                 }

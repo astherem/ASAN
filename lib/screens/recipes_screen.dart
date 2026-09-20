@@ -7,6 +7,7 @@ import 'package:asan/styles/theme.dart';
 import 'package:asan/models/recipes.dart';
 
 import 'package:asan/screens/recipe_form_screen.dart';
+import 'package:asan/screens/recipe_details_screen.dart';
 
 import 'package:asan/widgets/buttons.dart';
 import 'package:asan/widgets/containment.dart';
@@ -104,6 +105,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
 
   List<String> get _activeFilterLabels => [
     ...?_activeFilters?.totalTimeRanges,
+    ...?_activeFilters?.mealTimeCategories,
     ...?_activeFilters?.mealCategories,
   ];
 
@@ -114,7 +116,10 @@ class _RecipesScreenState extends State<RecipesScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => DraggableScrollableSheet(
         expand: false,
-        initialChildSize: filterSheetInitialSize(context),
+        initialChildSize: filterSheetInitialSize(
+          context,
+          menuType: AsanFilterMenuType.recipes,
+        ),
         minChildSize: 0.5,
         maxChildSize: 0.9,
         builder: (context, scrollController) => AsanFilterList(
@@ -135,8 +140,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
 
     setState(() {
       _activeFilters = filters.copyWith(
-        purchaseStatuses: {...filters.purchaseStatuses}..remove(label),
         totalTimeRanges: {...filters.totalTimeRanges}..remove(label),
+        mealTimeCategories: {...filters.mealTimeCategories}..remove(label),
         mealCategories: {...filters.mealCategories}..remove(label),
       );
     });
@@ -283,14 +288,14 @@ class _RecipesScreenState extends State<RecipesScreen> {
                     mealCategory: recipe.mealCategory ?? 'Uncategorized',
                     totalTime: recipe.formattedTotalTime,
                     showBookmark: false,
-                    onTap: () => _showEditItemDialog(recipe),
+                    onTap: () => _showRecipeDetails(recipe),
                   );
                 }, childCount: _groupedRecipesFlat.length),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: AsanSpacing.md,
-                  mainAxisSpacing: AsanSpacing.lg,
-                  childAspectRatio: 163 / 213,
+                  mainAxisSpacing: AsanSpacing.sm,
+                  childAspectRatio: 163 / 220,
                 ),
               ),
       ),
@@ -335,13 +340,14 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 _savedRecipeTitles.add(recipe.title);
               }
             }),
+            onTap: () => _showExploreRecipeDetails(recipe),
           );
         }, childCount: recipes.length),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: AsanSpacing.md,
-          mainAxisSpacing: AsanSpacing.lg,
-          childAspectRatio: 163 / 213,
+          mainAxisSpacing: AsanSpacing.sm,
+          childAspectRatio: 163 / 220,
         ),
       ),
     );
@@ -421,12 +427,56 @@ class _RecipesScreenState extends State<RecipesScreen> {
     final updatedItem = await showDialog<Recipes>(
       context: context,
       useSafeArea: false,
-      builder: (context) => RecipeFormScreen(initialItem: item),
+      builder: (context) => RecipeFormScreen(
+        initialItem: item,
+        onDelete: () {
+          setState(() => _items.remove(item));
+        },
+      ),
     );
     if (updatedItem != null && mounted) {
       final index = _items.indexOf(item);
       if (index != -1) setState(() => _items[index] = updatedItem);
     }
+  }
+
+  void _showRecipeDetails(Recipes recipe) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RecipeDetailsScreen(
+          recipe: recipe,
+          showEditButton: true,
+          onEdit: () {
+            _showEditItemDialog(recipe);
+          }
+        ),
+      ),
+    );
+  }
+
+  void _showExploreRecipeDetails(_ExploreRecipe recipe) {
+    final isSaved = _savedRecipeTitles.contains(recipe.title);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RecipeDetailsScreen(
+          recipe: Recipes(
+            name: recipe.title,
+            mealCategory: recipe.mealCategory,
+          ),
+          imageUrl: recipe.imageUrl,
+          isSaved: isSaved,
+          onToggleSaved: () => setState(() {
+            if (isSaved) {
+              _savedRecipeTitles.remove(recipe.title);
+            } else {
+              _savedRecipeTitles.add(recipe.title);
+            }
+          }),
+        ),
+      ),
+    );
   }
 
   String _asanTotalTimeOptions(int minutes) {

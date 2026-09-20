@@ -7,16 +7,20 @@
   // PRIMARY
   class PrimaryButton extends StatelessWidget {
     final String? label;
+    final double fontSize;
     final Widget? child;
     final Widget? icon;
+    final double iconSize;
     final VoidCallback? onPressed;
     final double height;
 
     const PrimaryButton({
       super.key,
       this.label,
+      this.fontSize = 16,
       this.child,
       this.icon,
+      this.iconSize = 20,
       this.onPressed,
       this.height = 42,
     });
@@ -27,6 +31,7 @@
           label ?? '',
           style: AsanTextTheme.bodyMedium.copyWith(
             fontWeight: FontWeight.bold,
+            fontSize: fontSize,
             color: AsanColorScheme.onPrimary,
           ),
           maxLines: 1,
@@ -41,8 +46,8 @@
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconTheme(
-                        data: const IconThemeData(
-                          size: 18,
+                        data: IconThemeData(
+                          size: iconSize,
                           color: AsanColorScheme.onPrimary,
                         ),
                         child: icon!,
@@ -50,8 +55,8 @@
                       const SizedBox(width: AsanSpacing.xs),
                       Flexible(child: labelText),
                     ],
-                  ));
-
+                  )
+          );
       return Material(
         color: AsanColorScheme.primary,
         borderRadius: BorderRadius.circular(8),
@@ -74,16 +79,20 @@
   // SECONDARY
   class SecondaryButton extends StatelessWidget {
     final String? label;
+    final double fontSize;
     final Widget? child;
     final Widget? icon;
+    final double iconSize;
     final VoidCallback? onPressed;
     final double height;
 
     const SecondaryButton({
       super.key,
       this.label,
+      this.fontSize = 16,
       this.child,
       this.icon,
+      this.iconSize = 20,
       this.onPressed,
       this.height = 42,
     });
@@ -97,6 +106,7 @@
                   label ?? '',
                   style: AsanTextTheme.bodyMedium.copyWith(
                     fontWeight: FontWeight.bold,
+                    fontSize: fontSize,
                     color: AsanColorScheme.onSecondary,
                   ),
                   maxLines: 1,
@@ -106,8 +116,8 @@
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconTheme(
-                      data: const IconThemeData(
-                        size: 18,
+                      data: IconThemeData(
+                        size: iconSize,
                         color: AsanColorScheme.onSecondary,
                       ),
                       child: icon!,
@@ -117,6 +127,7 @@
                       label ?? '',
                       style: AsanTextTheme.bodyMedium.copyWith(
                         fontWeight: FontWeight.bold,
+                        fontSize: fontSize,
                         color: AsanColorScheme.onSecondary,
                       ),
                       maxLines: 1,
@@ -362,9 +373,11 @@
       super.key,
       required this.icon,
       this.onPressed,
+      Color? color,
+      double? size,
     }) : background = AsanColorScheme.surface,
-        iconColor = AsanColorScheme.primary,
-        size = 32,
+        iconColor = color ?? AsanColorScheme.primary,
+        size = size ?? 34,
         borderRadius = const BorderRadius.all(Radius.circular(50)),
         showShadow = true;
 

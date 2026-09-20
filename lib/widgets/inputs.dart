@@ -1,6 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/styles/theme.dart';
+
+import 'package:asan/widgets/buttons.dart';
 
 // TEXT FIELD
 class AsanTextField extends StatefulWidget {
@@ -242,6 +247,70 @@ class _AsanSearchBarState extends State<AsanSearchBar> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// IMAGE PICKER
+class AsanImagePicker extends StatelessWidget {
+  final Uint8List? imageBytes;
+  final VoidCallback onTap;
+
+  const AsanImagePicker({
+    super.key,
+    required this.imageBytes,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: double.infinity,
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Container(
+                  color: AsanColorScheme.container,
+                  child: imageBytes == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Symbols.add_photo_alternate_rounded,
+                              size: 72,
+                              color: AsanColorScheme.inactive,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Add Recipe Image',
+                              style: AsanTextTheme.labelSmall.copyWith(
+                                color: AsanColorScheme.inactive,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Image.memory(imageBytes!, fit: BoxFit.cover),
+                ),
+              ),
+            ),
+          ),
+          if (imageBytes != null)
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: TonalIconButton.round(
+                icon: const Icon(Symbols.edit_rounded, size: 16),
+                onPressed: onTap,
+              ),
+            ),
         ],
       ),
     );

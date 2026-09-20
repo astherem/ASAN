@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -16,8 +17,9 @@ import 'package:asan/widgets/selections.dart';
 
 class RecipeFormScreen extends StatefulWidget {
   final Recipes? initialItem;
+  final VoidCallback? onDelete;
 
-  const RecipeFormScreen({super.key, this.initialItem});
+  const RecipeFormScreen({super.key, this.initialItem, this.onDelete});
 
   @override
   State<RecipeFormScreen> createState() => _RecipeFormScreenState();
@@ -34,22 +36,44 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       if (context.mounted) Navigator.pop(context);
       return;
     }
-
     if (formState.currentStep > 0) {
       formState.goToPreviousStep();
       return;
     }
-
     if (!formState.hasChanges) {
       if (context.mounted) Navigator.pop(context);
       return;
     }
-
-    final shouldDiscard = await AsanAlertDialog.show(context);
+    final shouldDiscard = await AsanAlertDialog.show(context,
+      title: 'Discard Changes?',
+      content: 'You have changes that won\'t be saved if you close. Are you sure you want to discard them?',
+      cancelText: 'Cancel',
+      destructiveText: 'Discard',
+    );
     if (shouldDiscard == true && context.mounted) {
       Navigator.pop(context);
     }
   }
+
+  Future<void> _handleDelete() async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AsanAlertDialog(
+      title: 'Delete Recipe?',
+      content:
+          'This recipe will be permanently removed from your collection and meal plans. Are you sure you want to delete it?',
+      cancelText: 'Cancel',
+      destructiveText: 'Delete Recipe',
+    ),
+  );
+
+  if (!mounted) return;
+
+  if (confirmed == true) {
+    widget.onDelete?.call();
+    Navigator.of(context).pop();
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +85,19 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                 ? 'Edit ${widget.initialItem!.name}'
                 : 'Add Recipe',
             onBackPressed: _handleBackPressed,
+            trailing: _isEditing
+              ? IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                  icon: const Icon(
+                    Symbols.delete_rounded,
+                    fill: 1,
+                    size: 28,
+                    color: AsanColorScheme.error,
+                  ),
+                  onPressed: _handleDelete,
+                )
+              : null,
           ),
           body: AddRecipeForm(
             key: _formKey,
@@ -111,6 +148,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
   late final TextEditingController _carbohydratesController;
   late final TextEditingController _proteinController;
   String? _mealCategory;
+  final Set<String> _idealFor = {};
   bool _itemHasError = false;
   bool _mealCategoryHasError = false;
   int _currentStep = 0;
@@ -209,7 +247,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
     maxWidth: 1200,
     imageQuality: 80,
   );
-  if (file == null) return; // user cancelled, not an error
+  if (file == null) return;
 
   final bytes = await file.readAsBytes();
   if (!mounted) return;
@@ -232,7 +270,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Add Recipe Photo',
+                'Add Recipe Image',
                 style: AsanTextTheme.bodyMedium.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -240,14 +278,14 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
               ),
               const SizedBox(height: AsanSpacing.lg),
               PrimaryButton(
-                label: 'Take Photo',
-                icon: const Icon(Symbols.photo_camera_rounded, size: 22),
+                label: 'Take a Photo',
+                icon: const Icon(Symbols.photo_camera_rounded, size: 22, weight: 600),
                 onPressed: () => Navigator.pop(context, ImageSource.camera),
               ),
               const SizedBox(height: AsanSpacing.md),
               SecondaryButton(
                 label: 'Choose from Gallery',
-                icon: const Icon(Symbols.image_rounded, size: 22),
+                icon: const Icon(Symbols.image_rounded, size: 22, weight: 600),
                 onPressed: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
@@ -326,7 +364,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
             AsanSpacing.lg,
             AsanSpacing.md,
           ),
-          child: _StepProgress(
+          child: AsanStepProgress(
             stepCount: stepCount,
             currentStep: _currentStep,
             title: _stepTitles[_currentStep],
@@ -377,7 +415,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
   Widget _buildBasicInformationStep() {
     return _StepBody(
       children: [
-        _RecipeImagePicker(
+        AsanImagePicker(
           imageBytes: _imageBytes,
           onTap: _showImageSourcePicker,
         ),
@@ -403,6 +441,29 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
               _mealCategoryHasError = false;
             });
           },
+        ),
+        const SizedBox(height: AsanSpacing.md),
+        Text(
+          'Ideal For',
+          style: AsanTextTheme.labelSmall.copyWith(
+            color: AsanColorScheme.secondary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: AsanSpacing.sm),
+        Wrap(
+          spacing: AsanSpacing.sm,
+          runSpacing: AsanSpacing.sm,
+          children: asanMealTimeCategories.map((mealTime) {
+            final selected = _idealFor.contains(mealTime);
+            return AsanFilterChip(
+              label: mealTime,
+              isSelected: selected,
+              onPressed: () => setState(() {
+                selected ? _idealFor.remove(mealTime) : _idealFor.add(mealTime);
+              }),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -483,7 +544,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
         const SizedBox(height: AsanSpacing.md),
         PrimaryButton(
           label: 'Add Ingredient',
-          icon: const Icon(Symbols.add_rounded, size: 24),
+          icon: const Icon(Symbols.add_rounded, size: 24, weight: 600),
           onPressed: _addIngredient,
         ),
       ],
@@ -512,7 +573,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
                   child: TonalIconButton.square(
                     size: 38,
                     color: AsanColorScheme.error,
-                    icon: const Icon(Symbols.delete_rounded, size: 24, weight: 500),
+                    icon: const Icon(Symbols.delete_rounded, size: 24, weight: 600),
                     onPressed: () => _removeStep(index),
                   ),
                 ),
@@ -523,7 +584,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
         const SizedBox(height: AsanSpacing.md),
         PrimaryButton(
           label: 'Add Step',
-          icon: const Icon(Symbols.add_rounded, size: 24),
+          icon: const Icon(Symbols.add_rounded, size: 24, weight: 600),
           onPressed: _addStep,
         ),
       ],
@@ -535,14 +596,14 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
       children: [
         AsanTextField(
           label: 'Prep Time',
-          hintText: 'Enter prep time in minutes',
+          hintText: 'Enter prep time (mins)',
           controller: _prepTimeController,
           required: true,
         ),
         const SizedBox(height: AsanSpacing.sm),
         AsanTextField(
           label: 'Cook Time',
-          hintText: 'Enter cook time in minutes',
+          hintText: 'Enter cook time (mins)',
           controller: _cookTimeController,
           required: true,
         ),
@@ -571,42 +632,42 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
         const SizedBox(height: AsanSpacing.sm),
         AsanTextField(
           label: 'Calories',
-          hintText: 'Enter calories in kcal',
+          hintText: 'Enter calories (kcal)',
           controller: _caloriesController,
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: AsanSpacing.sm),
         AsanTextField(
           label: 'Fats',
-          hintText: 'Enter fats in grams',
+          hintText: 'Enter fats (g)',
           controller: _fatsController,
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: AsanSpacing.sm),
         AsanTextField(
           label: 'Colesterol',
-          hintText: 'Enter cholesterol in milligrams',
+          hintText: 'Enter cholesterol (mg)',
           controller: _cholesterolController,
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: AsanSpacing.sm),
         AsanTextField(
           label: 'Sodium',
-          hintText: 'Enter sodium in milligrams',
+          hintText: 'Enter sodium (mg)',
           controller: _sodiumController,
           keyboardType: TextInputType.number
         ),
         const SizedBox(height: AsanSpacing.sm),
         AsanTextField(
           label: 'Carbohydrates',
-          hintText: 'Enter carbohydrates in grams',
+          hintText: 'Enter carbohydrates (g)',
           controller: _carbohydratesController,
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: AsanSpacing.sm),
         AsanTextField(
           label: 'Protein',
-          hintText: 'Enter protein in grams',
+          hintText: 'Enter protein (g)',
           controller: _proteinController,
           keyboardType: TextInputType.number),
       ],
@@ -667,125 +728,6 @@ class _StepBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: children,
-      ),
-    );
-  }
-}
-
-class _StepProgress extends StatelessWidget {
-  final int stepCount;
-  final int currentStep;
-  final String title;
-
-  const _StepProgress({
-    required this.stepCount,
-    required this.currentStep,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: List.generate(stepCount, (index) {
-            final isCompleted = index <= currentStep;
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: index == stepCount - 1 ? 0 : AsanSpacing.xs,
-                ),
-                child: SizedBox(
-                  height: 4,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? AsanColorScheme.primary
-                          : AsanColorScheme.container,
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-        const SizedBox(height: AsanSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: AsanTextTheme.bodyMedium.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              'Step ${currentStep + 1} of $stepCount',
-              style: AsanTextTheme.labelSmall.copyWith(
-                color: AsanColorScheme.inactive,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _RecipeImagePicker extends StatelessWidget {
-  final Uint8List? imageBytes;
-  final VoidCallback onTap;
-
-  const _RecipeImagePicker({required this.imageBytes, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: Container(
-                width: double.infinity,
-                color: AsanColorScheme.container,
-                child: imageBytes == null
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Symbols.add_photo_alternate_rounded,
-                            size: 72,
-                            color: AsanColorScheme.inactive,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Add Recipe Image',
-                            style: AsanTextTheme.labelSmall.copyWith(
-                              color: AsanColorScheme.inactive,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Image.memory(imageBytes!, fit: BoxFit.cover),
-              ),
-            ),
-          ),
-          if (imageBytes != null)
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: TonalIconButton.round(
-                icon: const Icon(Symbols.edit_rounded, size: 16),
-                onPressed: onTap,
-              ),
-            ),
-        ],
       ),
     );
   }

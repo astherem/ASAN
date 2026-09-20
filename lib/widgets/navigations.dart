@@ -103,11 +103,13 @@ class FullScreenDialogHeader extends StatelessWidget
     implements PreferredSizeWidget {
   final String screenTitle;
   final VoidCallback? onBackPressed;
+  final Widget? trailing;
 
   const FullScreenDialogHeader({
     super.key,
     required this.screenTitle,
     this.onBackPressed,
+    this.trailing,
   });
 
   @override
@@ -146,6 +148,11 @@ class FullScreenDialogHeader extends StatelessWidget
                 textAlign: TextAlign.center,
               ),
             ),
+            if (trailing != null)
+              Positioned(
+                right: AsanSpacing.md,
+                child: trailing!,
+              ),
           ],
         ),
       ),

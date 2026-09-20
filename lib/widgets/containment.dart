@@ -317,71 +317,77 @@ class RecipeCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: SizedBox(
-                width: 163,
-                height: 163,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (imageUrl == null || imageUrl!.isEmpty)
-                      Container(
-                        color: AsanColorScheme.container,
-                        child: const Icon(
-                          Symbols.restaurant_rounded,
-                          size: 36,
-                          color: AsanColorScheme.inactive,
-                        ),
-                      )
-                    else
-                      Image.network(imageUrl!, fit: BoxFit.cover),
-                    Padding(
-                      padding: const EdgeInsets.all(AsanSpacing.sm),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          if (showBookmark)
-                            TonalIconButton.round(
-                              icon: Icon(
-                                Symbols.bookmark_rounded,
-                                fill: isSaved ? 1 : 0,
-                                color: isSaved
-                                    ? AsanColorScheme.primary
-                                    : AsanColorScheme.secondary,
-                              ),
-                              onPressed: onIconPressed,
-                            ),
-                          const Spacer(),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AsanColorScheme.surface,
-                                borderRadius: BorderRadius.circular(50),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Symbols.schedule_rounded,
-                                    size: 16,
-                                    color: AsanColorScheme.secondary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    totalTime,
-                                    style: AsanTextTheme.labelSmall,
-                                  ),
-                                ],
-                              ),
-                            ),
+                width: double.infinity,
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (imageUrl == null || imageUrl!.isEmpty)
+                        Container(
+                          color: AsanColorScheme.container,
+                          child: const Icon(
+                            Symbols.restaurant_rounded,
+                            size: 36,
+                            color: AsanColorScheme.inactive,
                           ),
-                        ],
+                        )
+                      else
+                        Image.network(imageUrl!, fit: BoxFit.cover),
+                      Padding(
+                        padding: const EdgeInsets.all(AsanSpacing.sm),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (showBookmark)
+                              TonalIconButton.round(
+                                icon: Icon(
+                                  Symbols.bookmark_rounded,
+                                  weight: 600,
+                                  fill: isSaved ? 1 : 0,
+                                  color: isSaved
+                                      ? AsanColorScheme.primary
+                                      : AsanColorScheme.secondary,
+                                ),
+                                onPressed: onIconPressed,
+                              ),
+                            const Spacer(),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AsanColorScheme.surface,
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Symbols.schedule_rounded,
+                                      size: 16,
+                                      weight: 600,
+                                      color: AsanColorScheme.secondary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      totalTime,
+                                      style: AsanTextTheme.labelSmall.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

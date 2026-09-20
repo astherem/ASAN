@@ -35,6 +35,7 @@ class AsanDropdownMenu extends StatefulWidget {
   final List<String> items;
   final String? value;
   final String? hintText;
+  final String? searchHint;
   final ValueChanged<String?>? onChanged;
   final bool hasError;
   final bool required;
@@ -45,6 +46,7 @@ class AsanDropdownMenu extends StatefulWidget {
     required this.items,
     this.value,
     this.hintText,
+    this.searchHint,
     this.onChanged,
     this.hasError = false,
     this.required = false,
@@ -81,6 +83,7 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
               : widget.label,
           items: widget.items,
           selectedValue: widget.value,
+          searchHint: widget.searchHint ?? 'Search ${widget.label.toLowerCase()}...',
           scrollController: scrollController,
         ),
       ),
@@ -397,6 +400,14 @@ const asanMealCategories = [
   'Others',
 ];
 
+const asanMealTimeCategories = [
+  'Breakfast',
+  'Brunch',
+  'Lunch',
+  'Snack',
+  'Dinner',
+];
+
 const asanTotalTimeOptions = [
   '15 minutes or less',
   '30 minutes or less',
@@ -404,8 +415,11 @@ const asanTotalTimeOptions = [
   'More than 1 hour',
 ];
 
-double filterSheetInitialSize(BuildContext context) {
-  const contentHeight = 820.0;
+double filterSheetInitialSize(
+  BuildContext context, {
+  AsanFilterMenuType menuType = AsanFilterMenuType.pantry,
+}) {
+  final contentHeight = menuType == AsanFilterMenuType.recipes ? 980.0 : 820.0;
   final availableHeight = MediaQuery.sizeOf(context).height;
   final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
   return ((contentHeight + bottomInset) / availableHeight)
@@ -420,6 +434,7 @@ class AsanFilterSelection {
   final Set<String> expirationStatuses;
   final Set<String> foodGroups;
   final Set<String> totalTimeRanges;
+  final Set<String> mealTimeCategories;
   final Set<String> mealCategories;
 
   const AsanFilterSelection({
@@ -429,6 +444,7 @@ class AsanFilterSelection {
     required this.expirationStatuses,
     required this.foodGroups,
     this.totalTimeRanges = const {},
+    this.mealTimeCategories = const {},
     this.mealCategories = const {},
   });
 
@@ -439,6 +455,7 @@ class AsanFilterSelection {
     Set<String>? expirationStatuses,
     Set<String>? foodGroups,
     Set<String>? totalTimeRanges,
+    Set<String>? mealTimeCategories,
     Set<String>? mealCategories,
   }) {
     return AsanFilterSelection(
@@ -448,6 +465,7 @@ class AsanFilterSelection {
       expirationStatuses: expirationStatuses ?? this.expirationStatuses,
       foodGroups: foodGroups ?? this.foodGroups,
       totalTimeRanges: totalTimeRanges ?? this.totalTimeRanges,
+      mealTimeCategories: mealTimeCategories ?? this.mealTimeCategories,
       mealCategories: mealCategories ?? this.mealCategories,
     );
   }
@@ -515,6 +533,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
   final Set<String> _statuses = {};
   final Set<String> _foodGroups = {};
   final Set<String> _totalTimeRanges = {};
+  final Set<String> _mealTimeCategories = {};
   final Set<String> _mealCategories = {};
 
   void _reset() {
@@ -524,6 +543,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
       _statuses.clear();
       _foodGroups.clear();
       _totalTimeRanges.clear();
+      _mealTimeCategories.clear();
       _mealCategories.clear();
     });
   }
@@ -541,6 +561,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
     );
     _foodGroups.addAll(selection?.foodGroups ?? const {});
     _totalTimeRanges.addAll(selection?.totalTimeRanges ?? const {});
+    _mealTimeCategories.addAll(selection?.mealTimeCategories ?? const {});
     _mealCategories.addAll(selection?.mealCategories ?? const {});
   }
 
@@ -621,6 +642,40 @@ class _AsanFilterListState extends State<AsanFilterList> {
                                 selected
                                     ? _totalTimeRanges.remove(range)
                                     : _totalTimeRanges.add(range);
+                              }),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: AsanSpacing.md),
+                      const AsanDivider(),
+                      const SizedBox(height: AsanSpacing.md),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Meal Time',
+                          style: AsanTextTheme.labelSmall.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AsanSpacing.sm),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          alignment: WrapAlignment.start,
+                          spacing: AsanSpacing.sm,
+                          runSpacing: AsanSpacing.sm,
+                          children: asanMealTimeCategories.map((category) {
+                            final selected =
+                                _mealTimeCategories.contains(category);
+                            return AsanFilterChip(
+                              label: category,
+                              isSelected: selected,
+                              onPressed: () => setState(() {
+                                selected
+                                    ? _mealTimeCategories.remove(category)
+                                    : _mealTimeCategories.add(category);
                               }),
                             );
                           }).toList(),
@@ -721,6 +776,9 @@ class _AsanFilterListState extends State<AsanFilterList> {
                           totalTimeRanges: _isRecipes
                               ? Set.unmodifiable(_totalTimeRanges)
                               : const {},
+                          mealTimeCategories: _isRecipes
+                              ? Set.unmodifiable(_mealTimeCategories)
+                              : const {},
                           mealCategories: _isRecipes
                               ? Set.unmodifiable(_mealCategories)
                               : const {},
@@ -806,9 +864,10 @@ class _FilterSection extends StatelessWidget {
             padding: EdgeInsets.only(top: entry.$1 == 0 ? 0 : AsanSpacing.sm),
             child: InkWell(
               onTap: () => onSelected(entry.$2),
-              child: SizedBox(
-                height: 30,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 30),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
                       width: 22,

@@ -2,12 +2,9 @@
 
 > Asan is a meal planning and pantry management mobile app for students and busy households who want to plan meals, organize ingredients, and reduce food waste with less effort.
 
-**Live demo:** https://benicemalig.github.io/ASAN/
-
-**Demo video:** `docs/demo.mp4` (link it here once it exists)
-
-**Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University
-
+**Live demo:** https://benicemalig.github.io/ASAN/ <br>
+**Demo video:** `docs/demo.mp4` (link it here once it exists) <br>
+**Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University <br>
 **Author:** Benice Asheret Malig
 
 ---
