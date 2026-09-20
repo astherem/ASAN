@@ -1,9 +1,9 @@
 # Asan
 
-> Asan is a meal planning and pantry management mobile app for students and busy households who want to plan meals, organize ingredients, and reduce food waste with less effort.
+> Asan is a meal planning and pantry management mobile app designed for students and busy households who want to plan meals, organize ingredients, and reduce food waste with less effort.
 
 **Live demo:** https://benicemalig.github.io/ASAN/ <br>
-**Demo video:** `docs/demo.mp4` (link it here once it exists) <br>
+**Demo video:** To be added after recording. <br>
 **Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University <br>
 **Author:** Benice Asheret Malig
 
@@ -34,15 +34,14 @@ A repo without screenshots reads as abandoned, whatever the code says.
 | | |
 | --- | --- |
 | Framework | Flutter (Dart) |
-| State | `setState` / provider / riverpod (say which) |
-| Storage | shared_preferences / Hive / Drift / Firebase / Supabase / other |
-| Other packages | list the ones that matter, with a word on why |
+| State | Local widget state with `setState` |
+| Storage | None yet; current data is sample or in-memory data |
+| Other packages | `material_symbols_icons` for icons, `google_fonts` for typography, `device_preview` for responsive previews, and `image_picker` for image selection support |
 
 ## Running it yourself
 
 ```bash
 flutter pub get
-cp .env.example .env      # only if your app needs keys, see below
 flutter run -d web-server --web-port 8080
 ```
 
@@ -60,8 +59,6 @@ result.
 | `EXAMPLE_API_KEY` | ... | ... |
 
 ## Privacy and secrets
-
-Required section. Two or three honest sentences:
 
 - What personal data this app stores, if any, and where it goes.
 - Where the secrets live (`.env` locally, repository secrets in the deploy
@@ -88,17 +85,20 @@ Be honest. What works, what is half done, what you would build next. An honest
 "known issues" section reads better than a claim the reader disproves in thirty
 seconds.
 
+**What works:** Main navigation, recipe browsing and creation, pantry and grocery forms, search, filters, sorting, and grocery-to-pantry handoff are implemented.
+
+**What is half done:** Meal plan view and persistent storage are still in progress.
+
+**What would be built next:** Complete meal scheduling, add persistence, replace placeholder recipe data.
+
 ## Credits
 
 - Packages: see `pubspec.yaml`
-- Assets, icons, 3D models, sounds: name the author and the licence for each
-- People who helped, and how
+- Icons: by Google and Tim Maffett, licensed under the [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## AI use
 
-If you used AI tools while building this, say so in a sentence or two and say
-where. Honest disclosure is the standard in this course and increasingly outside
-it.
+AI tools were used to support documentation, implementation review, and debugging. Final design and code decisions were reviewed in the project files.
 
 ## Licence
 
