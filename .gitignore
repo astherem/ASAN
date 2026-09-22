@@ -29,5 +29,6 @@ Thumbs.db
 .vscode/*
 !.vscode/launch.json
 
-# Notes
+# Personal
 notes.md
+journal.md

@@ -1,105 +1,123 @@
 # Asan
 
-> Asan is a meal planning and pantry management mobile app designed for students and busy households who want to plan meals, organize ingredients, and reduce food waste with less effort.
+[![Made with AI](https://img.shields.io/badge/Made_with-AI_assistance-blue)](AI-USAGE.md)
 
 **Live demo:** https://benicemalig.github.io/ASAN/ <br>
 **Demo video:** To be added after recording. <br>
 **Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University <br>
 **Author:** Benice Asheret Malig
 
----
+## 1. Overview
 
-## Screenshots
+Asan is a Flutter-based food and meal planning app designed to help people track groceries, manage pantry stock, and save or explore recipes in one place. It targets busy students and households who want a clearer picture of what they have, what they need, and what they could cook next.
 
-Put two or three real screenshots at phone size in `docs/assets/`, then replace
-this paragraph with them:
+## 2. Setup and installation
 
-```markdown
-| Home | Detail | Add |
-| --- | --- | --- |
-| ![Home](docs/assets/screen-home.png) | ![Detail](docs/assets/screen-detail.png) | ![Add](docs/assets/screen-add.png) |
-```
+**The app was built and tested with:**
 
-A repo without screenshots reads as abandoned, whatever the code says.
+- Flutter 3.47.2
+- Dart 3.13.2
 
-## What it does
+**To get the project running from a fresh machine:**
 
-- Discover, save, and add recipes.
-- Plan and manage meals for the week.
-- Track pantry items and monitor expiration dates.
-- Create grocery lists based on planned meals.
-
-## Built with
-
-| | |
-| --- | --- |
-| Framework | Flutter (Dart) |
-| State | Local widget state with `setState` |
-| Storage | None yet; current data is sample or in-memory data |
-| Other packages | `material_symbols_icons` for icons, `google_fonts` for typography, `device_preview` for responsive previews, and `image_picker` for image selection support |
-
-## Running it yourself
-
+1. Install Flutter and ensure the Flutter toolchain is on your PATH.
+2. Clone the repository:
 ```bash
+git clone https://github.com/benicemalig/ASAN.git
+cd ASAN
+```
+3. Open the project folder in VS Code or your terminal.
+4. Run:
+``` bash
 flutter pub get
-flutter run -d web-server --web-port 8080
+```
+5. If you are using a physical device or emulator, connect it and confirm it is listed with:
+``` bash
+flutter devices
+```
+6. No API keys or backend configuration are implemented yet. The Explore tab for Recipes is still awaiting a suitable recipe API. If a backend or external API is added later, store any real secrets in a secure environment file and never commit them.
+
+## 3. How to run it
+
+Start the app with:
+``` bash
+flutter run
+```
+For a browser preview, use:
+``` bash
+flutter run -d chrome
 ```
 
-Then open http://localhost:8080. Requires Flutter (run `flutter --version` and
-put yours here).
+When the app loads successfully, the default view opens to the Recipes tab and the bottom navigation should show Recipes, Meals, Pantry, and Groceries. The interface should be fully interactive in a local development build.
 
-### Environment variables
+## 4. Features and usage
 
-This project reads its configuration from a `.env` file that is **not** in the
-repository. Copy `.env.example`, fill in your own values, and never commit the
-result.
+### Recipes
 
-| Variable | What it is | Where to get one |
-| --- | --- | --- |
-| `EXAMPLE_API_KEY` | ... | ... |
+- Browse the Explore tab to see recipes.
+- Save recipes from the Explore view to keep them in a personal shortlist.
+- Open My Recipes to view custom recipes created in-app.
+- Use the add button in the Recipes app bar to open the full recipe form.
+- The recipe form includes basic information, ingredients, instructions, and other details.
 
-## Privacy and secrets
+### Meal Plan
 
-- What personal data this app stores, if any, and where it goes.
-- Where the secrets live (`.env` locally, repository secrets in the deploy
-  workflow) and what protects the data on the service side (Firestore rules,
-  Supabase RLS, or "nothing leaves the device").
-- Confirm that all sample data, screenshots and the video contain **no real
-  personal information**.
+- The Meal Plan screen is present in the app navigation and has the planned shell for future planning features.
+- It is currently a placeholder and is not yet connected to a complete meal-planning workflow or persistent data model.
 
-## Project documentation
+### Pantry
 
-| Document | |
-| --- | --- |
-| [Proposal](docs/01-proposal.md) | the problem, the users, the scope |
-| [Mockup and wireframes](docs/02-mockup.md) | what it looks like, and the screen flow |
-| [Design system](docs/03-design-system.md) | colors, type, spacing, components |
-| [Weekly reports](docs/04-weekly-reports.md) | what happened each week |
-| [Demo video](docs/05-demo-video.md) | the recording and what it shows |
-| [Start here](START-HERE.md) | how this repo works (delete once you have read it) |
-| [Security and privacy](docs/06-security-and-privacy.md) | the checklist, filled in |
+- Add pantry items with name, quantity, expiry date, notes, and food group.
+- Search by item name and filter by food group or expiry status.
+- Grouped list sections make it easier to review inventory by category.
 
-## Status and what is next
+### Groceries
 
-Be honest. What works, what is half done, what you would build next. An honest
-"known issues" section reads better than a claim the reader disproves in thirty
-seconds.
+- Add grocery items from the Groceries tab.
+- Search, filter, and review purchase status.
+- Checking an item triggers its transfer into the pantry flow and updates the badge count in the navigation bar.
 
-**What works:** Main navigation, recipe browsing and creation, pantry and grocery forms, search, filters, sorting, and grocery-to-pantry handoff are implemented.
+## 5. Project structure
 
-**What is half done:** Meal plan view and persistent storage are still in progress.
+The project is organised as a Flutter app with a clear screen-first structure:
 
-**What would be built next:** Complete meal scheduling, add persistence, replace placeholder recipe data.
+```text
+lib/
+├──main.dart          app entry point and shared navigation state
+├──screens            Recipes, Meal Plan, Pantry, and Groceries screens
+├──models             recipe, pantry item, and grocery item models
+├──styles             theme — color palette, spacing, and app typography
+└──widgets            reusable buttons, cards, dialogs, filters, search, and navigation components
+```
 
-## Credits
+## 6. Screenshots
 
-- Packages: see `pubspec.yaml`
-- Icons: by Google and Tim Maffett, licensed under the [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+Screenshots are not yet committed to the repository for every screen, but the app currently includes these UI areas:
 
-## AI use
+- Recipes screen
+- Meal Plan screen
+- Pantry screen
+- Groceries screen
+- Recipe creation/edit form
 
-AI tools were used to support documentation, implementation review, and debugging. Final design and code decisions were reviewed in the project files.
+## 7. Known issues and next steps
 
-## Licence
+**Current known limitations:**
 
-MIT, see [LICENSE](LICENSE).
+- The Explore tab in Recipes is still on hold while a suitable recipe API is being evaluated.
+- Meal Plan is still a placeholder and cannot yet support the complete planning workflow because the Recipes workflow is not fully completed.
+- Data is not yet persisted to local storage or a backend, so recipes, pantry items, and groceries reset when the app is restarted.
+- The repository still needs final screenshot capture and polish for the visual documentation.
+- More validation and edge-case handling should be added for item editing, filtering, and duplicate prevention.
+
+**Planned next steps:**
+
+1. Finalize the recipe workflow and identify/integrate a suitable recipe API for the Explore tab.
+2. Add persistent storage for recipes, pantry items, and groceries.
+3. Complete the Meal Plan workflow with recipe selection, scheduling, and date-based planning.
+4. Finalize visual documentation and screenshot assets.
+5. Improve validation and state handling across all screens.
+
+## AI usage
+
+This repository includes an AI usage log in [AI-USAGE.md](AI-USAGE.md). The app was developed with AI support for structure, UI patterns, and documentation, while the final implementation was reviewed and adjusted by the author to match project needs.
