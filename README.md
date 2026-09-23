@@ -1,11 +1,9 @@
 # Asan
 
-[![Made with AI](https://img.shields.io/badge/Made_with-AI_assistance-blue)](AI-USAGE.md)
-
-**Live demo:** https://benicemalig.github.io/ASAN/ <br>
+**Live demo:** https://astherem.github.io/ASAN/ <br>
 **Demo video:** To be added after recording. <br>
 **Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University <br>
-**Author:** Benice Asheret Malig
+**Author:** astherem
 
 ## 1. Overview
 
@@ -23,7 +21,7 @@ Asan is a Flutter-based food and meal planning app designed to help people track
 1. Install Flutter and ensure the Flutter toolchain is on your PATH.
 2. Clone the repository:
 ```bash
-git clone https://github.com/benicemalig/ASAN.git
+git clone https://github.com/astherem/ASAN.git
 cd ASAN
 ```
 3. Open the project folder in VS Code or your terminal.
@@ -84,21 +82,25 @@ The project is organised as a Flutter app with a clear screen-first structure:
 ```text
 lib/
 ├──main.dart          app entry point and shared navigation state
-├──screens            Recipes, Meal Plan, Pantry, and Groceries screens
 ├──models             recipe, pantry item, and grocery item models
+├──screens            Recipes, Meal Plan, Pantry, and Groceries screens
 ├──styles             theme — color palette, spacing, and app typography
 └──widgets            reusable buttons, cards, dialogs, filters, search, and navigation components
 ```
 
 ## 6. Screenshots
 
-Screenshots are not yet committed to the repository for every screen, but the app currently includes these UI areas:
+| Recipes | Add Recipe | Meal Plan |
+| --- | --- | --- |
+| ![Recipes](docs/assets/screenshots/recipes.png) | ![Add Recipe](docs/assets/screenshots/add_recipe.png) | ![Meal Plan](docs/assets/screenshots/meal_plan.PNG) |
 
-- Recipes screen
-- Meal Plan screen
-- Pantry screen
-- Groceries screen
-- Recipe creation/edit form
+| Add Meal | Pantry | Add Pantry Item |
+| --- | --- | --- |
+| ![Add Meal](docs/assets/screenshots/add_meal.PNG) | ![Pantry](docs/assets/screenshots/pantry.PNG) | ![Add Pantry Item](docs/assets/screenshots/add_pantry_item.PNG) |
+
+| Groceries | Add Grocery Item | --- |
+| --- | --- | --- |
+| ![Add Groceries](docs/assets/screenshots/groceries.PNG) | ![Add Grocery Item](docs/assets/screenshots/add_grocery_jtem.PNG) | ![]() |
 
 ## 7. Known issues and next steps
 
@@ -120,4 +122,10 @@ Screenshots are not yet committed to the repository for every screen, but the ap
 
 ## AI usage
 
+![Built with AI assistance](https://img.shields.io/badge/built%20with-AI%20assistance-0b5fff)
+
 This repository includes an AI usage log in [AI-USAGE.md](AI-USAGE.md). The app was developed with AI support for structure, UI patterns, and documentation, while the final implementation was reviewed and adjusted by the author to match project needs.
+
+## LICENSE
+
+Copyright © 2026 astherem. [MIT License](LICENSE).

@@ -1,9 +1,3 @@
-// A widget test: it builds your app in memory and checks what is on screen.
-// Run them all with: flutter test
-//
-// You are not required to write more of these, but a project with a few real
-// tests reads very differently from one with none.
-
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:asan/main.dart';
