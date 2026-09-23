@@ -92,7 +92,7 @@ lib/
 
 | Recipes | Add Recipe | Meal Plan |
 | --- | --- | --- |
-| ![Recipes](docs/assets/screenshots/recipes.png) | ![Add Recipe](docs/assets/screenshots/add_recipe.png) | ![Meal Plan](docs/assets/screenshots/meal_plan.PNG) |
+| ![Recipes](docs/assets/screenshots/recipes.PNG) | ![Add Recipe](docs/assets/screenshots/add_recipe.PNG) | ![Meal Plan](docs/assets/screenshots/meal_plan.PNG) |
 
 | Add Meal | Pantry | Add Pantry Item |
 | --- | --- | --- |
