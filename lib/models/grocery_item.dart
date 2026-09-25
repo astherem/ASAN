@@ -23,4 +23,5 @@ class GroceryItem {
     notes: notes,
     purchaseDate: purchaseDate,
   );
+
 }

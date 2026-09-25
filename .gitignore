@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 env.json
+assets/config/supabase.json
 *.keystore
 *.jks
 serviceAccountKey.json
@@ -32,4 +33,3 @@ Thumbs.db
 # Personal
 notes.md
 journal.md
-SECURITY-CHECKLIST.md

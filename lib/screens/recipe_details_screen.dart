@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -44,6 +46,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   static const _tabs = ['Details', 'Ingredients', 'Instructions'];
 
   int _selectedTab = 0;
+  bool _imageScrolledPastHeader = false;
 
   static const Map<String, Color> _mealTimeColors = {
     'Breakfast': AsanColorScheme.yellow,
@@ -56,24 +59,92 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final recipe = widget.recipe;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final heroHeight = screenWidth * 3 / 4;
+    final bottomBarHeight = 66 + MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
       backgroundColor: AsanColorScheme.surface,
       body: Stack(
         children: [
-          Column(
-            children: [
-              SizedBox(
-                height: 390,
-                width: double.infinity,
-                child: _HeroImage(imageUrl: widget.imageUrl),
+          Positioned.fill(
+            bottom: bottomBarHeight,
+            child: NotificationListener<ScrollUpdateNotification>(
+              onNotification: (notification) {
+                final scrolled = notification.metrics.pixels >= heroHeight - 72;
+                if (scrolled != _imageScrolledPastHeader) {
+                  setState(() => _imageScrolledPastHeader = scrolled);
+                }
+                return false;
+              },
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      height: heroHeight,
+                      child: _HeroImage(
+                        imageUrl: widget.imageUrl,
+                        imageBytes: widget.recipe.imageBytes,
+                      ),
+                    ),
+                    Container(
+              decoration: const BoxDecoration(
+                color: AsanColorScheme.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
-              Expanded(child: Container()),
-            ],
+              padding: const EdgeInsets.all(AsanSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    recipe.name,
+                    style: AsanTextTheme.bodyMedium.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: AsanSpacing.xs),
+                  _MetaRow(recipe: recipe),
+                  if (widget.idealFor.isNotEmpty) ...[
+                    const SizedBox(height: AsanSpacing.sm),
+                    _IdealForRow(
+                      idealFor: widget.idealFor,
+                      colors: _mealTimeColors,
+                    ),
+                  ],
+                  const SizedBox(height: AsanSpacing.md),
+                  AsanSegmentedButton(
+                    views: _tabs,
+                    selectedIndex: _selectedTab,
+                    onChanged: (index) =>
+                        setState(() => _selectedTab = index),
+                  ),
+                  const SizedBox(height: AsanSpacing.md),
+                  switch (_selectedTab) {
+                        0 => _DetailsTab(recipe: recipe),
+                        1 => _IngredientsTab(ingredients: widget.ingredients),
+                        _ => _InstructionsTab(
+                          instructions: widget.instructions,
+                        ),
+                  },
+                ],
+              ),
+                    ),
+                    SizedBox(height: bottomBarHeight),
+                  ],
+                ),
+              ),
+            ),
           ),
           SafeArea(
             bottom: false,
-            child: Padding(
+            child: Container(
+              color: _imageScrolledPastHeader
+                  ? AsanColorScheme.surface
+                  : Colors.transparent,
               padding: const EdgeInsets.symmetric(
                 horizontal: AsanSpacing.lg,
                 vertical: AsanSpacing.md,
@@ -108,61 +179,6 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                       size: 48,
                       onPressed: widget.onToggleSaved,
                     ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 370,
-            bottom: 66,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: AsanColorScheme.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              padding: const EdgeInsets.all(AsanSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    recipe.name,
-                    style: AsanTextTheme.bodyMedium.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: AsanSpacing.xs),
-                  _MetaRow(recipe: recipe),
-                  if (widget.idealFor.isNotEmpty) ...[
-                    const SizedBox(height: AsanSpacing.sm),
-                    _IdealForRow(
-                      idealFor: widget.idealFor,
-                      colors: _mealTimeColors,
-                    ),
-                  ],
-                  const SizedBox(height: AsanSpacing.md),
-                  AsanSegmentedButton(
-                    views: _tabs,
-                    selectedIndex: _selectedTab,
-                    onChanged: (index) =>
-                        setState(() => _selectedTab = index),
-                  ),
-                  const SizedBox(height: AsanSpacing.md),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: switch (_selectedTab) {
-                        0 => _DetailsTab(recipe: recipe),
-                        1 => _IngredientsTab(ingredients: widget.ingredients),
-                        _ => _InstructionsTab(
-                          instructions: widget.instructions,
-                        ),
-                      },
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -223,11 +239,15 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
 
 class _HeroImage extends StatelessWidget {
   final String? imageUrl;
+  final Uint8List? imageBytes;
 
-  const _HeroImage({required this.imageUrl});
+  const _HeroImage({required this.imageUrl, required this.imageBytes});
 
   @override
   Widget build(BuildContext context) {
+    if (imageBytes != null) {
+      return Image.memory(imageBytes!, width: double.infinity, fit: BoxFit.cover);
+    }
     if (imageUrl == null || imageUrl!.isEmpty) {
       return Container(
         color: AsanColorScheme.container,
@@ -242,6 +262,15 @@ class _HeroImage extends StatelessWidget {
       imageUrl!,
       width: double.infinity,
       fit: BoxFit.cover,
+      webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+      errorBuilder: (context, error, stackTrace) => Container(
+        color: AsanColorScheme.container,
+        child: const Icon(
+          Symbols.restaurant_rounded,
+          size: 64,
+          color: AsanColorScheme.inactive,
+        ),
+      ),
     );
   }
 }
@@ -256,7 +285,7 @@ class _MetaRow extends StatelessWidget {
     return Row(
       children: [
         Text(
-          recipe.mealCategory ?? 'Uncategorized',
+          _display(recipe.mealCategory),
           style: AsanTextTheme.labelSmall,
         ),
         const SizedBox(width: AsanSpacing.md),
@@ -268,23 +297,40 @@ class _MetaRow extends StatelessWidget {
             color: AsanColorScheme.container,
           ),
         ),
-        const SizedBox(width: AsanSpacing.md),
-        const Icon(
-          Symbols.local_dining_rounded,
-          size: 16,
-          color: AsanColorScheme.secondary,
-        ),
-        const SizedBox(width: 4),
-        Text('${recipe.prepTime}m prep', style: AsanTextTheme.labelSmall),
-        const SizedBox(width: AsanSpacing.sm),
-        const Icon(
-          Symbols.skillet_rounded,
-          fill: 1,
-          size: 16,
-          color: AsanColorScheme.secondary,
-        ),
-        const SizedBox(width: 4),
-        Text('${recipe.cookTime}m cook', style: AsanTextTheme.labelSmall),
+        if (recipe.prepTime > 0 || recipe.cookTime > 0) ...[
+          const SizedBox(width: AsanSpacing.md),
+          if (recipe.prepTime > 0) ...[
+            const Icon(
+              Symbols.local_dining_rounded,
+              size: 16,
+              color: AsanColorScheme.secondary,
+              weight: 600,
+            ),
+            const SizedBox(width: 4),
+            Text('${recipe.prepTime}m prep', style: AsanTextTheme.labelSmall),
+          ],
+          if (recipe.cookTime > 0) ...[
+            const SizedBox(width: AsanSpacing.sm),
+            const Icon(
+              Symbols.skillet_rounded,
+              fill: 1,
+              size: 16,
+              color: AsanColorScheme.secondary,
+            ),
+            const SizedBox(width: 4),
+            Text('${recipe.cookTime}m cook', style: AsanTextTheme.labelSmall),
+          ],
+        ],
+        if (recipe.servings > 0) ...[
+          const SizedBox(width: AsanSpacing.sm),
+          const Icon(
+            Symbols.group_rounded,
+            size: 16,
+            color: AsanColorScheme.secondary,
+          ),
+          const SizedBox(width: 4),
+          Text('${recipe.servings} servings', style: AsanTextTheme.labelSmall),
+        ],
       ],
     );
   }
@@ -353,7 +399,7 @@ class _DetailsTab extends StatelessWidget {
         ),
         const SizedBox(height: AsanSpacing.sm),
         Text(
-          recipe.description.isEmpty ? 'No description added.' : recipe.description,
+          _display(recipe.description),
           style: AsanTextTheme.bodyMedium,
         ),
         const SizedBox(height: AsanSpacing.md),
@@ -373,20 +419,20 @@ class _DetailsTab extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AsanSpacing.sm),
-              _NutritionRow(label: 'Calories', value: recipe.calories, unit: 'kcal'),
-              _NutritionRow(label: 'Fats', value: recipe.fats, unit: 'g'),
+              _NutritionRow(label: 'Calories', value: recipe.calories == 0 ? null : recipe.calories, unit: 'kcal'),
+              _NutritionRow(label: 'Fats', value: recipe.fats == 0 ? null : recipe.fats, unit: 'g'),
               _NutritionRow(
                 label: 'Cholesterol',
-                value: recipe.cholesterol,
+                value: recipe.cholesterol == 0 ? null : recipe.cholesterol,
                 unit: 'mg',
               ),
-              _NutritionRow(label: 'Sodium', value: recipe.sodium, unit: 'mg'),
+              _NutritionRow(label: 'Sodium', value: recipe.sodium == 0 ? null : recipe.sodium, unit: 'mg'),
               _NutritionRow(
                 label: 'Carbohydrates',
-                value: recipe.carbohydrates,
+                value: recipe.carbohydrates == 0 ? null : recipe.carbohydrates,
                 unit: 'g',
               ),
-              _NutritionRow(label: 'Protein', value: recipe.protein, unit: 'g'),
+              _NutritionRow(label: 'Protein', value: recipe.protein == 0 ? null : recipe.protein, unit: 'g'),
             ],
           ),
         ),
@@ -395,9 +441,11 @@ class _DetailsTab extends StatelessWidget {
   }
 }
 
+String _display(String? value) => value == null || value.trim().isEmpty ? '-' : value;
+
 class _NutritionRow extends StatelessWidget {
   final String label;
-  final int value;
+  final int? value;
   final String unit;
 
   const _NutritionRow({
@@ -414,13 +462,7 @@ class _NutritionRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: AsanTextTheme.bodyMedium),
-          Row(
-            children: [
-              Text('$value', style: AsanTextTheme.bodyMedium),
-              const SizedBox(width: 4),
-              Text(unit, style: AsanTextTheme.bodyMedium),
-            ],
-          ),
+          Text(value == null ? '-' : '$value $unit', style: AsanTextTheme.bodyMedium),
         ],
       ),
     );

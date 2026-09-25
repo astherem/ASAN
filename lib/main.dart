@@ -6,12 +6,15 @@ import 'package:asan/screens/meal_plan_screen.dart';
 import 'package:asan/screens/pantry_screen.dart';
 import 'package:asan/screens/recipes_screen.dart';
 import 'package:asan/models/pantry_item.dart';
+import 'package:asan/services/api/recipe_api.dart';
 
 import 'package:asan/styles/theme.dart';
 
 import 'package:asan/widgets/navigations.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await RecipeApi.loadConfig();
   runApp(DevicePreview(enabled: true, builder: (context) => const Asan()));
 }
 

@@ -228,7 +228,22 @@ class _PantryScreenState extends State<PantryScreen> {
           ),
         ),
       ),
-      body: ListView.separated(
+      body: _groupedItems.isEmpty &&
+              (_searchQuery.trim().isNotEmpty || _activeFilterLabels.isNotEmpty)
+          ? AsanEmptyState(
+              icon: Symbols.search_off_rounded,
+              title: "No pantry items found",
+              message: "No matches for '${_searchQuery.trim()}'."
+            )
+          : _items.isEmpty
+          ? AsanEmptyState(
+              icon: Symbols.grocery_rounded,
+              title: 'Your pantry is empty',
+              message: 'When you add pantry items, they will show up here.',
+              actionLabel: 'Add Pantry Item',
+              onAction: () => _showAddPantryItemDialog(context),
+            )
+          : ListView.separated(
         controller: _contentScrollController,
         padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
         itemCount: _groupedItems.length,

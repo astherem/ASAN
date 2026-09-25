@@ -157,3 +157,81 @@ class AsanStepProgress extends StatelessWidget {
 }
 
 // EMPTY STATE
+class AsanEmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final Widget? actionIcon;
+  final VoidCallback? onAction;
+
+  const AsanEmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.actionIcon = const Icon(Icons.add_rounded, weight: 600),
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AsanSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 72, color: AsanColorScheme.inactive),
+            const SizedBox(height: AsanSpacing.lg),
+            Text(title, style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            const SizedBox(height: AsanSpacing.sm),
+            Text(
+              message,
+              style: AsanTextTheme.bodyMedium.copyWith(color: AsanColorScheme.inactive),
+              textAlign: TextAlign.center,
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: AsanSpacing.lg),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 280),
+                child: PrimaryButton(
+                  label: actionLabel!,
+                  icon: actionIcon,
+                  onPressed: onAction!,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// TAGS
+class AsanTag extends StatelessWidget {
+  final String label;
+  final Color? color;
+
+  const AsanTag({super.key, required this.label, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.sm, vertical: AsanSpacing.xs),
+      decoration: BoxDecoration(
+        color: color ?? AsanColorScheme.container,
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        label,
+        style: AsanTextTheme.labelSmall.copyWith(
+          color: color != null ? Colors.white : AsanColorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}

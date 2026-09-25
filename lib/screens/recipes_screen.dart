@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -5,11 +7,13 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:asan/styles/theme.dart';
 
 import 'package:asan/models/recipes.dart';
+import 'package:asan/services/api/recipe_api.dart';
 
 import 'package:asan/screens/recipe_form_screen.dart';
 import 'package:asan/screens/recipe_details_screen.dart';
 
 import 'package:asan/widgets/buttons.dart';
+import 'package:asan/widgets/communication.dart';
 import 'package:asan/widgets/containment.dart';
 import 'package:asan/widgets/inputs.dart';
 import 'package:asan/widgets/navigations.dart';
@@ -23,9 +27,16 @@ class RecipesScreen extends StatefulWidget {
   @override
   State<RecipesScreen> createState() => _RecipesScreenState();
 }
-
 class _RecipesScreenState extends State<RecipesScreen> {
   final List<Recipes> _items = [];
+  final RecipeApi _recipeApi = RecipeApi();
+  final Map<String, String?> _recipeImages = {};
+  final Set<String> _pendingRecipeImages = {};
+  List<ApiRecipe> _exploreRecipes = const [];
+  bool _isLoadingExplore = true;
+  String? _exploreError;
+  int _exploreRequest = 0;
+  Timer? _searchDebounce;
   String _searchQuery = '';
   AsanFilterSelection? _activeFilters;
   int _selectedView = 0;
@@ -34,39 +45,9 @@ class _RecipesScreenState extends State<RecipesScreen> {
   bool _isContentScrolled = false;
   int _receivedItemCount = 0;
   final Set<String> _savedRecipeTitles = {};
+  String? _exploreCategory;
 
   static const _views = ['Explore', 'Saved', 'My Recipes'];
-  static const _exploreRecipes = [
-    _ExploreRecipe(
-      title: 'Recipe 1',
-      mealCategory: 'Meal Category',
-      totalTime: '25 mins',
-      imageUrl:
-          'https://images.pexels.com/photos/24866519/pexels-photo-24866519.jpeg',
-    ),
-    _ExploreRecipe(
-      title: 'Recipe 2',
-      mealCategory: 'Meal Category',
-      totalTime: '25 mins',
-      imageUrl:
-          'https://images.pexels.com/photos/26076240/pexels-photo-26076240.jpeg',
-    ),
-    _ExploreRecipe(
-      title: 'Recipe 3',
-      mealCategory: 'Meal Category',
-      totalTime: '25 mins',
-      imageUrl:
-          'https://images.pexels.com/photos/32214637/pexels-photo-32214637.jpeg',
-    ),
-    _ExploreRecipe(
-      title: 'Recipe 4',
-      mealCategory: 'Meal Category',
-      totalTime: '25 mins',
-      imageUrl:
-          'https://images.pexels.com/photos/15486347/pexels-photo-15486347.jpeg',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -75,6 +56,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
     _filterScrollController = ScrollController();
     _items.addAll(widget.incomingRecipes);
     _receivedItemCount = widget.incomingRecipes.length;
+    _loadExploreRecipes();
   }
 
   @override
@@ -93,6 +75,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
       ..removeListener(_handleContentScroll)
       ..dispose();
     _filterScrollController.dispose();
+    _searchDebounce?.cancel();
+    _recipeApi.close();
     super.dispose();
   }
 
@@ -188,8 +172,16 @@ class _RecipesScreenState extends State<RecipesScreen> {
                     Expanded(
                       child: AsanSearchBar(
                         hintText: 'Search recipes...',
-                        onChanged: (query) =>
-                            setState(() => _searchQuery = query),
+                        onChanged: (query) {
+                          setState(() => _searchQuery = query);
+                          if (_selectedView < 2) {
+                            _searchDebounce?.cancel();
+                            _searchDebounce = Timer(
+                              const Duration(milliseconds: 350),
+                              () => _loadExploreRecipes(query),
+                            );
+                          }
+                        },
                       ),
                     ),
                     const SizedBox(width: AsanSpacing.sm),
@@ -269,15 +261,39 @@ class _RecipesScreenState extends State<RecipesScreen> {
     return [
       SliverPadding(
         padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
-        sliver: _items.isEmpty
-            ? SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: AsanSpacing.lg),
-                  child: Text(
-                    'No recipes added yet.',
-                    style: AsanTextTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
+        sliver: _items.isEmpty &&
+                (_searchQuery.trim().isNotEmpty ||
+                    _activeFilterLabels.isNotEmpty)
+            ? SliverFillRemaining(
+                hasScrollBody: false,
+                child: AsanEmptyState(
+                  icon: Symbols.search_off_rounded,
+                  title: "No recipes found",
+                  message: "No matches for '${_searchQuery.trim()}'."
+                ),
+              )
+            : _items.isEmpty
+            ? SliverFillRemaining(
+                hasScrollBody: false,
+                child: AsanEmptyState(
+                  icon: Symbols.edit_document_rounded,
+                  title: 'No created recipes yet',
+                  message: 'When you add recipes, they will show up here.',
+                  actionLabel: 'Add Recipe',
+                  onAction: () => _showAddRecipeDialog(context),
+                ),
+              )
+            : _groupedRecipesFlat.isEmpty
+            ? SliverFillRemaining(
+                hasScrollBody: false,
+                child: AsanEmptyState(
+                  icon: Symbols.search_off_rounded,
+                  title: _searchQuery.trim().isNotEmpty
+                      ? "No results for '${_searchQuery.trim()}'"
+                      : 'No recipes found',
+                  message: _searchQuery.trim().isNotEmpty
+                      ? "did you mean '${_searchQuery.trim()}'"
+                      : 'Try a different search or adjust your filters.',
                 ),
               )
             : SliverGrid(
@@ -285,7 +301,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
                   final recipe = _groupedRecipesFlat[index];
                   return RecipeCard(
                     recipeName: recipe.name,
-                    mealCategory: recipe.mealCategory ?? 'Uncategorized',
+                    mealCategory: recipe.mealCategory?.trim().isNotEmpty == true ? recipe.mealCategory! : '-',
+                    imageBytes: recipe.imageBytes,
                     totalTime: recipe.formattedTotalTime,
                     showBookmark: false,
                     onTap: () => _showRecipeDetails(recipe),
@@ -302,67 +319,247 @@ class _RecipesScreenState extends State<RecipesScreen> {
     ];
   }
 
-  SliverPadding _buildExploreView(List<_ExploreRecipe> recipes) {
-    if (recipes.isEmpty) {
+  SliverPadding _buildExploreView(List<ApiRecipe> recipes) {
+    if (_isLoadingExplore && _exploreRecipes.isEmpty) {
+      return const SliverPadding(
+        padding: EdgeInsets.zero,
+        sliver: SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (_exploreError != null && _exploreRecipes.isEmpty) {
       return SliverPadding(
         padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
-        sliver: SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(top: AsanSpacing.lg),
-            child: Text(
-              _selectedView == 1
-                  ? 'Your saved recipes will appear here.'
-                  : 'No recipes match your search.',
-              style: AsanTextTheme.bodyMedium,
-              textAlign: TextAlign.center,
+        sliver: SliverFillRemaining(
+          hasScrollBody: false,
+          child: AsanEmptyState(
+            icon: Symbols.error_rounded,
+            title: 'Recipes could not be loaded',
+            message: _exploreError!,
+            actionIcon: const Icon(Symbols.refresh_rounded, weight: 600),
+            actionLabel: 'Try again',
+            onAction: () => _loadExploreRecipes(_searchQuery),
+          ),
+        ),
+      );
+    }
+    if (recipes.isEmpty) {
+      if (_selectedView == 1) {
+        final hasSearchOrFilters =
+            _searchQuery.trim().isNotEmpty || _activeFilterLabels.isNotEmpty;
+        return SliverPadding(
+          padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
+          sliver: SliverFillRemaining(
+            hasScrollBody: false,
+            child: AsanEmptyState(
+              icon: hasSearchOrFilters
+                  ? Symbols.search_off_rounded
+                  : Symbols.bookmark_rounded,
+              title: hasSearchOrFilters
+                  ? (_searchQuery.trim().isNotEmpty
+                      ? "No results for '${_searchQuery.trim()}'"
+                      : 'No recipes found')
+                  : 'No saved recipes yet',
+              message: hasSearchOrFilters
+                  ? (_searchQuery.trim().isNotEmpty
+                      ? "did you mean '${_searchQuery.trim()}'"
+                      : 'Try a different search or adjust your filters.')
+                  : 'When you save recipes, they will show up here.',
+              actionLabel: hasSearchOrFilters ? null : 'Save Recipes',
+              onAction: hasSearchOrFilters
+                  ? null
+                  : () => setState(() => _selectedView = 0),
             ),
+          ),
+        );
+      }
+      return SliverPadding(
+        padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
+        sliver: SliverFillRemaining(
+          hasScrollBody: false,
+          child: AsanEmptyState(
+            icon: _searchQuery.trim().isNotEmpty ||
+                    _activeFilterLabels.isNotEmpty
+                ? Symbols.search_off_rounded
+                : Symbols.restaurant_menu_rounded,
+            title: _searchQuery.trim().isNotEmpty
+                ? "No results for '${_searchQuery.trim()}'"
+                : _activeFilterLabels.isNotEmpty
+                ? 'No recipes match these filters'
+                : 'No recipes to explore yet',
+            message: _searchQuery.trim().isNotEmpty
+                ? "did you mean '${_searchQuery.trim()}'"
+                : _activeFilterLabels.isNotEmpty
+                ? 'Try adjusting your filters.'
+                : 'Recipes will appear here when they are available.',
           ),
         ),
       );
     }
 
-    return SliverPadding(
-      padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
-      sliver: SliverGrid(
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final recipe = recipes[index];
-          final isSaved = _savedRecipeTitles.contains(recipe.title);
-          return RecipeCard(
-            recipeName: recipe.title,
-            mealCategory: recipe.mealCategory,
-            imageUrl: recipe.imageUrl,
-            totalTime: recipe.totalTime,
-            isSaved: isSaved,
-            onIconPressed: () => setState(() {
-              if (isSaved) {
-                _savedRecipeTitles.remove(recipe.title);
-              } else {
-                _savedRecipeTitles.add(recipe.title);
-              }
-            }),
-            onTap: () => _showExploreRecipeDetails(recipe),
-          );
-        }, childCount: recipes.length),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: AsanSpacing.md,
-          mainAxisSpacing: AsanSpacing.sm,
-          childAspectRatio: 163 / 220,
+    final groups = <String, List<ApiRecipe>>{};
+    for (final recipe in recipes) {
+      (groups[recipe.category.trim().isEmpty ? 'Other' : recipe.category] ??= [])
+          .add(recipe);
+    }
+    final categories = groups.keys.toList()..sort();
+
+    if (_exploreCategory != null && groups.containsKey(_exploreCategory)) {
+      final categoryRecipes = groups[_exploreCategory]!;
+      return SliverPadding(
+        padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
+        sliver: SliverMainAxisGroup(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: AsanSpacing.md),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(_exploreCategory!, style: AsanTextTheme.headlineSmall),
+                    ),
+                    AsanTextButton(
+                      label: 'All categories',
+                      onPressed: () => setState(() => _exploreCategory = null),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverGrid(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _buildExploreRecipeCard(categoryRecipes[index]),
+                childCount: categoryRecipes.length,
+              ),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: AsanSpacing.md,
+                mainAxisSpacing: AsanSpacing.sm,
+                childAspectRatio: 163 / 220,
+              ),
+            ),
+          ],
         ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.only(bottom: AsanSpacing.lg),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final category = categories[index];
+          final categoryRecipes = groups[category]!;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AsanSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.lg),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(category, style: AsanTextTheme.bodyMedium)),
+                      AsanTextButton(
+                        label: 'View all',
+                        onPressed: () => setState(() => _exploreCategory = category),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AsanSpacing.sm),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final cardWidth =
+                        (constraints.maxWidth - (AsanSpacing.lg * 2) - AsanSpacing.md) / 2;
+                    return SizedBox(
+                      height: cardWidth + 56,
+                      child: ScrollConfiguration(
+                        behavior: ScrollConfiguration.of(context).copyWith(
+                          dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse, PointerDeviceKind.trackpad},
+                        ),
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.lg),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: categoryRecipes.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: AsanSpacing.md),
+                          itemBuilder: (context, recipeIndex) => SizedBox(
+                            width: cardWidth,
+                            child: _buildExploreRecipeCard(categoryRecipes[recipeIndex]),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+        }, childCount: categories.length),
       ),
     );
   }
 
-  List<_ExploreRecipe> get _filteredExploreRecipes {
-    final query = _searchQuery.trim().toLowerCase();
-    return _exploreRecipes
-        .where(
-          (recipe) =>
-              query.isEmpty ||
-              recipe.title.toLowerCase().contains(query) ||
-              recipe.mealCategory.toLowerCase().contains(query),
-        )
-        .toList();
+  Widget _buildExploreRecipeCard(ApiRecipe recipe) {
+    _loadRecipeImage(recipe.title, recipe.imageUrl);
+    final isSaved = _savedRecipeTitles.contains(recipe.title);
+    final totalTime = recipe.totalTime > 0
+        ? recipe.totalTime
+        : recipe.prepTime + recipe.cookTime;
+    return RecipeCard(
+      recipeName: recipe.title,
+      mealCategory: recipe.category,
+      imageUrl: _recipeImages[recipe.title] ?? (recipe.imageUrl.isEmpty ? null : recipe.imageUrl),
+      totalTime: totalTime > 0 ? Recipes.formatTotalTime(totalTime) : 'Open recipe',
+      isSaved: isSaved,
+      onIconPressed: () => setState(() {
+        if (isSaved) {
+          _savedRecipeTitles.remove(recipe.title);
+        } else {
+          _savedRecipeTitles.add(recipe.title);
+        }
+      }),
+      onTap: () => _showExploreRecipeDetails(recipe),
+    );
+  }
+
+  List<ApiRecipe> get _filteredExploreRecipes => _exploreRecipes;
+
+  Future<void> _loadExploreRecipes([String query = '']) async {
+    final request = ++_exploreRequest;
+    if (mounted) {
+      setState(() {
+        _isLoadingExplore = true;
+        _exploreError = null;
+      });
+    }
+    try {
+      final recipes = await _recipeApi.search(query);
+      if (!mounted || request != _exploreRequest) return;
+      setState(() {
+        _exploreRecipes = recipes;
+        _isLoadingExplore = false;
+      });
+      for (final recipe in recipes) {
+        _loadRecipeImage(recipe.title, recipe.imageUrl);
+      }
+    } catch (error) {
+      if (!mounted || request != _exploreRequest) return;
+      setState(() {
+        _exploreError = error.toString();
+        _isLoadingExplore = false;
+      });
+    }
+  }
+
+  void _loadRecipeImage(String title, [String? imageUrl]) {
+    if (_recipeImages.containsKey(title) || !_pendingRecipeImages.add(title)) return;
+    _recipeApi.imageFor(title, imageUrl: imageUrl).then((imageUrl) {
+      _pendingRecipeImages.remove(title);
+      if (!mounted) return;
+      setState(() => _recipeImages[title] = imageUrl);
+    });
   }
 
   List<MapEntry<String, List<Recipes>>> get _groupedItems {
@@ -455,17 +652,64 @@ class _RecipesScreenState extends State<RecipesScreen> {
     );
   }
 
-  void _showExploreRecipeDetails(_ExploreRecipe recipe) {
+  Future<void> _showExploreRecipeDetails(ApiRecipe recipe) async {
     final isSaved = _savedRecipeTitles.contains(recipe.title);
+    ApiRecipe details;
+    try {
+      details = await _recipeApi.getById(recipe.id);
+    } on RecipeApiException {
+      // Search results already contain enough data to show the details page.
+      // Keep navigation available if the richer information request fails.
+      details = recipe;
+    } catch (_) {
+      details = recipe;
+    }
+    if (!mounted) return;
+    final imageUrl = await _recipeApi.imageFor(
+      details.title,
+      imageUrl: details.imageUrl,
+    );
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => RecipeDetailsScreen(
           recipe: Recipes(
-            name: recipe.title,
-            mealCategory: recipe.mealCategory,
+            name: details.title,
+            mealCategory: details.category,
+            description: details.description,
+            difficulty: details.difficulty,
+            cuisine: details.cuisine,
+            tags: details.tags,
+            prepTime: details.prepTime,
+            cookTime: details.cookTime,
+            totalTime: details.totalTime > 0
+                ? details.totalTime
+                : details.prepTime + details.cookTime,
+            servings: details.servings,
+            calories: details.calories,
+            fats: details.fats,
+            cholesterol: details.cholesterol,
+            sodium: details.sodium,
+            carbohydrates: details.carbohydrates,
+            protein: details.protein,
+            diets: details.diets,
+            occasions: details.occasions,
+            dishTypes: details.dishTypes,
+            vegetarian: details.vegetarian,
+            vegan: details.vegan,
+            glutenFree: details.glutenFree,
+            dairyFree: details.dairyFree,
+            veryHealthy: details.veryHealthy,
+            cheap: details.cheap,
+            creditsText: details.creditsText,
+            fiber: details.fiber,
+            sugar: details.sugar,
+            saturatedFat: details.saturatedFat,
           ),
-          imageUrl: recipe.imageUrl,
+          imageUrl: imageUrl,
+          ingredients: details.ingredients,
+          instructions: details.instructions,
           isSaved: isSaved,
           onToggleSaved: () => setState(() {
             if (isSaved) {
@@ -534,18 +778,4 @@ class _SegmentedButtonHeaderDelegate extends SliverPersistentHeaderDelegate {
     return oldDelegate.selectedIndex != selectedIndex ||
         oldDelegate.views != views;
   }
-}
-
-class _ExploreRecipe {
-  final String title;
-  final String mealCategory;
-  final String totalTime;
-  final String imageUrl;
-
-  const _ExploreRecipe({
-    required this.title,
-    required this.mealCategory,
-    required this.totalTime,
-    required this.imageUrl,
-  });
 }

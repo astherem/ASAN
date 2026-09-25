@@ -221,7 +221,22 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
           ),
         ),
       ),
-      body: ListView.separated(
+      body: _groupedItems.isEmpty &&
+              (_searchQuery.trim().isNotEmpty || _activeFilterLabels.isNotEmpty)
+          ? AsanEmptyState(
+              icon: Symbols.search_off_rounded,
+              title: "No grocery items found",
+              message: "No matches for '${_searchQuery.trim()}'."
+            )
+          : _items.isEmpty
+          ? AsanEmptyState(
+              icon: Symbols.receipt_long_rounded,
+              title: 'Your grocery list is empty',
+              message: 'When you add grocery items, they will show up here.',
+              actionLabel: 'Add Grocery Item',
+              onAction: () => _showAddGroceryItemDialog(context),
+            )
+          : ListView.separated(
         controller: _contentScrollController,
         padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
         itemCount: _groupedItems.length,

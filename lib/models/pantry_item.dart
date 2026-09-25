@@ -33,4 +33,5 @@ class PantryItem {
         consumed: consumed ?? this.consumed,
         consumedDate: consumedDate ?? this.consumedDate,
       );
+
 }

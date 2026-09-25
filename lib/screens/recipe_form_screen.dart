@@ -694,25 +694,54 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
     });
     if (name.isEmpty || !hasMealCategory) return;
 
+    final prepTime = int.tryParse(_prepTimeController.text.trim());
+    final cookTime = int.tryParse(_cookTimeController.text.trim());
+    final servings = int.tryParse(_servingsController.text.trim());
+    final calories = _optionalNonNegativeInt(_caloriesController.text);
+    final fats = _optionalNonNegativeInt(_fatsController.text);
+    final cholesterol = _optionalNonNegativeInt(_cholesterolController.text);
+    final sodium = _optionalNonNegativeInt(_sodiumController.text);
+    final carbohydrates = _optionalNonNegativeInt(_carbohydratesController.text);
+    final protein = _optionalNonNegativeInt(_proteinController.text);
+    if (prepTime == null || prepTime < 0 ||
+        cookTime == null || cookTime < 0 ||
+        servings == null || servings <= 0 ||
+        calories == null || fats == null || cholesterol == null ||
+        sodium == null || carbohydrates == null || protein == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter whole numbers: times and nutrition must be 0 or more, and servings must be at least 1.'),
+        ),
+      );
+      return;
+    }
+
     Navigator.pop(
       context,
       Recipes(
         name: name,
+        imageBytes: _imageBytes,
         description: _descriptionController.text.trim(),
         mealCategory: _mealCategory,
         notes: _notesController.text.trim(),
-        prepTime: _prepTimeMinutes,
-        cookTime: _cookTimeMinutes,
-        totalTime: _totalTimeMinutes,
-        servings: int.tryParse(_servingsController.text.trim()) ?? 1,
-        calories: int.tryParse(_caloriesController.text.trim()) ?? 0,
-        fats: int.tryParse(_fatsController.text.trim()) ?? 0,
-        cholesterol: int.tryParse(_cholesterolController.text.trim()) ?? 0,
-        sodium: int.tryParse(_sodiumController.text.trim()) ?? 0,
-        carbohydrates: int.tryParse(_carbohydratesController.text.trim()) ?? 0,
-        protein: int.tryParse(_proteinController.text.trim()) ?? 0,
+        prepTime: prepTime,
+        cookTime: cookTime,
+        totalTime: prepTime + cookTime,
+        servings: servings,
+        calories: calories,
+        fats: fats,
+        cholesterol: cholesterol,
+        sodium: sodium,
+        carbohydrates: carbohydrates,
+        protein: protein,
       ),
     );
+  }
+
+  int? _optionalNonNegativeInt(String value) {
+    if (value.trim().isEmpty) return 0;
+    final parsed = int.tryParse(value.trim());
+    return parsed != null && parsed >= 0 ? parsed : null;
   }
 }
 

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -285,6 +287,7 @@ class RecipeCard extends StatelessWidget {
   final String recipeName;
   final String mealCategory;
   final String? imageUrl;
+  final Uint8List? imageBytes;
   final String totalTime;
   final bool isSaved;
   final bool showBookmark;
@@ -296,6 +299,7 @@ class RecipeCard extends StatelessWidget {
     required this.recipeName,
     required this.mealCategory,
     this.imageUrl,
+    this.imageBytes,
     required this.totalTime,
     this.isSaved = false,
     this.showBookmark = true,
@@ -323,7 +327,9 @@ class RecipeCard extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      if (imageUrl == null || imageUrl!.isEmpty)
+                      if (imageBytes != null)
+                        Image.memory(imageBytes!, fit: BoxFit.cover)
+                      else if (imageUrl == null || imageUrl!.isEmpty)
                         Container(
                           color: AsanColorScheme.container,
                           child: const Icon(
@@ -333,7 +339,20 @@ class RecipeCard extends StatelessWidget {
                           ),
                         )
                       else
-                        Image.network(imageUrl!, fit: BoxFit.cover),
+                        Image.network(
+                          imageUrl!,
+                          fit: BoxFit.cover,
+                          webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: AsanColorScheme.container,
+                                child: const Icon(
+                                  Symbols.restaurant_rounded,
+                                  size: 36,
+                                  color: AsanColorScheme.inactive,
+                                ),
+                              ),
+                        ),
                       Padding(
                         padding: const EdgeInsets.all(AsanSpacing.sm),
                         child: Column(
@@ -428,5 +447,109 @@ class AsanDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Divider(height: thickness, thickness: thickness, color: color);
+  }
+}
+
+// MEAL CARD
+class MealCard extends StatelessWidget {
+  final String recipeName;
+  final String mealCategory;
+  final String? imageUrl;
+  final String totalTime;
+  final int servings;
+  final VoidCallback? onTap;
+
+  const MealCard({
+    super.key,
+    required this.recipeName,
+    required this.mealCategory,
+    this.imageUrl,
+    required this.totalTime,
+    required this.servings,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          height: 70,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: 62,
+                  height: 62,
+                  child: imageUrl == null || imageUrl!.isEmpty
+                      ? Container(
+                          color: AsanColorScheme.container,
+                          child: const Icon(
+                            Symbols.restaurant_rounded,
+                            size: 24,
+                            color: AsanColorScheme.inactive,
+                          ),
+                        )
+                      : Image.network(imageUrl!, fit: BoxFit.cover),
+                ),
+              ),
+              const SizedBox(width: AsanSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      recipeName,
+                      style: AsanTextTheme.bodyMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      mealCategory,
+                      style: AsanTextTheme.labelSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Symbols.schedule_rounded,
+                          size: 16,
+                          color: AsanColorScheme.secondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(totalTime, style: AsanTextTheme.labelSmall),
+                        const SizedBox(width: AsanSpacing.sm),
+                        const Icon(
+                          Symbols.group_rounded,
+                          size: 16,
+                          color: AsanColorScheme.secondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$servings serving${servings == 1 ? '' : 's'}',
+                          style: AsanTextTheme.labelSmall,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -364,9 +364,9 @@
       required this.icon,
       required this.size,
       this.onPressed,
+      this.borderRadius = const BorderRadius.all(Radius.circular(8)),
     }) : background = color,
         iconColor = AsanColorScheme.surface,
-        borderRadius = const BorderRadius.all(Radius.circular(8)),
         showShadow = false;
 
     const TonalIconButton.round({
@@ -375,10 +375,10 @@
       this.onPressed,
       Color? color,
       double? size,
+      this.borderRadius = const BorderRadius.all(Radius.circular(50)),
     }) : background = AsanColorScheme.surface,
         iconColor = color ?? AsanColorScheme.primary,
         size = size ?? 34,
-        borderRadius = const BorderRadius.all(Radius.circular(50)),
         showShadow = true;
 
     @override

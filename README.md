@@ -18,22 +18,24 @@ Asan is a Flutter-based food and meal planning app designed to help people track
 
 **To get the project running from a fresh machine:**
 
-1. Install Flutter and ensure the Flutter toolchain is on your PATH.
-2. Clone the repository:
+Install Flutter and ensure the Flutter toolchain is on your PATH.
+
 ```bash
 git clone https://github.com/astherem/ASAN.git
 cd ASAN
 ```
-3. Open the project folder in VS Code or your terminal.
-4. Run:
+Open the project folder in VS Code or your terminal.
+
 ``` bash
 flutter pub get
 ```
-5. If you are using a physical device or emulator, connect it and confirm it is listed with:
+If you are using a physical device or emulator, connect it and confirm it is listed with:
 ``` bash
 flutter devices
 ```
-6. No API keys or backend configuration are implemented yet. The Explore tab for Recipes is still awaiting a suitable recipe API. If a backend or external API is added later, store any real secrets in a secure environment file and never commit them.
+Recipes Explore uses Spoonacular through a Supabase Edge Function. The Spoonacular API key stays in Supabase Function secrets; the Flutter app receives only the Supabase URL and publishable key.
+
+For local development, copy `assets/config/supabase.example.json` to `assets/config/supabase.json` and replace the sample values with your Supabase project URL and publishable key. The local config is git-ignored and loaded at app startup, so ordinary `flutter run` and VS Code's **Asan** launch configuration work without defines. Build-time `--dart-define` values remain supported for CI and deployments.
 
 ## 3. How to run it
 
@@ -46,22 +48,29 @@ For a browser preview, use:
 flutter run -d chrome
 ```
 
-When the app loads successfully, the default view opens to the Recipes tab and the bottom navigation should show Recipes, Meals, Pantry, and Groceries. The interface should be fully interactive in a local development build.
+The recipe search calls the `spoonacular` Supabase Edge Function, which calls Spoonacular without exposing the provider key in the Flutter client. Configure and deploy it once:
+
+```bash
+supabase link --project-ref your-project-ref
+supabase secrets set SPOONACULAR_API_KEY=your_spoonacular_key
+supabase functions deploy spoonacular
+```
+
+For GitHub Pages, add `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as repository secrets. The workflow passes them as Flutter `--dart-define` values. The Edge Function endpoint is callable by app clients, so monitor its usage.
+When the app loads successfully, it opens to Recipes. The bottom navigation contains Recipes, Meals, Pantry, and Groceries. Recipe search requires a configured Supabase project and a deployed `spoonacular` Edge Function; the other screens can be explored without that service.
 
 ## 4. Features and usage
 
 ### Recipes
 
-- Browse the Explore tab to see recipes.
-- Save recipes from the Explore view to keep them in a personal shortlist.
-- Open My Recipes to view custom recipes created in-app.
-- Use the add button in the Recipes app bar to open the full recipe form.
-- The recipe form includes basic information, ingredients, instructions, and other details.
+- Browse Explore recipes returned by the Spoonacular Edge Function, search by text, and filter by preparation time or meal category.
+- Open a recipe to view its details, ingredients, and instructions.
+- Save Explore recipes to the Saved tab for the current app session.
+- Open My Recipes to view recipes created with the add button and recipe form.
 
 ### Meal Plan
 
-- The Meal Plan screen is present in the app navigation and has the planned shell for future planning features.
-- It is currently a placeholder and is not yet connected to a complete meal-planning workflow or persistent data model.
+- The screen has Day and Week views, date navigation, and meal sections. Adding meals, applying filters, and sending planned meals to Groceries are not implemented yet.
 
 ### Pantry
 
@@ -71,9 +80,9 @@ When the app loads successfully, the default view opens to the Recipes tab and t
 
 ### Groceries
 
-- Add grocery items from the Groceries tab.
-- Search, filter, and review purchase status.
-- Checking an item triggers its transfer into the pantry flow and updates the badge count in the navigation bar.
+- Add and edit grocery items; search, filter by food group, and sort or group the list.
+- Checking an item removes it from Groceries and adds it to Pantry with its purchase date. The navigation badge tracks the number of grocery items.
+
 
 ## 5. Project structure
 
@@ -106,7 +115,7 @@ lib/
 
 **Current known limitations:**
 
-- The Explore tab in Recipes is still on hold while a suitable recipe API is being evaluated.
+- Spoonacular's allowance is 50 daily credits; each request costs 1 point plus 0.01 points per result returned. High usage or large result counts can exhaust the allowance.
 - Meal Plan is still a placeholder and cannot yet support the complete planning workflow because the Recipes workflow is not fully completed.
 - Data is not yet persisted to local storage or a backend, so recipes, pantry items, and groceries reset when the app is restarted.
 - The repository still needs final screenshot capture and polish for the visual documentation.
@@ -124,7 +133,7 @@ lib/
 
 ![Built with AI assistance](https://img.shields.io/badge/built%20with-AI%20assistance-0b5fff)
 
-This repository includes an AI usage log in [AI-USAGE.md](AI-USAGE.md). The app was developed with AI support for structure, UI patterns, and documentation, while the final implementation was reviewed and adjusted by the author to match project needs.
+The app was developed with AI support for structure, UI patterns, and documentation, while the final implementation was reviewed and adjusted by the author to match project needs. See [AI-USAGE.md](AI-USAGE.md) for more details. 
 
 ## LICENSE
 
