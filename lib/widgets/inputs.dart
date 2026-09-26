@@ -15,7 +15,11 @@ class AsanTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final TextInputType? keyboardType;
   final bool hasError;
+  final String? errorText;
   final bool required;
+  final bool expandsWithContent;
+  final Widget? labelAction;
+  final double horizontalPadding;
 
   const AsanTextField({
     super.key,
@@ -25,7 +29,11 @@ class AsanTextField extends StatefulWidget {
     this.onChanged,
     this.keyboardType,
     this.hasError = false,
+    this.errorText,
     this.required = false,
+    this.expandsWithContent = false,
+    this.labelAction,
+    this.horizontalPadding = AsanSpacing.sm,
   });
 
   @override
@@ -83,7 +91,7 @@ class _AsanTextFieldState extends State<AsanTextField> {
               ),
             ),
             if (widget.required) ...[
-              const SizedBox(width: 4),
+              const SizedBox(width: AsanSpacing.xs),
               Text(
                 '(Required)',
                 style: AsanTextTheme.labelSmall.copyWith(
@@ -91,17 +99,26 @@ class _AsanTextFieldState extends State<AsanTextField> {
                 ),
               ),
             ],
+            if (widget.labelAction != null) ...[
+              const Spacer(),
+              widget.labelAction!,
+            ],
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AsanSpacing.sm),
         Container(
-          height: 38,
-          padding: const EdgeInsets.all(8),
+          constraints: widget.expandsWithContent
+              ? const BoxConstraints(minHeight: 38)
+              : const BoxConstraints.tightFor(height: 38),
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.horizontalPadding,
+            vertical: AsanSpacing.sm,
+          ),
           decoration: BoxDecoration(
             color: hasBorder
                 ? AsanColorScheme.surface
                 : AsanColorScheme.container,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AsanSpacing.sm),
             border: hasBorder
                 ? Border.all(
                     color: isActive
@@ -115,6 +132,8 @@ class _AsanTextFieldState extends State<AsanTextField> {
             focusNode: _focusNode,
             onChanged: widget.onChanged,
             keyboardType: widget.keyboardType,
+            minLines: widget.expandsWithContent ? 1 : 1,
+            maxLines: widget.expandsWithContent ? null : 1,
             style: AsanTextTheme.bodyMedium.copyWith(color: textColor),
             decoration: InputDecoration(
               hintText: widget.hintText,
@@ -128,6 +147,13 @@ class _AsanTextFieldState extends State<AsanTextField> {
             textAlignVertical: TextAlignVertical.center,
           ),
         ),
+        if (widget.hasError && widget.errorText != null) ...[
+          const SizedBox(height: AsanSpacing.xs),
+          Text(
+            widget.errorText!,
+            style: AsanTextTheme.labelSmall.copyWith(color: AsanColorScheme.error),
+          ),
+        ],
       ],
     );
   }
@@ -188,7 +214,7 @@ class _AsanSearchBarState extends State<AsanSearchBar> {
 
     return Container(
       height: 38,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AsanSpacing.sm),
       decoration: BoxDecoration(
         color: isActive ? AsanColorScheme.surface : AsanColorScheme.container,
         borderRadius: BorderRadius.circular(8),
@@ -205,9 +231,7 @@ class _AsanSearchBarState extends State<AsanSearchBar> {
             ),
             child: const Icon(Icons.search_rounded),
           ),
-
-          const SizedBox(width: 8),
-
+          const SizedBox(width: AsanSpacing.sm),
           Expanded(
             child: TextField(
               controller: _controller,
@@ -228,7 +252,7 @@ class _AsanSearchBarState extends State<AsanSearchBar> {
           ),
 
           if (_controller.text.isNotEmpty) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AsanSpacing.sm),
 
             SizedBox(
               width: 22,
@@ -241,7 +265,7 @@ class _AsanSearchBarState extends State<AsanSearchBar> {
                     size: 22,
                     color: AsanColorScheme.primary,
                   ),
-                  child: const Icon(Icons.close_rounded),
+                  child: const Icon(Symbols.close_rounded),
                 ),
                 onPressed: _clearSearch,
               ),
@@ -287,7 +311,7 @@ class AsanImagePicker extends StatelessWidget {
                               size: 72,
                               color: AsanColorScheme.inactive,
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AsanSpacing.sm),
                             Text(
                               'Add Recipe Image',
                               style: AsanTextTheme.labelSmall.copyWith(

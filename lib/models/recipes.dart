@@ -7,6 +7,7 @@ class Recipes {
   final String? difficulty;
   final String? cuisine;
   final List<String> tags;
+  final List<String> idealFor;
   final String description;
   final String notes;
   final int prepTime;
@@ -19,24 +20,15 @@ class Recipes {
   final int sodium;
   final int carbohydrates;
   final int protein;
-  final List<String> diets;
-  final List<String> occasions;
   final List<String> dishTypes;
-  final bool vegetarian;
-  final bool vegan;
-  final bool glutenFree;
-  final bool dairyFree;
-  final bool veryHealthy;
-  final bool cheap;
+  final List<String> ingredients;
+  final List<String> ingredientNotes;
+  final List<String> instructions;
   final int healthScore;
   final int aggregateLikes;
   final double pricePerServing;
   final String? sourceName;
   final String? sourceUrl;
-  final String? creditsText;
-  final int fiber;
-  final int sugar;
-  final int saturatedFat;
 
   const Recipes({
     required this.name,
@@ -46,6 +38,7 @@ class Recipes {
     this.difficulty,
     this.cuisine,
     this.tags = const [],
+    this.idealFor = const [],
     this.notes = '',
     this.prepTime = 0,
     this.cookTime = 0,
@@ -57,12 +50,12 @@ class Recipes {
     this.sodium = 0,
     this.carbohydrates = 0,
     this.protein = 0,
-    this.diets = const [], this.occasions = const [], this.dishTypes = const [],
-    this.vegetarian = false, this.vegan = false, this.glutenFree = false,
-    this.dairyFree = false, this.veryHealthy = false, this.cheap = false,
+    this.dishTypes = const [],
+    this.ingredients = const [],
+    this.ingredientNotes = const [],
+    this.instructions = const [],
     this.healthScore = 0, this.aggregateLikes = 0, this.pricePerServing = 0,
-    this.sourceName, this.sourceUrl, this.creditsText,
-    this.fiber = 0, this.sugar = 0, this.saturatedFat = 0,
+    this.sourceName, this.sourceUrl,
   });
 
   Recipes copyWith({
@@ -73,6 +66,7 @@ class Recipes {
     String? difficulty,
     String? cuisine,
     List<String>? tags,
+    List<String>? idealFor,
     String? notes,
     int? prepTime,
     int? cookTime,
@@ -86,6 +80,7 @@ class Recipes {
       difficulty: difficulty ?? this.difficulty,
       cuisine: cuisine ?? this.cuisine,
       tags: tags ?? this.tags,
+      idealFor: idealFor ?? this.idealFor,
       notes: notes ?? this.notes,
       prepTime: prepTime ?? this.prepTime,
       cookTime: cookTime ?? this.cookTime,

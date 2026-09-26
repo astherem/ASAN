@@ -13,7 +13,7 @@ class AsanBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
       padding: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
         color: AsanColorScheme.secondary,
@@ -24,7 +24,6 @@ class AsanBadge extends StatelessWidget {
         count > 99 ? '99+' : '$count',
         style: AsanTextTheme.labelSmall.copyWith(
           color: AsanColorScheme.surface,
-          fontSize: 9,
           fontWeight: FontWeight.bold,
         ),
         textAlign: TextAlign.center,
@@ -75,16 +74,22 @@ class AsanAlertDialog  extends StatelessWidget {
       ),
       title: Text(title, style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
       content: Text(content, style: AsanTextTheme.bodyMedium),
+      actionsAlignment: MainAxisAlignment.end,
+      actionsPadding: const EdgeInsets.fromLTRB(AsanSpacing.lg, 0, AsanSpacing.lg, AsanSpacing.lg),
       actions: [
-        AsanTextButton.black(
-          label: cancelText,
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(cancelText, style: TextStyle(color: AsanColorScheme.secondary, fontWeight: FontWeight.bold)),
-        ),
-        AsanTextButton.red(
-          label: destructiveText,
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text(destructiveText, style: TextStyle(color: AsanColorScheme.error, fontWeight: FontWeight.bold)),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AsanTextButton.black(
+              label: cancelText,
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            const SizedBox(width: AsanSpacing.lg),
+            AsanTextButton.red(
+              label: destructiveText,
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
         ),
       ],
     );
@@ -204,32 +209,6 @@ class AsanEmptyState extends StatelessWidget {
               ),
             ],
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// TAGS
-class AsanTag extends StatelessWidget {
-  final String label;
-  final Color? color;
-
-  const AsanTag({super.key, required this.label, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.sm, vertical: AsanSpacing.xs),
-      decoration: BoxDecoration(
-        color: color ?? AsanColorScheme.container,
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Text(
-        label,
-        style: AsanTextTheme.labelSmall.copyWith(
-          color: color != null ? Colors.white : AsanColorScheme.onSurface,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );

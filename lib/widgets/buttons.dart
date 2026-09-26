@@ -1,4 +1,5 @@
-  import 'package:flutter/material.dart';
+  import 'package:asan/widgets/communication.dart';
+import 'package:flutter/material.dart';
 
   import 'package:asan/styles/theme.dart';
 
@@ -311,37 +312,10 @@
                   Positioned(
                     right: -8,
                     top: -8,
-                    child: _ButtonBadge(count: badgeCount),
+                    child: AsanBadge(count: badgeCount),
                   ),
               ],
             ),
-          ),
-        ),
-      );
-    }
-  }
-
-  class _ButtonBadge extends StatelessWidget {
-    final int count;
-
-    const _ButtonBadge({required this.count});
-
-    @override
-    Widget build(BuildContext context) {
-      return Container(
-        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-        padding: const EdgeInsets.symmetric(horizontal: 3),
-        decoration: BoxDecoration(
-          color: AsanColorScheme.secondary,
-          borderRadius: BorderRadius.circular(100),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          count > 99 ? '99+' : '$count',
-          style: AsanTextTheme.labelSmall.copyWith(
-            color: AsanColorScheme.surface,
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
           ),
         ),
       );
@@ -374,12 +348,13 @@
       required this.icon,
       this.onPressed,
       Color? color,
+      Color? backgroundColor,
       double? size,
       this.borderRadius = const BorderRadius.all(Radius.circular(50)),
-    }) : background = AsanColorScheme.surface,
+      this.showShadow = true,
+    }) : background = backgroundColor ?? AsanColorScheme.surface,
         iconColor = color ?? AsanColorScheme.primary,
-        size = size ?? 34,
-        showShadow = true;
+        size = size ?? 34;
 
     @override
     Widget build(BuildContext context) {
@@ -602,13 +577,13 @@
           onTap: onPressed,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.sm, vertical: AsanSpacing.sm),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   label,
-                  style: AsanTextTheme.bodyMedium.copyWith(
+                  style: AsanTextTheme.labelSmall.copyWith(
                     color: isSelected
                         ? AsanColorScheme.surface
                         : AsanColorScheme.inactive,
@@ -619,7 +594,7 @@
                   const SizedBox(width: AsanSpacing.xs),
                   const Icon(
                     Icons.close_rounded,
-                    size: 22,
+                    size: 16,
                     color: AsanColorScheme.surface,
                   ),
                 ],

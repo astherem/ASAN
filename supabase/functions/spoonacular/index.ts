@@ -2,6 +2,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Expose-Headers": "X-API-Quota-Request, X-API-Quota-Used, X-API-Quota-Left",
 };
 
 Deno.serve(async (request: Request) => {
@@ -31,26 +32,35 @@ Deno.serve(async (request: Request) => {
     }
     endpoint.searchParams.set("apiKey", apiKey);
     const upstream = await fetch(endpoint);
+    const quotaHeaders: Record<string, string> = {};
+    for (const name of ["X-API-Quota-Request", "X-API-Quota-Used", "X-API-Quota-Left"]) {
+      const value = upstream.headers.get(name);
+      if (value !== null) quotaHeaders[name] = value;
+    }
     if (!upstream.ok) {
       console.error("Spoonacular request failed", {
         status: upstream.status,
         body: await upstream.text(),
       });
-      return json({ error: "Recipe provider request failed" }, upstream.status === 404 ? 404 : 502);
+      return json(
+        { error: "Recipe provider request failed", upstreamStatus: upstream.status },
+        upstream.status,
+        quotaHeaders,
+      );
     }
     const result = await upstream.json();
     if (action === "search" && !body.query.trim()) {
-      return json({ results: Array.isArray(result.recipes) ? result.recipes : [] });
+      return json({ results: Array.isArray(result.recipes) ? result.recipes : [] }, 200, quotaHeaders);
     }
-    return json(result);
+    return json(result, 200, quotaHeaders);
   } catch {
     return json({ error: "Invalid request or unavailable recipe provider" }, 400);
   }
 });
 
-function json(value: unknown, status = 200): Response {
+function json(value: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(value), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json", ...extraHeaders },
   });
 }

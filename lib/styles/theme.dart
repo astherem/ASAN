@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 // PALETTE
 class AsanColorScheme {
@@ -28,28 +27,25 @@ class AsanColorScheme {
 // TYPE SCALE
 class AsanTextTheme {
   // heading
-  static final TextStyle headlineSmall = GoogleFonts.bricolageGrotesque(
-    textStyle: const TextStyle(
-      fontSize: 24,
-      fontWeight: FontWeight.bold,
-      height: 1.4,
-    ),
+  static const TextStyle headlineSmall = TextStyle(
+    fontFamily: 'BricolageGrotesque',
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+    height: 1.4,
   );
   // body
-  static final TextStyle bodyMedium = GoogleFonts.bricolageGrotesque(
-    textStyle: const TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.normal,
-      height: 1.4,
-    ),
+  static const TextStyle bodyMedium = TextStyle(
+    fontFamily: 'BricolageGrotesque',
+    fontSize: 16,
+    fontWeight: FontWeight.normal,
+    height: 1.4,
   );
   // capption
-  static final TextStyle labelSmall = GoogleFonts.bricolageGrotesque(
-    textStyle: const TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.normal,
-      height: 1.4,
-    ),
+  static const TextStyle labelSmall = TextStyle(
+    fontFamily: 'BricolageGrotesque',
+    fontSize: 12,
+    fontWeight: FontWeight.normal,
+    height: 1.4,
   );
 }
 

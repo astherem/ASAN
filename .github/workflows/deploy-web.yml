@@ -71,6 +71,13 @@ jobs:
         with:
           channel: stable
 
+      - name: Create local Supabase config
+        if: steps.check.outputs.ready == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: python -c 'import json, os; open("env.json", "w").write(json.dumps({"SUPABASE_URL": os.environ["SUPABASE_URL"], "SUPABASE_PUBLISHABLE_KEY": os.environ["SUPABASE_PUBLISHABLE_KEY"]}))'
+
       - if: steps.check.outputs.ready == 'true'
         run: flutter pub get
 

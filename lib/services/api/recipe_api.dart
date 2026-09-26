@@ -6,12 +6,28 @@ import 'package:http/http.dart' as http;
 
 class RecipeApiException implements Exception {
   final String message;
+  final int? statusCode;
+  final String? quotaLeft;
 
-  const RecipeApiException(this.message);
+  const RecipeApiException(this.message, {this.statusCode, this.quotaLeft});
 
   @override
   String toString() => message;
 }
+
+String _httpErrorMessage(int statusCode) => switch (statusCode) {
+      400 => 'Bad Request: the recipe service could not understand the request.',
+      401 => 'Unauthorized: the recipe service did not accept the credentials.',
+      403 => 'Forbidden: the recipe service denied access to this request.',
+      404 => 'Not Found: the requested recipe or service endpoint could not be found.',
+      402 => 'Daily API quota exceeded: the recipe searches will be available again after the quota resets at midnight UTC.',
+      429 => 'Rate limit exceeded: the recipe service allows only a limited number of requests per minute. Please wait and try again.',
+      500 => 'Internal Server Error: the recipe service encountered a problem.',
+      502 => 'Bad Gateway: the recipe provider returned an invalid response.',
+      503 => 'Service Unavailable: the recipe service is temporarily unavailable.',
+      504 => 'Gateway Timeout: the recipe provider took too long to respond.',
+      _ => 'The recipe service returned an HTTP error. Please try again later.',
+    };
 
 class ApiRecipe {
   final String id;
@@ -24,6 +40,7 @@ class ApiRecipe {
   final String imageUrl;
   final List<String> instructions;
   final List<String> ingredients;
+  final List<String?> ingredientAisles;
   final int prepTime;
   final int cookTime;
   final int totalTime;
@@ -35,18 +52,6 @@ class ApiRecipe {
   final int carbohydrates;
   final int protein;
   final List<String> dishTypes;
-  final List<String> diets;
-  final List<String> occasions;
-  final bool vegetarian;
-  final bool vegan;
-  final bool glutenFree;
-  final bool dairyFree;
-  final bool veryHealthy;
-  final bool cheap;
-  final String? creditsText;
-  final int fiber;
-  final int sugar;
-  final int saturatedFat;
 
   const ApiRecipe({
     required this.id,
@@ -59,6 +64,7 @@ class ApiRecipe {
     required this.imageUrl,
     required this.instructions,
     required this.ingredients,
+    this.ingredientAisles = const [],
     required this.prepTime,
     required this.cookTime,
     required this.totalTime,
@@ -69,11 +75,7 @@ class ApiRecipe {
     required this.sodium,
     required this.carbohydrates,
     required this.protein,
-    this.creditsText,
-    this.dishTypes = const [], this.diets = const [], this.occasions = const [],
-    this.vegetarian = false, this.vegan = false, this.glutenFree = false,
-    this.dairyFree = false, this.veryHealthy = false, this.cheap = false,
-    this.fiber = 0, this.sugar = 0, this.saturatedFat = 0,
+    this.dishTypes = const [],
   });
 
   factory ApiRecipe.fromMealDbJson(Map<String, dynamic> meal) {
@@ -111,6 +113,7 @@ class ApiRecipe {
       imageUrl: value('strMealThumb'),
       instructions: instructions,
       ingredients: ingredients,
+      ingredientAisles: const [],
       prepTime: 0,
       cookTime: 0,
       totalTime: 0,
@@ -135,11 +138,11 @@ class ApiRecipe {
     }
 
     final categories = stringList(recipe['mealType']);
-    final tags = stringList(recipe['tags']);
+    final tags = stringList(recipe['tags']).toList();
     return ApiRecipe(
       id: 'dummy:${recipe['id'] ?? ''}',
       title: '${recipe['name'] ?? 'Untitled recipe'}',
-      category: categories.isNotEmpty ? categories.first : (tags.isNotEmpty ? tags.first : 'Recipe'),
+      category: categories.isNotEmpty ? categories.first : 'Recipe',
       description: '',
       difficulty: optionalString(recipe['difficulty']),
       cuisine: optionalString(recipe['cuisine']),
@@ -147,8 +150,8 @@ class ApiRecipe {
       imageUrl: '${recipe['image'] ?? ''}',
       instructions: stringList(recipe['instructions']),
       ingredients: stringList(recipe['ingredients']),
-      prepTime: number(recipe['prepTimeMinutes']),
-      cookTime: number(recipe['cookTimeMinutes']),
+      prepTime: number(recipe['preparationMinutes']),
+      cookTime: number(recipe['cookingMinutes']),
       totalTime: number(recipe['readyInMinutes'], fallback: number(recipe['prepTimeMinutes']) + number(recipe['cookTimeMinutes'])),
       servings: number(recipe['servings'], fallback: 1),
       calories: number(recipe['caloriesPerServing']),
@@ -200,47 +203,58 @@ class ApiRecipe {
       if (rawInstructions.isNotEmpty) instructions.add(rawInstructions);
     }
     final extended = recipe['extendedIngredients'];
-    final ingredients = extended is List
+    final ingredientRecords = extended is List
         ? extended.whereType<Map>().map((item) {
             final original = text(item['original']).isNotEmpty
                 ? text(item['original'])
                 : text(item['originalString']);
-            if (original.isNotEmpty) return original;
-            return [text(item['amount']), text(item['unit']), text(item['name'])]
+            final formatted = original.isNotEmpty ? original : [text(item['amount']), text(item['unit']), text(item['name'])]
                 .where((part) => part.isNotEmpty)
                 .join(' ');
-          }).where((item) => item.isNotEmpty).toList()
-        : const <String>[];
+            final aisle = text(item['aisle']);
+            return (formatted: formatted, aisle: aisle.isEmpty ? null : aisle);
+          }).where((item) => item.formatted.isNotEmpty).toList()
+        : <({String formatted, String? aisle})>[];
+    final ingredients = ingredientRecords.map((item) => item.formatted).toList();
+    final ingredientAisles = ingredientRecords.map((item) => item.aisle).toList();
     final cuisines = recipe['cuisines'] is List
         ? (recipe['cuisines'] as List).whereType<String>().toList()
         : const <String>[];
     final dishTypes = stringList(recipe['dishTypes']);
     final diets = stringList(recipe['diets']);
-    final occasions = stringList(recipe['occasions']);
     final prepTime = number(recipe['preparationMinutes']);
     final cookTime = number(recipe['cookingMinutes']);
     final totalTime = number(recipe['readyInMinutes']);
+    final tags = stringList(recipe['tags']).toList();
+    void addTagIfMissing(String value) {
+      if (value.trim().isNotEmpty &&
+          !tags.any((tag) => tag.toLowerCase() == value.trim().toLowerCase())) {
+        tags.add(value.trim());
+      }
+    }
+    for (final diet in diets) {
+      addTagIfMissing(diet);
+    }
+    if (recipe['vegetarian'] == true) addTagIfMissing('Vegetarian');
+    if (recipe['vegan'] == true) addTagIfMissing('Vegan');
+    tags.removeWhere((tag) => cuisines.any(
+      (cuisine) => cuisine.toLowerCase() == tag.toLowerCase(),
+    ));
     return ApiRecipe(
       id: 'spoonacular:$id', title: text(recipe['title']).isEmpty ? 'Untitled recipe' : text(recipe['title']),
       category: recipe['dishTypes'] is List && (recipe['dishTypes'] as List).isNotEmpty
           ? text((recipe['dishTypes'] as List).first) : 'Recipe',
       description: text(recipe['description']).replaceAll(RegExp(r'<[^>]*>'), ''),
-      difficulty: null, cuisine: cuisines.isEmpty ? null : cuisines.first,
-      tags: [...cuisines, ...diets, ...occasions,
-        if (recipe['vegetarian'] == true && !diets.contains('vegetarian')) 'Vegetarian',
-        if (recipe['vegan'] == true && !diets.contains('vegan')) 'Vegan'],
+      difficulty: null, cuisine: cuisines.isEmpty ? null : cuisines.join(', '),
+      tags: tags,
       imageUrl: text(recipe['image']), instructions: instructions, ingredients: ingredients,
+      ingredientAisles: ingredientAisles,
       prepTime: prepTime, cookTime: cookTime,
       totalTime: totalTime > 0 ? totalTime : prepTime + cookTime,
       servings: number(recipe['servings']) == 0 ? 1 : number(recipe['servings']),
       calories: nutrient('Calories'), fats: nutrient('Fat'), cholesterol: nutrient('Cholesterol'),
       sodium: nutrient('Sodium'), carbohydrates: nutrient('Carbohydrates'), protein: nutrient('Protein'),
-      dishTypes: dishTypes, diets: diets, occasions: occasions,
-      vegetarian: recipe['vegetarian'] == true, vegan: recipe['vegan'] == true,
-      glutenFree: recipe['glutenFree'] == true, dairyFree: recipe['dairyFree'] == true,
-      veryHealthy: recipe['veryHealthy'] == true, cheap: recipe['cheap'] == true,
-      creditsText: text(recipe['creditsText']).isEmpty ? null : text(recipe['creditsText']),
-      fiber: nutrient('Fiber'), sugar: nutrient('Sugar'), saturatedFat: nutrient('Saturated Fat'),
+      dishTypes: dishTypes,
     );
   }
 }
@@ -255,7 +269,7 @@ class RecipeApi {
   static Future<void> loadConfig() async {
     try {
       final config = jsonDecode(
-        await rootBundle.loadString('assets/config/supabase.json'),
+        await rootBundle.loadString('env.json'),
       );
       if (config is Map<String, dynamic>) {
         final url = config['SUPABASE_URL'];
@@ -308,7 +322,7 @@ class RecipeApi {
 
   void _checkSupabaseConfig() {
     if (_supabaseUrl.isEmpty || _supabasePublishableKey.isEmpty) {
-      throw const RecipeApiException('Recipe search is not configured. Add the Supabase URL and publishable key to the app build settings.');
+      throw const RecipeApiException('Recipe search is not configured. Add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY to env.json.');
     }
   }
 
@@ -325,7 +339,27 @@ class RecipeApi {
       throw const RecipeApiException('Could not reach the recipe service. Check your connection.');
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw RecipeApiException('Recipe service request failed (HTTP ${response.statusCode}).');
+      var statusCode = response.statusCode;
+      try {
+        final errorBody = jsonDecode(response.body);
+        if (errorBody is Map<String, dynamic>) {
+          final upstreamStatus = errorBody['upstreamStatus'];
+          if (upstreamStatus is int && upstreamStatus >= 100 && upstreamStatus <= 599) {
+            statusCode = upstreamStatus;
+          }
+        }
+      } on FormatException {
+        // Fall back to the HTTP status returned by the function.
+      }
+      final quotaLeft = response.headers['x-api-quota-left'];
+      final message = _httpErrorMessage(statusCode);
+      throw RecipeApiException(
+        quotaLeft == null || quotaLeft.isEmpty
+            ? message
+            : '$message Quota points remaining today: $quotaLeft.',
+        statusCode: statusCode,
+        quotaLeft: quotaLeft,
+      );
     }
     try {
       final body = jsonDecode(response.body);

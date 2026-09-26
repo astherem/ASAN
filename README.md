@@ -35,7 +35,7 @@ flutter devices
 ```
 Recipes Explore uses Spoonacular through a Supabase Edge Function. The Spoonacular API key stays in Supabase Function secrets; the Flutter app receives only the Supabase URL and publishable key.
 
-For local development, copy `assets/config/supabase.example.json` to `assets/config/supabase.json` and replace the sample values with your Supabase project URL and publishable key. The local config is git-ignored and loaded at app startup, so ordinary `flutter run` and VS Code's **Asan** launch configuration work without defines. Build-time `--dart-define` values remain supported for CI and deployments.
+For local development, put your Supabase project URL and publishable key in the root `env.json` file. This local config is git-ignored and loaded at app startup, so ordinary `flutter run` works without defines. Build-time `--dart-define` values remain supported for CI and deployments.
 
 ## 3. How to run it
 
@@ -63,38 +63,44 @@ When the app loads successfully, it opens to Recipes. The bottom navigation cont
 
 ### Recipes
 
-- Browse Explore recipes returned by the Spoonacular Edge Function, search by text, and filter by preparation time or meal category.
-- Open a recipe to view its details, ingredients, and instructions.
-- Save Explore recipes to the Saved tab for the current app session.
-- Open My Recipes to view recipes created with the add button and recipe form.
+- Explore tab loads a set of recipes from Spoonacular and supports text search and recipe filters. Select a result to view its details, ingredients, and instructions.
+- Save Explore recipes to Saved for the current app session.
+- Use My Recipes to create, view, and manage custom recipes. Recipe images can be selected with the device image picker where supported.
+- Explore requires valid Supabase client configuration and a deployed `spoonacular` Edge Function with the `SPOONACULAR_API_KEY` secret. Without these, custom recipes and the other local screens remain available, but Explore cannot fetch recipes.
 
 ### Meal Plan
 
-- The screen has Day and Week views, date navigation, and meal sections. Adding meals, applying filters, and sending planned meals to Groceries are not implemented yet.
+- Switch between Day and Week views, navigate by day or week, select a date, and filter the displayed meal entries by meal time or recipe category. The screen groups entries into Breakfast, Lunch, and Dinner.
+- Meal entries can be displayed when supplied to the screen, but creating/editing entries, opening their recipe details, and sending ingredients to Groceries are not implemented yet.
 
 ### Pantry
 
-- Add pantry items with name, quantity, expiry date, notes, and food group.
+- Add and edit pantry items with name, quantity, purchase/expiry dates, notes, and food group.
 - Search by item name and filter by food group or expiry status.
 - Grouped list sections make it easier to review inventory by category.
 
 ### Groceries
 
 - Add and edit grocery items; search, filter by food group, and sort or group the list.
-- Checking an item removes it from Groceries and adds it to Pantry with its purchase date. The navigation badge tracks the number of grocery items.
+- Checking an item removes it from Groceries and adds it to Pantry with its purchase date. The navigation badge tracks the grocery item count.
 
 
 ## 5. Project structure
 
-The project is organised as a Flutter app with a clear screen-first structure:
+The project is organised by app responsibility:
 
 ```text
 lib/
-├──main.dart          app entry point and shared navigation state
-├──models             recipe, pantry item, and grocery item models
-├──screens            Recipes, Meal Plan, Pantry, and Groceries screens
-├──styles             theme — color palette, spacing, and app typography
-└──widgets            reusable buttons, cards, dialogs, filters, search, and navigation components
+├── main.dart                       app startup, device preview, and bottom navigation
+├── models/                         recipe, meal plan, pantry, grocery, and filter data
+├── screens/                        Recipes, recipe details/form, Meal Plan, Pantry, Groceries
+├── services/api/                   recipe API client and Supabase configuration
+├── styles/                         color palette, spacing, and typography
+└── widgets/                        shared buttons, cards, dialogs, filters, inputs, and navigation
+supabase/functions/spoonacular/     server-side Spoonacular proxy Edge Function
+web/                                Flutter web entry point and manifest
+docs/                               project documentation, screenshots, and fonts
+.github/workflows/                  GitHub Pages build and deployment
 ```
 
 ## 6. Screenshots
@@ -115,19 +121,18 @@ lib/
 
 **Current known limitations:**
 
-- Spoonacular's allowance is 50 daily credits; each request costs 1 point plus 0.01 points per result returned. High usage or large result counts can exhaust the allowance.
-- Meal Plan is still a placeholder and cannot yet support the complete planning workflow because the Recipes workflow is not fully completed.
-- Data is not yet persisted to local storage or a backend, so recipes, pantry items, and groceries reset when the app is restarted.
-- The repository still needs final screenshot capture and polish for the visual documentation.
-- More validation and edge-case handling should be added for item editing, filtering, and duplicate prevention.
+- Explore tab depends on the Supabase Edge Function and the Spoonacular service/quota. Configure and deploy the function before expecting Explore results.
+- Meal Plan supports browsing dates and filtering entries, but adding meals, editing them, opening their recipe details, and transferring planned ingredients to Groceries are unfinished.
+- Recipes, saved recipes, pantry items, and groceries use in-memory state and reset when the app restarts. The screens do not yet share durable storage.
+
+- Form validation exists for required item and recipe fields, but duplicate prevention and broader edge-case handling remain limited.
 
 **Planned next steps:**
 
-1. Finalize the recipe workflow and identify/integrate a suitable recipe API for the Explore tab.
-2. Add persistent storage for recipes, pantry items, and groceries.
-3. Complete the Meal Plan workflow with recipe selection, scheduling, and date-based planning.
-4. Finalize visual documentation and screenshot assets.
-5. Improve validation and state handling across all screens.
+1. Add durable storage for custom and saved recipes, pantry items, and groceries.
+2. Finish Meal Plan creation, editing, recipe navigation, and the planned-meals-to-Groceries flow.
+3. Improve validation and edge-case handling, including duplicate items and state updates.
+4. Refresh screenshots and finish the demo and presentation materials.
 
 ## AI usage
 

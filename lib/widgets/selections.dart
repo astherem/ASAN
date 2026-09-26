@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/styles/theme.dart';
+import 'package:asan/models/filter_selection.dart';
 
 import 'package:asan/widgets/buttons.dart';
+import 'package:asan/widgets/communication.dart';
 import 'package:asan/widgets/containment.dart';
 import 'package:asan/widgets/inputs.dart';
 
@@ -38,7 +41,9 @@ class AsanDropdownMenu extends StatefulWidget {
   final String? searchHint;
   final ValueChanged<String?>? onChanged;
   final bool hasError;
+  final String? errorText;
   final bool required;
+  final Color? labelColor;
 
   const AsanDropdownMenu({
     super.key,
@@ -49,7 +54,9 @@ class AsanDropdownMenu extends StatefulWidget {
     this.searchHint,
     this.onChanged,
     this.hasError = false,
+    this.errorText,
     this.required = false,
+    this.labelColor,
   });
 
   @override
@@ -80,6 +87,10 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
         builder: (context, scrollController) => AsanDropdownList(
           title: widget.label == 'Food Group'
               ? 'Select Food Group'
+              : widget.label == 'Aisle'
+              ? 'Select Aisle'
+              : widget.label == 'Dish Type'
+              ? 'Select Dish Type'
               : widget.label,
           items: widget.items,
           selectedValue: widget.value,
@@ -100,9 +111,7 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
         ? AsanColorScheme.inactive
         : AsanColorScheme.onSurface;
 
-    return SizedBox(
-      height: 63,
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
@@ -110,12 +119,12 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
               Text(
                 widget.label,
                 style: AsanTextTheme.labelSmall.copyWith(
-                  color: AsanColorScheme.secondary,
+                  color: widget.labelColor ?? AsanColorScheme.secondary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               if (widget.required) ...[
-                const SizedBox(width: 4),
+                const SizedBox(width: AsanSpacing.xs),
                 Text(
                   '(Required)',
                   style: AsanTextTheme.labelSmall.copyWith(
@@ -168,8 +177,14 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
               ),
             ),
           ),
+        if (widget.hasError && widget.errorText != null) ...[
+          const SizedBox(height: AsanSpacing.xs),
+          Text(
+            widget.errorText!,
+            style: AsanTextTheme.labelSmall.copyWith(color: AsanColorScheme.error),
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -282,22 +297,35 @@ class _AsanDropdownListState extends State<AsanDropdownList> {
                     const SizedBox(height: AsanSpacing.md),
                   ],
                   Expanded(
-                    child: ListView.separated(
-                      controller: widget.scrollController ?? _scrollController,
-                      padding: EdgeInsets.zero,
-                      itemCount: filteredItems.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: AsanSpacing.sm),
-                      itemBuilder: (context, index) {
-                        final item = filteredItems[index];
-                        final isSelected = item == widget.selectedValue;
-                        return _DropdownListItem(
-                          label: item,
-                          isSelected: isSelected,
-                          onPressed: () => Navigator.pop(context, item),
-                        );
-                      },
-                    ),
+                    child: filteredItems.isEmpty
+                        ? AsanEmptyState(
+                            icon: Symbols.search_off_rounded,
+                            title: _searchQuery.trim().isEmpty
+                                ? 'No options available'
+                                : 'No results found',
+                            message: _searchQuery.trim().isEmpty
+                                ? 'There are no options to choose from.'
+                                : 'Try a different search.',
+                          )
+                        : ListView.separated(
+                            controller:
+                                widget.scrollController ?? _scrollController,
+                            padding: EdgeInsets.zero,
+                            itemCount: filteredItems.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: AsanSpacing.sm),
+                            itemBuilder: (context, index) {
+                              final item = filteredItems[index];
+                              final isSelected =
+                                  item == widget.selectedValue;
+                              return _DropdownListItem(
+                                label: item,
+                                isSelected: isSelected,
+                                onPressed: () =>
+                                    Navigator.pop(context, item),
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -362,57 +390,50 @@ class _DropdownListItem extends StatelessWidget {
 }
 
 // FILTER MENU
-
 const asanFoodGroups = [
-  'Beverages',
-  'Bread & Bakery',
-  'Cans & Jars',
-  'Condiments & Sauces',
-  'Dairy',
-  'Deli',
-  'Frozen Foods',
-  'Fruit',
-  'Grains & Cereals',
-  'Herbs & Spices',
-  'Meat',
-  'Oils & Vinegars',
-  'Poultry',
-  'Seafood',
-  'Snacks',
-  'Spices & Seasonings',
-  'Soups & Broths',
-  'Vegetables',
-  'Others',
+  'Beverages', 'Baking', 'Bread & Bakery', 'Cans & Jars', 'Condiments & Sauces', 
+  'Dairy', 'Deli', 'Frozen Foods', 'Fruit', 'Grains & Pasta', 'Herbs & Spices', 
+  'Meat', 'Nuts & Seeds', 'Oils & Vinegars', 'Poultry', 'Seafood', 'Snacks', 
+  'Spices & Seasonings', 'Soups & Broths', 'Vegetables', 'Others',
 ];
 
-const asanMealCategories = [
-  'Main Dish',
-  'Side Dish',
-  'Dessert',
-  'Pastry',
-  'Snack',
-  'Appetizer',
-  'Salad',
-  'Soup',
-  'Drink',
-  'Bread',
-  'Sauce',
-  'Others',
+const asanAisles = [
+  'Produce', 'Spices and Seasonings', 'Milk, Eggs, Other Dairy', 'Meat', 'Seafood', 
+  'Bakery/Bread', 'Pasta and Rice', 'Canned and Jarred', 'Frozen', 'Condiments', 'Beverages', 
+  'Baking', 'Nuts', 'Oil, Vinegar, Salad Dressing', 'Cereal', 'Snacks', 'Other',
 ];
 
-const asanMealTimeCategories = [
-  'Breakfast',
-  'Brunch',
-  'Lunch',
-  'Snack',
-  'Dinner',
+const asanMealTimes = [
+  'Breakfast', 'Brunch', 'Lunch', 'Snack', 'Dinner',
 ];
 
-const asanTotalTimeOptions = [
-  '15 minutes or less',
-  '30 minutes or less',
-  '1 hour or less',
-  'More than 1 hour',
+const asanTotalTimes = [
+  '15 minutes or less', '30 minutes or less', '1 hour or less', 'More than 1 hour',
+];
+
+String? asanTotalTimeRangeFor(int minutes) {
+  if (minutes <= 0) return null;
+  if (minutes <= 15) return asanTotalTimes[0];
+  if (minutes <= 30) return asanTotalTimes[1];
+  if (minutes <= 60) return asanTotalTimes[2];
+  return asanTotalTimes[3];
+}
+
+const asanDiets = [
+  'Gluten Free', 'Ketogenic', 'Vegetarian', 'Lacto-Vegetarian', 'Ovo-Vegetarian', 
+  'Vegan', 'Pescetarian', 'Paleo', 'Primal', 'Low FODMAP', 'Whole30',
+];
+
+const asanDishTypes = [
+  'Main Course', 'Side Dish', 'Dessert', 'Appetizer', 'Salad', 'Bread',
+  'Soup', 'Beverage', 'Sauce', 'Marinade', 'Fingerfood', 'Snack', 'Drink',
+];
+
+const asanCuisines = [
+  'African', 'Asian', 'American', 'British', 'Cajun', 'Caribbean', 'Chinese', 
+  'Eastern European', 'European', 'French', 'German', 'Greek', 'Indian', 'Irish', 
+  'Italian', 'Japanese', 'Jewish', 'Korean', 'Latin American', 'Mediterranean', 
+  'Mexican', 'Middle Eastern', 'Nordic', 'Southern', 'Spanish', 'Thai', 'Vietnamese',
 ];
 
 double filterSheetInitialSize(
@@ -426,52 +447,6 @@ double filterSheetInitialSize(
       .clamp(0.5, 0.9)
       .toDouble();
 }
-
-class AsanFilterSelection {
-  final String sortBy;
-  final bool sortAscending;
-  final Set<String> purchaseStatuses;
-  final Set<String> expirationStatuses;
-  final Set<String> foodGroups;
-  final Set<String> totalTimeRanges;
-  final Set<String> mealTimeCategories;
-  final Set<String> mealCategories;
-
-  const AsanFilterSelection({
-    required this.sortBy,
-    required this.sortAscending,
-    required this.purchaseStatuses,
-    required this.expirationStatuses,
-    required this.foodGroups,
-    this.totalTimeRanges = const {},
-    this.mealTimeCategories = const {},
-    this.mealCategories = const {},
-  });
-
-  AsanFilterSelection copyWith({
-    String? sortBy,
-    bool? sortAscending,
-    Set<String>? purchaseStatuses,
-    Set<String>? expirationStatuses,
-    Set<String>? foodGroups,
-    Set<String>? totalTimeRanges,
-    Set<String>? mealTimeCategories,
-    Set<String>? mealCategories,
-  }) {
-    return AsanFilterSelection(
-      sortBy: sortBy ?? this.sortBy,
-      sortAscending: sortAscending ?? this.sortAscending,
-      purchaseStatuses: purchaseStatuses ?? this.purchaseStatuses,
-      expirationStatuses: expirationStatuses ?? this.expirationStatuses,
-      foodGroups: foodGroups ?? this.foodGroups,
-      totalTimeRanges: totalTimeRanges ?? this.totalTimeRanges,
-      mealTimeCategories: mealTimeCategories ?? this.mealTimeCategories,
-      mealCategories: mealCategories ?? this.mealCategories,
-    );
-  }
-}
-
-enum AsanFilterMenuType { pantry, groceries, recipes, meals }
 
 class AsanFilterList extends StatefulWidget {
   final ScrollController? scrollController;
@@ -494,7 +469,8 @@ class _AsanFilterListState extends State<AsanFilterList> {
 
   String get _defaultSortBy => switch (widget.menuType) {
     AsanFilterMenuType.pantry => 'Expiration date',
-    AsanFilterMenuType.recipes => 'Meal category',
+    AsanFilterMenuType.recipes => 'Dish type',
+    AsanFilterMenuType.meals => 'Meal time',
     _ => 'Food group',
   };
 
@@ -505,11 +481,8 @@ class _AsanFilterListState extends State<AsanFilterList> {
       'Item name',
       'Purchase date',
     ],
-    AsanFilterMenuType.recipes => const [
-      'Meal category',
-      'Recipe name',
-      'Total time',
-    ],
+    AsanFilterMenuType.meals => const ['Meal time', 'Recipe name', 'Meal category'],
+    AsanFilterMenuType.recipes => const ['Dish type', 'Cuisine', 'Recipe name', 'Total time',],
     _ => const ['Food group', 'Item name'],
   };
 
@@ -534,7 +507,9 @@ class _AsanFilterListState extends State<AsanFilterList> {
   final Set<String> _foodGroups = {};
   final Set<String> _totalTimeRanges = {};
   final Set<String> _mealTimeCategories = {};
+  final Set<String> _mealTimes = {};
   final Set<String> _mealCategories = {};
+  final Set<String> _cuisines = {};
 
   void _reset() {
     setState(() {
@@ -544,7 +519,9 @@ class _AsanFilterListState extends State<AsanFilterList> {
       _foodGroups.clear();
       _totalTimeRanges.clear();
       _mealTimeCategories.clear();
+      _mealTimes.clear();
       _mealCategories.clear();
+      _cuisines.clear();
     });
   }
 
@@ -562,7 +539,9 @@ class _AsanFilterListState extends State<AsanFilterList> {
     _foodGroups.addAll(selection?.foodGroups ?? const {});
     _totalTimeRanges.addAll(selection?.totalTimeRanges ?? const {});
     _mealTimeCategories.addAll(selection?.mealTimeCategories ?? const {});
+    _mealTimes.addAll(selection?.mealTimes ?? const {});
     _mealCategories.addAll(selection?.mealCategories ?? const {});
+    _cuisines.addAll(selection?.cuisines ?? const {});
   }
 
   @override
@@ -619,6 +598,26 @@ class _AsanFilterListState extends State<AsanFilterList> {
                     if (_isRecipes) ...[
                       Align(
                         alignment: Alignment.centerLeft,
+                        child: Text('Meal Time', style: AsanTextTheme.labelSmall.copyWith(fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(height: AsanSpacing.sm),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: AsanSpacing.sm,
+                          runSpacing: AsanSpacing.sm,
+                          children: asanMealTimes.map((mealTime) => AsanFilterChip(
+                            label: mealTime,
+                            isSelected: _mealTimes.contains(mealTime),
+                            onPressed: () => setState(() => _mealTimes.contains(mealTime) ? _mealTimes.remove(mealTime) : _mealTimes.add(mealTime)),
+                          )).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: AsanSpacing.md),
+                      const AsanDivider(),
+                      const SizedBox(height: AsanSpacing.md),
+                      Align(
+                        alignment: Alignment.centerLeft,
                         child: Text(
                           'Total Time',
                           style: AsanTextTheme.labelSmall.copyWith(
@@ -633,7 +632,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                           alignment: WrapAlignment.start,
                           spacing: AsanSpacing.sm,
                           runSpacing: AsanSpacing.sm,
-                          children: asanTotalTimeOptions.map((range) {
+                          children: asanTotalTimes.map((range) {
                             final selected = _totalTimeRanges.contains(range);
                             return AsanFilterChip(
                               label: range,
@@ -653,7 +652,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Meal Time',
+                          'Dish Type',
                           style: AsanTextTheme.labelSmall.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -666,7 +665,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                           alignment: WrapAlignment.start,
                           spacing: AsanSpacing.sm,
                           runSpacing: AsanSpacing.sm,
-                          children: asanMealTimeCategories.map((category) {
+                          children: asanDishTypes.map((category) {
                             final selected =
                                 _mealTimeCategories.contains(category);
                             return AsanFilterChip(
@@ -684,7 +683,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                       const SizedBox(height: AsanSpacing.md),
                       const AsanDivider(),
                       const SizedBox(height: AsanSpacing.md),
-                    ] else if (_statusOptions.isNotEmpty) ...[
+                    ] else if (_statusOptions.isNotEmpty && widget.menuType != AsanFilterMenuType.meals) ...[
                       _FilterSection(
                         title: _statusTitle,
                         options: _statusOptions,
@@ -701,10 +700,27 @@ class _AsanFilterListState extends State<AsanFilterList> {
                       const AsanDivider(),
                       const SizedBox(height: AsanSpacing.md),
                     ],
+                    if (widget.menuType == AsanFilterMenuType.meals) ...[
+                      _FilterSection(
+                        title: 'Meal Time',
+                        options: const ['Breakfast', 'Lunch', 'Dinner'],
+                        selected: '',
+                        selectedValues: _mealTimeCategories,
+                        isCheckbox: true,
+                        onSelected: (value) => setState(() {
+                          _mealTimeCategories.contains(value)
+                              ? _mealTimeCategories.remove(value)
+                              : _mealTimeCategories.add(value);
+                        }),
+                      ),
+                      const SizedBox(height: AsanSpacing.md),
+                      const AsanDivider(),
+                      const SizedBox(height: AsanSpacing.md),
+                    ],
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        _isRecipes ? 'Meal Category' : 'Food Group',
+                        _isRecipes ? 'Diet' : widget.menuType == AsanFilterMenuType.meals ? 'Recipe Category' : 'Food Group',
                         style: AsanTextTheme.labelSmall.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -718,9 +734,9 @@ class _AsanFilterListState extends State<AsanFilterList> {
                         spacing: AsanSpacing.sm,
                         runSpacing: AsanSpacing.sm,
                         children:
-                            (_isRecipes ? asanMealCategories : asanFoodGroups)
+                            (_isRecipes ? asanDiets : widget.menuType == AsanFilterMenuType.meals ? asanDiets : asanFoodGroups)
                                 .map((group) {
-                                  final selectedSet = _isRecipes
+                                  final selectedSet = _isRecipes || widget.menuType == AsanFilterMenuType.meals
                                       ? _mealCategories
                                       : _foodGroups;
                                   final selected = selectedSet.contains(group);
@@ -737,6 +753,28 @@ class _AsanFilterListState extends State<AsanFilterList> {
                                 .toList(),
                       ),
                     ),
+                    if (_isRecipes) ...[
+                      const SizedBox(height: AsanSpacing.md),
+                      const AsanDivider(),
+                      const SizedBox(height: AsanSpacing.md),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Cuisine', style: AsanTextTheme.labelSmall.copyWith(fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(height: AsanSpacing.sm),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: AsanSpacing.sm,
+                          runSpacing: AsanSpacing.sm,
+                          children: asanCuisines.map((cuisine) => AsanFilterChip(
+                            label: cuisine,
+                            isSelected: _cuisines.contains(cuisine),
+                            onPressed: () => setState(() => _cuisines.contains(cuisine) ? _cuisines.remove(cuisine) : _cuisines.add(cuisine)),
+                          )).toList(),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -776,12 +814,14 @@ class _AsanFilterListState extends State<AsanFilterList> {
                           totalTimeRanges: _isRecipes
                               ? Set.unmodifiable(_totalTimeRanges)
                               : const {},
-                          mealTimeCategories: _isRecipes
+                          mealTimeCategories: _isRecipes || widget.menuType == AsanFilterMenuType.meals
                               ? Set.unmodifiable(_mealTimeCategories)
                               : const {},
-                          mealCategories: _isRecipes
+                          mealTimes: _isRecipes ? Set.unmodifiable(_mealTimes) : const {},
+                          mealCategories: _isRecipes || widget.menuType == AsanFilterMenuType.meals
                               ? Set.unmodifiable(_mealCategories)
                               : const {},
+                          cuisines: _isRecipes ? Set.unmodifiable(_cuisines) : const {},
                         ),
                       ),
                     ),

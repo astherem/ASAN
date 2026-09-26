@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/models/meal_plans.dart';
-
+import 'package:asan/models/filter_selection.dart';
 import 'package:asan/styles/theme.dart';
 
 import 'package:asan/widgets/buttons.dart';
@@ -42,6 +42,27 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
   int _receivedEntryCount = 0;
   int _selectedRange = 0;
   DateTime _selectedDate = DateTime.now();
+  AsanFilterSelection? _activeFilters;
+
+  Future<void> _showFilters() async {
+    final selection = await showModalBottomSheet<AsanFilterSelection>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: filterSheetInitialSize(context, menuType: AsanFilterMenuType.meals),
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) => AsanFilterList(
+          scrollController: scrollController,
+          menuType: AsanFilterMenuType.meals,
+          initialSelection: _activeFilters,
+        ),
+      ),
+    );
+    if (selection != null && mounted) setState(() => _activeFilters = selection);
+  }
 
   @override
   void initState() {
@@ -89,9 +110,26 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
 
   Map<String, List<MealPlans>> get _groupedEntriesForSelectedDate {
     final groups = <String, List<MealPlans>>{};
+    final filters = _activeFilters;
     for (final entry in _entries) {
       if (!entry.isOnDate(_selectedDate)) continue;
+      if (filters?.mealTimeCategories.isNotEmpty ?? false) {
+        if (!filters!.mealTimeCategories.contains(entry.mealTime)) continue;
+      }
+      if (filters?.mealCategories.isNotEmpty ?? false) {
+        if (!filters!.mealCategories.contains(entry.recipe.mealCategory)) continue;
+      }
       (groups[entry.mealTime] ??= []).add(entry);
+    }
+    for (final entries in groups.values) {
+      entries.sort((a, b) {
+        final comparison = switch (filters?.sortBy) {
+          'Recipe name' => a.recipe.name.toLowerCase().compareTo(b.recipe.name.toLowerCase()),
+          'Meal category' => (a.recipe.mealCategory ?? '').compareTo(b.recipe.mealCategory ?? ''),
+          _ => 0,
+        };
+        return (filters?.sortAscending ?? true) ? comparison : -comparison;
+      });
     }
     return groups;
   }
@@ -101,6 +139,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
     final groups = _groupedEntriesForSelectedDate;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AsanAppBar(
         screenTitle: 'Meal Plan',
         icon: const Icon(Symbols.add_rounded),
@@ -163,9 +202,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
                     const SizedBox(width: AsanSpacing.sm),
                     FilledIconButton(
                       icon: const Icon(Symbols.tune_rounded, weight: 600),
-                      onPressed: () {
-                        // TODO: open meal-plan filters.
-                      },
+                      onPressed: _showFilters,
                     ),
                   ],
                 ),
@@ -254,7 +291,7 @@ class _DateNavigator extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: AsanTextTheme.bodyMedium.copyWith(
+                    style: AsanTextTheme.labelSmall.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),

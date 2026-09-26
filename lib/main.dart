@@ -62,6 +62,7 @@ class _AsanState extends State<Asan> {
       ),
 
       home: Scaffold(
+      resizeToAvoidBottomInset: false,
         body: IndexedStack(
           index: _selectedIndex,
           children: [

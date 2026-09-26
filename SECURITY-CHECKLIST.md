@@ -1,15 +1,6 @@
 # Security checklist template
 
-Copy this into your workspace `project/SECURITY-CHECKLIST.md` and fill it in
-before you make your project repository public.
-
-Every row gets one of **Yes**, **No** or **N/A**, and one line of evidence in
-your own words: what you checked, where, and what you found. "N/A" is a correct
-answer when it is true, but it needs its reason. A blank row scores nothing, and
-a Yes your repository contradicts scores nothing either.
-
-Replace the example evidence with your own.
-
+**Last checked:** 2026-09-25
 ## Secrets and credentials
 
 | # | Check | Yes / No / N/A | Evidence |

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/styles/theme.dart';
-
 import 'package:asan/models/pantry_item.dart';
+import 'package:asan/models/filter_selection.dart';
 
 import 'package:asan/widgets/buttons.dart';
 import 'package:asan/widgets/communication.dart';
@@ -117,6 +117,7 @@ class _PantryScreenState extends State<PantryScreen> {
         return Dialog.fullscreen(
           child: SafeArea(
             child: Scaffold(
+      resizeToAvoidBottomInset: false,
               appBar: FullScreenDialogHeader(
                 screenTitle: 'Add Pantry Item',
                 onBackPressed: () async {
@@ -150,6 +151,7 @@ class _PantryScreenState extends State<PantryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AsanAppBar(
         screenTitle: 'Pantry',
         forceElevated: _isContentScrolled,
@@ -206,7 +208,7 @@ class _PantryScreenState extends State<PantryScreen> {
                         controller: _filterScrollController,
                         primary: false,
                         clipBehavior: Clip.none,
-                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        padding: EdgeInsets.zero,
                         scrollDirection: Axis.horizontal,
                         physics: const AlwaysScrollableScrollPhysics(),
                         itemCount: _activeFilterLabels.length,
@@ -214,9 +216,13 @@ class _PantryScreenState extends State<PantryScreen> {
                             const SizedBox(width: AsanSpacing.sm),
                         itemBuilder: (context, index) {
                           final label = _activeFilterLabels[index];
-                          return ActiveFilterChip(
-                            label: label,
-                            onRemoved: () => _removeFilter(label),
+                          return Align(
+                            alignment: Alignment.centerLeft,
+                            child: AsanFilterChip(
+                              label: label,
+                              isSelected: true,
+                              onPressed: () => _removeFilter(label),
+                            ),
                           );
                         },
                       ),
@@ -376,6 +382,7 @@ class _PantryScreenState extends State<PantryScreen> {
       builder: (context) => Dialog.fullscreen(
         child: SafeArea(
           child: Scaffold(
+      resizeToAvoidBottomInset: false,
             appBar: FullScreenDialogHeader(
               screenTitle: 'Edit ${item.name}',
               onBackPressed: () async {

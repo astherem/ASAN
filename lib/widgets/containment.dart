@@ -197,15 +197,22 @@ class _AsanExpansionTileState extends State<AsanExpansionTile> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.titleWidget != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AsanSpacing.xs),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(child: widget.titleWidget!),
-                const SizedBox(width: AsanSpacing.sm),
-                chevron,
-              ],
+          SizedBox(
+            width: double.infinity,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AsanSpacing.xs),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: widget.titleWidget!),
+                  const SizedBox(width: AsanSpacing.sm),
+                  Transform.translate(
+                    // Center the chevron on the title label, not the whole field.
+                    offset: const Offset(0, -8),
+                    child: chevron,
+                  ),
+                ],
+              ),
             ),
           )
         else
@@ -548,6 +555,32 @@ class MealCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// TAGS
+class AsanTag extends StatelessWidget {
+  final String label;
+  final Color? color;
+
+  const AsanTag({super.key, required this.label, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.sm, vertical: AsanSpacing.xs),
+      decoration: BoxDecoration(
+        color: color ?? AsanColorScheme.container,
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        label,
+        style: AsanTextTheme.labelSmall.copyWith(
+          color: color != null ? Colors.white : AsanColorScheme.onSurface,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

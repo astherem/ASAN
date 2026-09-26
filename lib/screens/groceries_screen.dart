@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/styles/theme.dart';
-
 import 'package:asan/models/grocery_item.dart';
 import 'package:asan/models/pantry_item.dart';
+import 'package:asan/models/filter_selection.dart';
 
 import 'package:asan/widgets/buttons.dart';
 import 'package:asan/widgets/communication.dart';
@@ -109,6 +109,7 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
         return Dialog.fullscreen(
           child: SafeArea(
             child: Scaffold(
+      resizeToAvoidBottomInset: false,
               appBar: FullScreenDialogHeader(
                 screenTitle: 'Add Grocery Item',
                 onBackPressed: () async {
@@ -143,6 +144,7 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AsanAppBar(
         screenTitle: 'Groceries',
         forceElevated: _isContentScrolled,
@@ -199,7 +201,7 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
                         controller: _filterScrollController,
                         primary: false,
                         clipBehavior: Clip.none,
-                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        padding: EdgeInsets.zero,
                         scrollDirection: Axis.horizontal,
                         physics: const AlwaysScrollableScrollPhysics(),
                         itemCount: _activeFilterLabels.length,
@@ -207,9 +209,13 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
                             const SizedBox(width: AsanSpacing.sm),
                         itemBuilder: (context, index) {
                           final label = _activeFilterLabels[index];
-                          return ActiveFilterChip(
-                            label: label,
-                            onRemoved: () => _removeFilter(label),
+                          return Align(
+                            alignment: Alignment.centerLeft,
+                            child: AsanFilterChip(
+                              label: label,
+                              isSelected: true,
+                              onPressed: () => _removeFilter(label),
+                            ),
                           );
                         },
                       ),
@@ -330,6 +336,7 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
       builder: (context) => Dialog.fullscreen(
         child: SafeArea(
           child: Scaffold(
+      resizeToAvoidBottomInset: false,
             appBar: FullScreenDialogHeader(
               screenTitle: 'Edit ${item.name}',
               onBackPressed: () async {
