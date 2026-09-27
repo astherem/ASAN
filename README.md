@@ -107,19 +107,19 @@ docs/                               project documentation, screenshots, and font
 
 | Recipes (Explore) | Recipes (Saved) | Recipes (My Recipes) |
 | --- | --- | --- |
-| ![Recipes (Explore)](docs/assets/screenshots/recipes_explore.PNG) | ![Recipes (Saved)](docs/assets/screenshots/recipes_saved.PNG) | ![Recipes (My Recipes)](docs/assets/screenshots/recipes_my_recipes.PNG) |
+| ![Recipes (Explore)](docs/assets/screenshots/recipes_explore.png) | ![Recipes (Saved)](docs/assets/screenshots/recipes_saved.png) | ![Recipes (My Recipes)](docs/assets/screenshots/recipes_my_recipes.png) |
 
-| Add Recipe | Meal Plan (Day) | Meal Plan (Week) |
+| Recipe Details | Add Recipe | Meal Plan (Day) |
 | --- | --- | --- |
-| ![Add Recipe](docs/assets/screenshots/add_recipe.PNG) | ![Meal Plan](docs/assets/screenshots/meal_plan_day.PNG) | ![Meal Plan (Week)](docs/assets/screenshots/meal_plan_week.PNG) |
+| ![Recipe Details](docs/assets/screenshots/recipe_details.png) | ![Add Recipe](docs/assets/screenshots/add_recipe.png) | ![Meal Plan (Week)](docs/assets/screenshots/meal_plan_day.png) |
 
-| Pantry | Add Pantry Item | Groceries |
+| Meal Plan (Week) | Pantry | Add Pantry Item |
 | --- | --- | --- |
-| ![Pantry](docs/assets/screenshots/pantry.PNG) | ![Add Pantry Item](docs/assets/screenshots/add_pantry_item.PNG) | ![Groceries](docs/assets/screenshots/groceries.PNG) |
+| ![Meal Plan (Week)](docs/assets/screenshots/meal_plan_week.png) | ![Pantry](docs/assets/screenshots/pantry.png) | ![Add Pantry Item](docs/assets/screenshots/add_pantry_item.png) |
 
-| Add Grocery Item |   |  |
+| Groceries | Add Grocery Item |  |
 | --- | --- | --- |
-| ![Add Grocery Item](docs/assets/screenshots/add_grocery_item.PNG) | ![]() | ![]() |
+| ![Groceries](docs/assets/screenshots/groceries.png) | ![Add Grocery Item](docs/assets/screenshots/add_grocery_item.png) | ![]() |
 
 ## 7. Known issues and next steps
 
