@@ -115,7 +115,7 @@ docs/                               project documentation, screenshots, and font
 
 | Meal Plan (Week) | Pantry | Add Pantry Item |
 | --- | --- | --- |
-| ![Meal Plan (Week)](docs/assets/screenshots/meal_plan_week.png) | ![Pantry](docs/assets/screenshots/pantry.PPNG) | ![Add Pantry Item](docs/assets/screenshots/add_pantry_item.PNG) |
+| ![Meal Plan (Week)](docs/assets/screenshots/meal_plan_week.png) | ![Pantry](docs/assets/screenshots/pantry.PNG) | ![Add Pantry Item](docs/assets/screenshots/add_pantry_item.PNG) |
 
 | Groceries | Add Grocery Item |  |
 | --- | --- | --- |
