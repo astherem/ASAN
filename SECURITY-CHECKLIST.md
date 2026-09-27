@@ -52,7 +52,7 @@ If your app is fully local with no backend, mark every row N/A and say so once.
 | 21 | No student number, personal email, phone number or home address in the repository or in commit messages | Yes | Searched tracked project content and commit subjects; found no student number, personal contact details, or home address. |
 | 22 | No classmate's personal data in the repository | Yes | Reviewed repository files and found no classmate personal data; app records are user-entered and session-only. |
 | 23 | Dependencies come from pub.dev, and `build/` and `.dart_tool/` are gitignored | Yes | `pubspec.yaml` lists Flutter and pub.dev packages, and `.gitignore` excludes both `build/` and `.dart_tool/`. |
-| 24 | Images, fonts and other assets are mine, licensed, or credited | N/A | No image or font asset files are bundled in this repository; runtime recipe images are provided by the recipe service. |
+| 24 | Images, fonts and other assets are mine, licensed, or credited | Yes | Fonts and icons are credited in the repository's README; runtime recipe images are provided by the recipe service. |
 | 25 | Repository visibility is deliberate, and I checked it after my last push | Yes | Confirmed by the repository owner that the repository is public as intended. |
 
 ## Anything I found and fixed
