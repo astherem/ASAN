@@ -1,6 +1,6 @@
 # Security checklist template
 
-**Last checked:** 2026-09-27
+**Last checked:** 2026-09-28
 ## Secrets and credentials
 
 | # | Check | Yes / No / N/A | Evidence |
