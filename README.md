@@ -105,17 +105,21 @@ docs/                               project documentation, screenshots, and font
 
 ## 6. Screenshots
 
-| Recipes | Add Recipe | Meal Plan |
+| Recipes (Explore) | Recipes (Saved) | Recipes (My Recipes) |
 | --- | --- | --- |
-| ![Recipes](docs/assets/screenshots/recipes.PNG) | ![Add Recipe](docs/assets/screenshots/add_recipe.PNG) | ![Meal Plan](docs/assets/screenshots/meal_plan.PNG) |
+| ![Recipes (Explore)](docs/assets/screenshots/recipes_explore.PNG) | ![Recipes (Saved)](docs/assets/screenshots/recipes_saved.PNG) | ![Recipes (My Recipes)](docs/assets/screenshots/recipes_my_recipes.PNG) |
 
-| Add Meal | Pantry | Add Pantry Item |
+| Add Recipe | Meal Plan (Day) | Meal Plan (Week) |
 | --- | --- | --- |
-| ![Add Meal](docs/assets/screenshots/add_meal.PNG) | ![Pantry](docs/assets/screenshots/pantry.PNG) | ![Add Pantry Item](docs/assets/screenshots/add_pantry_item.PNG) |
+| ![Add Recipe](docs/assets/screenshots/add_recipe.PNG) | ![Meal Plan](docs/assets/screenshots/meal_plan_day.PNG) | ![Meal Plan (Week)](docs/assets/screenshots/meal_plan_week.PNG) |
 
-| Groceries | Add Grocery Item | --- |
+| Pantry | Add Pantry Item | Groceries |
 | --- | --- | --- |
-| ![Add Groceries](docs/assets/screenshots/groceries.PNG) | ![Add Grocery Item](docs/assets/screenshots/add_grocery_jtem.PNG) | ![]() |
+| ![Pantry](docs/assets/screenshots/pantry.PNG) | ![Add Pantry Item](docs/assets/screenshots/add_pantry_item.PNG) | ![Groceries](docs/assets/screenshots/groceries.PNG) |
+
+| Add Grocery Item |   |  |
+| --- | --- | --- |
+| ![Add Grocery Item](docs/assets/screenshots/add_grocery_item.PNG) | ![]() | ![]() |
 
 ## 7. Known issues and next steps
 
@@ -134,7 +138,7 @@ docs/                               project documentation, screenshots, and font
 3. Improve validation and edge-case handling, including duplicate items and state updates.
 4. Refresh screenshots and finish the demo and presentation materials.
 
-## Security
+## Security checklist
 
 See [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md) for the project's security review, including client configuration, GitHub Actions, and the server-side Spoonacular key.
 
