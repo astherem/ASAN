@@ -6,7 +6,7 @@
 | # | Check | Yes / No / N/A | Evidence |
 | --- | --- | --- | --- |
 | 1 | No API key, token or password is hardcoded in `lib/`, including in comments and commented-out code | Yes | Searched `lib/`; found only Supabase publishable-key configuration references, with no literal credential values. |
-| 2 | Anything private is in a gitignored config or passed with `--dart-define`, with an example file committed | Yes | `.gitignore` excludes `.env` and `assets/config/supabase.json`; `.env.example` and `assets/config/supabase.example.json` contain placeholders, and the deploy workflow reads config through `--dart-define`. |
+| 2 | Anything private is in a gitignored config or passed with `--dart-define`, with an example file committed | Yes | `.gitignore` excludes root `env.json`, which the app loads locally; committed `env.example.json` documents the expected keys with placeholders. CI reads the Supabase URL and publishable key from GitHub Actions settings, and the Spoonacular key stays in Supabase Function secrets. |
 | 3 | No keystore, `key.properties` or signing credential is in the repository | Yes | Searched repository files and ignored-file status; no keystore, `key.properties`, or signing credential is present. |
 | 4 | Git history is clean: I searched `git log -p` for password, secret, api key and token | Yes | Searched all available commit patches for those terms; matches were documentation and placeholder/config references, with no real credential value found. |
 | 5 | Any credential that was ever committed has been rotated | N/A | The history search found no real credential committed, so there was no committed credential to rotate. |
@@ -18,8 +18,8 @@ If your project has no workflows, mark every row N/A and say so once.
 | # | Check | Yes / No / N/A | Evidence |
 | --- | --- | --- | --- |
 | 6 | No secret value is written literally in any workflow YAML file | Yes | Reviewed `.github/workflows/deploy-web.yml`; it reads URL and publishable-key values from secret references and contains no literal secret value. |
-| 7 | Secrets are stored in repository Actions secrets and read with `${{ secrets.NAME }}` | Yes | Confirmed by the repository owner; `deploy-web.yml` reads both values using `${{ secrets.SUPABASE_URL }}` and `${{ secrets.SUPABASE_PUBLISHABLE_KEY }}`. |
-| 8 | No workflow step echoes, dumps or debug-prints a secret, and I opened a recent run's log to confirm | N/A | There was no recent run log to inspect because the API configuration was not yet in place; reviewed workflow YAML contains no secret dump or debug print. |
+| 7 | Secrets are stored in repository Actions secrets and read with `${{ secrets.NAME }}` | Yes | The repository owner confirmed the Actions values are configured; `deploy-web.yml` reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` using secret references. These are publishable client values. |
+| 8 | No workflow step echoes, dumps or debug-prints a secret, and I opened a recent run's log to confirm | Yes | Reviewed the Deploy web demo run for this commit. The Supabase values were masked in the config step, and the build output contained no credential values. |
 | 9 | If I build a signed APK: the keystore is a base64 secret decoded to a file at build time, never printed | N/A | This workflow builds and publishes a Flutter web app; it does not build a signed APK. |
 | 10 | Uploaded build artifacts contain no key file, keystore or generated config | Yes | The workflow uploads only `build/web`; the repository contains no key file or keystore, and the client config is compiled into the web app as public values. |
 | 11 | Third-party actions are pinned to a commit SHA, not a moveable tag | Yes | All four external actions in `deploy-web.yml` use full commit SHAs, with release versions retained in comments. |
@@ -57,4 +57,4 @@ If your app is fully local with no backend, mark every row N/A and say so once.
 
 ## Anything I found and fixed
 
-The review confirmed that the Spoonacular credential is read server-side and that app lists stay in session state; it also surfaced that the workflow used moveable action tags and the Edge Function is publicly callable with `verify_jwt = false`. I pinned the workflow actions to release commit SHAs; there was no recent workflow run log to inspect because API configuration was not yet in place.
+The review confirmed that the Spoonacular credential is read server-side and that app lists stay in session state. The Edge Function is publicly callable with `verify_jwt = false`, so its usage should be monitored. I pinned workflow actions to release commit SHAs. A recent workflow run log still needs review (check 8).

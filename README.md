@@ -134,6 +134,10 @@ docs/                               project documentation, screenshots, and font
 3. Improve validation and edge-case handling, including duplicate items and state updates.
 4. Refresh screenshots and finish the demo and presentation materials.
 
+## Security
+
+See [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md) for the project's security review, including client configuration, GitHub Actions, and the server-side Spoonacular key.
+
 ## AI usage
 
 ![Built with AI assistance](https://img.shields.io/badge/built%20with-AI%20assistance-0b5fff)
