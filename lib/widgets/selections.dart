@@ -471,6 +471,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
     AsanFilterMenuType.pantry => 'Expiration date',
     AsanFilterMenuType.recipes => 'Dish type',
     AsanFilterMenuType.meals => 'Meal time',
+    AsanFilterMenuType.groceries => 'Aisle',
     _ => 'Food group',
   };
 
@@ -483,6 +484,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
     ],
     AsanFilterMenuType.meals => const ['Meal time', 'Recipe name', 'Meal category'],
     AsanFilterMenuType.recipes => const ['Dish type', 'Cuisine', 'Recipe name', 'Total time',],
+    AsanFilterMenuType.groceries => const ['Aisle', 'Item name'],
     _ => const ['Food group', 'Item name'],
   };
 
@@ -720,7 +722,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        _isRecipes ? 'Diet' : widget.menuType == AsanFilterMenuType.meals ? 'Recipe Category' : 'Food Group',
+                        _isRecipes ? 'Diet' : widget.menuType == AsanFilterMenuType.meals ? 'Recipe Category' : widget.menuType == AsanFilterMenuType.groceries ? 'Aisle' : 'Food Group',
                         style: AsanTextTheme.labelSmall.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -734,7 +736,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                         spacing: AsanSpacing.sm,
                         runSpacing: AsanSpacing.sm,
                         children:
-                            (_isRecipes ? asanDiets : widget.menuType == AsanFilterMenuType.meals ? asanDiets : asanFoodGroups)
+                            (_isRecipes ? asanDiets : widget.menuType == AsanFilterMenuType.meals ? asanDiets : widget.menuType == AsanFilterMenuType.groceries ? asanAisles : asanFoodGroups)
                                 .map((group) {
                                   final selectedSet = _isRecipes || widget.menuType == AsanFilterMenuType.meals
                                       ? _mealCategories

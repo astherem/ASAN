@@ -25,16 +25,77 @@ class GroceriesScreen extends StatefulWidget {
   });
 
   @override
-  State<GroceriesScreen> createState() => _GroceriesScreenState();
+  State<GroceriesScreen> createState() => GroceriesScreenState();
 }
 
-class _GroceriesScreenState extends State<GroceriesScreen> {
+class GroceriesScreenState extends State<GroceriesScreen> {
   final List<GroceryItem> _items = [];
   String _searchQuery = '';
   AsanFilterSelection? _activeFilters;
   late final ScrollController _contentScrollController;
   late final ScrollController _filterScrollController;
   bool _isContentScrolled = false;
+
+  Future<void> addItems(List<GroceryItem> items) async {
+    if (items.isEmpty || !mounted) return;
+    String ingredientKey(GroceryItem item) =>
+        '${item.name.trim().toLowerCase()}|${item.aisle?.trim().toLowerCase() ?? ''}';
+
+    final existingIngredients = _items.map(ingredientKey).toSet();
+    final duplicates = items
+        .where((item) => existingIngredients.contains(ingredientKey(item)))
+        .toList();
+    if (duplicates.isNotEmpty) {
+      final names = duplicates.map((item) => item.name).toSet().join(', ');
+      final addAnyway = await AsanAlertDialog.show(
+        context,
+        title: 'Already in Groceries',
+        content: 'You already have $names in Groceries. Add them again? Their quantities will be combined with the existing items.',
+        cancelText: 'Cancel',
+        destructiveText: 'Add',
+        primaryAction: true,
+      );
+      if (addAnyway != true || !mounted) return;
+    }
+
+    setState(() {
+      for (final incoming in items) {
+        final index = _items.indexWhere(
+          (item) => ingredientKey(item) == ingredientKey(incoming),
+        );
+        if (index == -1) {
+          _items.add(incoming);
+          continue;
+        }
+        final current = _items[index];
+        final sameUnit = current.unit.trim().toLowerCase() == incoming.unit.trim().toLowerCase();
+        final currentAmount = double.tryParse(current.quantity.trim());
+        final incomingAmount = double.tryParse(incoming.quantity.trim());
+        final quantity = sameUnit && currentAmount != null && incomingAmount != null
+            ? '${currentAmount + incomingAmount}'
+            : [current.quantity, incoming.quantity].where((value) => value.trim().isNotEmpty).join(' + ');
+        _items[index] = GroceryItem(
+          name: current.name,
+          quantity: quantity,
+          unit: current.unit.isNotEmpty ? current.unit : incoming.unit,
+          aisle: current.aisle,
+          notes: _mergeNotes(current.notes, incoming.notes),
+          purchaseDate: current.purchaseDate,
+        );
+      }
+    });
+    widget.onItemCountChanged?.call(_items.length);
+  }
+
+  String _mergeNotes(String first, String second) {
+    final notes = <String>[];
+    final seen = <String>{};
+    for (final value in [first, second]) {
+      final note = value.trim();
+      if (note.isNotEmpty && seen.add(note.toLowerCase())) notes.add(note);
+    }
+    return notes.join('; ');
+  }
 
   @override
   void initState() {
@@ -275,15 +336,15 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
               (query.isEmpty || item.name.toLowerCase().contains(query)) &&
               (filters?.foodGroups.isEmpty ?? true
                   ? true
-                  : filters!.foodGroups.contains(item.foodGroup)),
+                  : filters!.foodGroups.contains(item.aisle)),
         )
         .toList();
-    final sortBy = filters?.sortBy ?? 'Food group';
+    final sortBy = filters?.sortBy ?? 'Aisle';
     items.sort((first, second) {
       final result = sortBy == 'Item name'
           ? first.name.toLowerCase().compareTo(second.name.toLowerCase())
-          : (first.foodGroup ?? 'Uncategorized').compareTo(
-              second.foodGroup ?? 'Uncategorized',
+          : (first.aisle ?? 'Uncategorized').compareTo(
+              second.aisle ?? 'Uncategorized',
             );
       return (filters?.sortAscending ?? true) ? result : -result;
     });
@@ -292,7 +353,7 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
     for (final item in items) {
       final label = sortBy == 'Item name'
           ? (item.name.trim().isEmpty ? '#' : item.name.trim()[0].toUpperCase())
-          : item.foodGroup ?? 'Uncategorized';
+          : item.aisle ?? 'Uncategorized';
       (groups[label] ??= []).add(item);
     }
     return groups.entries.toList();
@@ -303,7 +364,7 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
     itemName: item.name,
     quantity: item.quantity,
     unit: item.unit,
-    category: item.foodGroup ?? 'Uncategorized',
+    category: item.aisle ?? 'Uncategorized',
     purchasedDate: '',
     notes: item.notes,
     onChanged: (checked) {
@@ -321,7 +382,7 @@ class _GroceriesScreenState extends State<GroceriesScreen> {
         name: item.name,
         quantity: item.quantity,
         unit: item.unit,
-        foodGroup: item.foodGroup,
+        foodGroup: item.aisle,
         purchaseDate: checkedDate,
         notes: item.notes,
       ),
@@ -391,21 +452,21 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
   late final TextEditingController _quantityController;
   late final TextEditingController _unitController;
   late final TextEditingController _notesController;
-  String? _foodGroup;
+  String? _aisle;
   bool _itemHasError = false;
-  bool _foodGroupHasError = false;
+  bool _aisleHasError = false;
 
   bool get hasChanges => widget.initialItem == null
       ? _itemController.text.isNotEmpty ||
             _quantityController.text.isNotEmpty ||
             _unitController.text.isNotEmpty ||
             _notesController.text.isNotEmpty ||
-            _foodGroup != null
+            _aisle != null
       : _itemController.text.trim() != widget.initialItem!.name ||
             _quantityController.text.trim() != widget.initialItem!.quantity ||
             _unitController.text.trim() != widget.initialItem!.unit ||
             _notesController.text.trim() != widget.initialItem!.notes ||
-            _foodGroup != widget.initialItem!.foodGroup;
+            _aisle != widget.initialItem!.aisle;
 
   @override
   void initState() {
@@ -415,7 +476,7 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
     _quantityController = TextEditingController(text: item?.quantity);
     _unitController = TextEditingController(text: item?.unit);
     _notesController = TextEditingController(text: item?.notes);
-    _foodGroup = item?.foodGroup;
+    _aisle = item?.aisle;
   }
 
   @override
@@ -443,16 +504,16 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
           ),
           const SizedBox(height: AsanSpacing.md),
           AsanDropdownMenu(
-            label: 'Food Group',
-            items: asanFoodGroups,
-            value: _foodGroup,
-            hintText: 'Select a food group',
-            hasError: _foodGroupHasError,
+            label: 'Aisle',
+            items: asanAisles,
+            value: _aisle,
+            hintText: 'Select an aisle',
+            hasError: _aisleHasError,
             required: true,
             onChanged: (value) {
               setState(() {
-                _foodGroup = value;
-                _foodGroupHasError = false;
+                _aisle = value;
+                _aisleHasError = false;
               });
             },
           ),
@@ -495,12 +556,12 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
 
   void _submit() {
     final name = _itemController.text.trim();
-    final hasFoodGroup = _foodGroup != null;
+    final hasAisle = _aisle != null;
     setState(() {
       _itemHasError = name.isEmpty;
-      _foodGroupHasError = !hasFoodGroup;
+      _aisleHasError = !hasAisle;
     });
-    if (name.isEmpty || !hasFoodGroup) return;
+    if (name.isEmpty || !hasAisle) return;
 
     Navigator.pop(
       context,
@@ -508,9 +569,11 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
         name: name,
         quantity: _quantityController.text.trim(),
         unit: _unitController.text.trim(),
-        foodGroup: _foodGroup,
+        aisle: _aisle,
         notes: _notesController.text.trim(),
       ),
     );
   }
 }
+
+

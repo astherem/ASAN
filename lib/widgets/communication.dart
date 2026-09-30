@@ -38,6 +38,7 @@ class AsanAlertDialog  extends StatelessWidget {
   final String content;
   final String cancelText;
   final String destructiveText;
+  final bool primaryAction;
 
   const AsanAlertDialog( {
     super.key,
@@ -45,6 +46,7 @@ class AsanAlertDialog  extends StatelessWidget {
     required this.content,
     required this.cancelText,
     required this.destructiveText,
+    this.primaryAction = false,
   });
 
   static Future<bool?> show(
@@ -53,6 +55,7 @@ class AsanAlertDialog  extends StatelessWidget {
     required String content,
     required String cancelText,
     required String destructiveText,
+    bool primaryAction = false,
   }) {
     return showDialog<bool>(
       context: context,
@@ -61,6 +64,7 @@ class AsanAlertDialog  extends StatelessWidget {
         content: content,
         cancelText: cancelText,
         destructiveText: destructiveText,
+        primaryAction: primaryAction,
       ),
     );
   }
@@ -85,7 +89,12 @@ class AsanAlertDialog  extends StatelessWidget {
               onPressed: () => Navigator.of(context).pop(false),
             ),
             const SizedBox(width: AsanSpacing.lg),
-            AsanTextButton.red(
+            primaryAction
+                ? AsanTextButton(
+                    label: destructiveText,
+                    onPressed: () => Navigator.of(context).pop(true),
+                  )
+                : AsanTextButton.red(
               label: destructiveText,
               onPressed: () => Navigator.of(context).pop(true),
             ),
@@ -212,5 +221,46 @@ class AsanEmptyState extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// SNACKBAR
+class AsanSnackBar {
+  const AsanSnackBar._();
+
+  static void show(
+    BuildContext context, {
+    required String message,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  message,
+                  style: AsanTextTheme.labelSmall.copyWith(
+                    color: AsanColorScheme.onSurface,
+                  ),
+                ),
+              ),
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(width: AsanSpacing.sm),
+                AsanTextButton(label: actionLabel, onPressed: onAction),
+              ],
+            ],
+          ),
+          backgroundColor: AsanColorScheme.surface,
+          behavior: SnackBarBehavior.floating,
+          elevation: 8,
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(AsanSpacing.md),
+        ),
+      );
   }
 }

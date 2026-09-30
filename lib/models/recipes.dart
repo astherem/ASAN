@@ -22,7 +22,10 @@ class Recipes {
   final int protein;
   final List<String> dishTypes;
   final List<String> ingredients;
+  final List<String> ingredientQuantities;
+  final List<String> ingredientUnits;
   final List<String> ingredientNotes;
+  final List<String?> ingredientAisles;
   final List<String> instructions;
   final int healthScore;
   final int aggregateLikes;
@@ -52,7 +55,10 @@ class Recipes {
     this.protein = 0,
     this.dishTypes = const [],
     this.ingredients = const [],
+    this.ingredientQuantities = const [],
+    this.ingredientUnits = const [],
     this.ingredientNotes = const [],
+    this.ingredientAisles = const [],
     this.instructions = const [],
     this.healthScore = 0, this.aggregateLikes = 0, this.pricePerServing = 0,
     this.sourceName, this.sourceUrl,

@@ -5,9 +5,9 @@ import 'package:asan/screens/groceries_screen.dart';
 import 'package:asan/screens/meal_plan_screen.dart';
 import 'package:asan/screens/pantry_screen.dart';
 import 'package:asan/screens/recipes_screen.dart';
+
 import 'package:asan/models/pantry_item.dart';
 import 'package:asan/services/api/recipe_api.dart';
-
 import 'package:asan/styles/theme.dart';
 
 import 'package:asan/widgets/navigations.dart';
@@ -26,6 +26,7 @@ class Asan extends StatefulWidget {
 }
 
 class _AsanState extends State<Asan> {
+  final _groceriesKey = GlobalKey<GroceriesScreenState>();
   int _selectedIndex = 0;
   int _groceriesItemCount = 0;
   final List<PantryItem> _receivedPantryItems = [];
@@ -66,10 +67,14 @@ class _AsanState extends State<Asan> {
         body: IndexedStack(
           index: _selectedIndex,
           children: [
-            const RecipesScreen(),
+            RecipesScreen(
+              onAddToGroceries: (items) async => await _groceriesKey.currentState?.addItems(items),
+              onViewGroceries: () => setState(() => _selectedIndex = 3),
+            ),
             const MealPlanScreen(),
             PantryScreen(incomingItems: _receivedPantryItems),
             GroceriesScreen(
+              key: _groceriesKey,
               onItemCountChanged: (count) {
                 setState(() => _groceriesItemCount = count);
               },

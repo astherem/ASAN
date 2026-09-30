@@ -5,11 +5,13 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/styles/theme.dart';
 import 'package:asan/models/recipes.dart';
+import 'package:asan/models/grocery_item.dart';
 import 'package:asan/models/filter_selection.dart';
 import 'package:asan/services/api/recipe_api.dart';
 
 import 'package:asan/screens/recipe_form_screen.dart';
 import 'package:asan/screens/recipe_details_screen.dart';
+import 'package:asan/screens/search_screen.dart';
 
 import 'package:asan/widgets/buttons.dart';
 import 'package:asan/widgets/communication.dart';
@@ -19,14 +21,26 @@ import 'package:asan/widgets/navigations.dart';
 import 'package:asan/widgets/selections.dart';
 
 class RecipesScreen extends StatefulWidget {
+  final Future<void> Function(List<GroceryItem>)? onAddToGroceries;
+  final VoidCallback? onViewGroceries;
   final List<Recipes> incomingRecipes;
+  final AsanFilterSelection? initialFilters;
+  final String initialQuery;
 
-  const RecipesScreen({super.key, this.incomingRecipes = const []});
+  const RecipesScreen({
+    super.key,
+    this.incomingRecipes = const [],
+    this.initialFilters,
+    this.initialQuery = '',
+    this.onAddToGroceries,
+    this.onViewGroceries,
+  });
 
   @override
   State<RecipesScreen> createState() => _RecipesScreenState();
 }
 class _RecipesScreenState extends State<RecipesScreen> {
+  _RecipesScreenState();
   final List<Recipes> _items = [];
   final RecipeApi _recipeApi = RecipeApi();
   final Map<String, String?> _recipeImages = {};
@@ -56,7 +70,9 @@ class _RecipesScreenState extends State<RecipesScreen> {
     _filterScrollController = ScrollController();
     _items.addAll(widget.incomingRecipes);
     _receivedItemCount = widget.incomingRecipes.length;
-    _loadExploreRecipes();
+    _activeFilters = widget.initialFilters;
+    _searchQuery = widget.initialQuery;
+    _loadExploreRecipes(_searchQuery);
   }
 
   @override
@@ -85,6 +101,16 @@ class _RecipesScreenState extends State<RecipesScreen> {
     if (isScrolled != _isContentScrolled) {
       setState(() => _isContentScrolled = isScrolled);
     }
+  }
+
+  String _cardDishType(Iterable<String> values, {String? fallback}) {
+    final dishType = values.map((value) => value.trim()).firstWhere(
+      (value) => value.isNotEmpty && !asanMealTimes.any(
+        (mealTime) => mealTime.toLowerCase() == value.toLowerCase(),
+      ),
+      orElse: () => '',
+    );
+    return dishType.isNotEmpty ? dishType : (fallback ?? '');
   }
 
   List<String> get _activeFilterLabels => [
@@ -135,6 +161,48 @@ class _RecipesScreenState extends State<RecipesScreen> {
     });
   }
 
+  void _openExploreCategoryInSearch(String category) {
+    final filters = _activeFilters;
+    final totalTimeRanges = {...?filters?.totalTimeRanges};
+    final mealTimeCategories = {...?filters?.mealTimeCategories};
+    final mealCategories = {...?filters?.mealCategories};
+
+    switch (category) {
+      case 'Quick Meals':
+        totalTimeRanges
+          ..add('15 minutes or less')
+          ..add('30 minutes or less');
+        break;
+      case 'Vegetarian':
+        mealCategories.add('Vegetarian');
+        break;
+      case 'Sweet Treats':
+        mealTimeCategories.add('Dessert');
+        break;
+      case 'Comfort Food':
+        mealTimeCategories.add('Main Course');
+        break;
+    }
+
+    final categoryFilters = (filters ?? const AsanFilterSelection(
+        sortBy: 'Dish type',
+        sortAscending: true,
+        purchaseStatuses: {},
+        expirationStatuses: {},
+        foodGroups: {},
+      )).copyWith(
+        totalTimeRanges: totalTimeRanges,
+        mealTimeCategories: mealTimeCategories,
+        mealCategories: mealCategories,
+      );
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SearchScreen(initialFilters: categoryFilters),
+      ),
+    );
+  }
+
   Future<void> _showAddRecipeDialog(BuildContext context) async {
     final item = await showDialog<Recipes>(
       context: context,
@@ -175,18 +243,28 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: AsanSearchBar(
-                        hintText: 'Search recipes...',
-                        onChanged: (query) {
-                          setState(() => _searchQuery = query);
-                          if (_selectedView < 2) {
-                            _searchDebounce?.cancel();
-                            _searchDebounce = Timer(
-                              const Duration(milliseconds: 350),
-                              () => _loadExploreRecipes(query),
-                            );
-                          }
-                        },
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => SearchScreen(initialFilters: _activeFilters),
+                          ),
+                        ),
+                        child: AbsorbPointer(
+                          child: AsanSearchBar(
+                            hintText: 'Search recipes...',
+                            initialQuery: _searchQuery,
+                            onChanged: (query) {
+                              setState(() => _searchQuery = query);
+                              if (_selectedView < 2) {
+                                _searchDebounce?.cancel();
+                                _searchDebounce = Timer(
+                                  const Duration(milliseconds: 350),
+                                  () => _loadExploreRecipes(query),
+                                );
+                              }
+                            },
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: AsanSpacing.sm),
@@ -244,23 +322,23 @@ class _RecipesScreenState extends State<RecipesScreen> {
         controller: _contentScrollController,
         slivers: [
           SliverPersistentHeader(
-            pinned: true,
-            delegate: _SegmentedButtonHeaderDelegate(
-              selectedIndex: _selectedView,
-              views: _views,
-              onChanged: (index) {
-                final shouldReloadExplore = _selectedView >= 2 && index < 2;
-                setState(() {
-                  _selectedView = index;
-                  if (shouldReloadExplore) _exploreCategory = null;
-                });
-                if (shouldReloadExplore) {
-                  _searchDebounce?.cancel();
-                  _loadExploreRecipes(_searchQuery);
-                }
-              },
+              pinned: true,
+              delegate: _SegmentedButtonHeaderDelegate(
+                selectedIndex: _selectedView,
+                views: _views,
+                onChanged: (index) {
+                  final shouldReloadExplore = _selectedView >= 2 && index < 2;
+                  setState(() {
+                    _selectedView = index;
+                    if (shouldReloadExplore) _exploreCategory = null;
+                  });
+                  if (shouldReloadExplore) {
+                    _searchDebounce?.cancel();
+                    _loadExploreRecipes(_searchQuery);
+                  }
+                },
+              ),
             ),
-          ),
           ..._buildSelectedView(),
         ],
       ),
@@ -349,12 +427,10 @@ class _RecipesScreenState extends State<RecipesScreen> {
                                   height: width * 220 / 163,
                                   child: RecipeCard(
                                     recipeName: recipe.name,
-                                    mealCategory: recipe.mealCategory
-                                                ?.trim()
-                                                .isNotEmpty ==
-                                            true
-                                        ? recipe.mealCategory!
-                                        : '-',
+                                    mealCategory: _cardDishType(
+                                      [recipe.mealCategory ?? '', ...recipe.dishTypes],
+                                      fallback: '-',
+                                    ),
                                     imageBytes: recipe.imageBytes,
                                     totalTime: recipe.formattedTotalTime,
                                     showBookmark: false,
@@ -374,7 +450,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
     ];
   }
 
-  SliverPadding _buildExploreView(List<ApiRecipe> recipes) {
+  Widget _buildExploreView(List<ApiRecipe> recipes) {
     if (_isLoadingExplore && _exploreRecipes.isEmpty) {
       return const SliverPadding(
         padding: EdgeInsets.zero,
@@ -458,12 +534,37 @@ class _RecipesScreenState extends State<RecipesScreen> {
       );
     }
 
-    final groups = <String, List<ApiRecipe>>{};
-    for (final recipe in recipes) {
-      (groups[recipe.category.trim().isEmpty ? 'Other' : recipe.category] ??= [])
-          .add(recipe);
-    }
-    final categories = groups.keys.toList()..sort();
+    final groups = <String, List<ApiRecipe>>{
+      'Quick Meals': recipes.where((recipe) {
+        final minutes = recipe.totalTime > 0
+            ? recipe.totalTime
+            : recipe.prepTime + recipe.cookTime;
+        return minutes > 0 && minutes <= 30;
+      }).toList(),
+      'Vegetarian': recipes.where((recipe) => recipe.tags.any((tag) =>
+          const {'vegetarian', 'vegan', 'lacto-vegetarian', 'ovo-vegetarian'}
+              .contains(tag.toLowerCase()))).toList(),
+      'Sweet Treats': recipes.where((recipe) =>
+          [...recipe.dishTypes, recipe.category].any((type) =>
+              const {'dessert', 'sweet'}
+                  .contains(type.trim().toLowerCase()))).toList(),
+      'Comfort Food': recipes.where((recipe) {
+        final searchableText = [
+          recipe.title,
+          recipe.description,
+          recipe.category,
+          ...recipe.dishTypes,
+          ...recipe.tags,
+        ].join(' ').toLowerCase();
+        return const [
+          'comfort', 'casserole', 'mac and cheese', 'macaroni', 'mashed potato',
+          'meatloaf', 'pot pie', 'chicken pot pie', 'stew', 'chili', 'lasagna',
+          'baked pasta', 'grilled cheese', 'shepherd', 'fried chicken', 'soup',
+        ].any(searchableText.contains);
+      }).toList(),
+    };
+    groups.removeWhere((_, items) => items.isEmpty);
+    final categories = groups.keys.toList();
 
     if (_exploreCategory != null && groups.containsKey(_exploreCategory)) {
       final categoryRecipes = groups[_exploreCategory]!;
@@ -504,10 +605,10 @@ class _RecipesScreenState extends State<RecipesScreen> {
       );
     }
 
-    return SliverPadding(
-      padding: const EdgeInsets.only(bottom: AsanSpacing.lg),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate((context, index) {
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverList(
+          delegate: SliverChildBuilderDelegate((context, index) {
           final category = categories[index];
           final categoryRecipes = groups[category]!;
           return Padding(
@@ -522,7 +623,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                       Expanded(child: Text(_capitalizeCategory(category), style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold))),
                       AsanTextButton(
                         label: 'View all',
-                        onPressed: () => setState(() => _exploreCategory = category),
+                        onPressed: () => _openExploreCategoryInSearch(category),
                       ),
                     ],
                   ),
@@ -556,7 +657,33 @@ class _RecipesScreenState extends State<RecipesScreen> {
             ),
           );
         }, childCount: categories.length),
-      ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(AsanSpacing.lg, 0, AsanSpacing.lg, AsanSpacing.sm),
+          sliver: SliverToBoxAdapter(
+            child: Row(
+              children: [
+                Expanded(child: Text('Discover Recipes', style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold))),
+              ],
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(AsanSpacing.lg, 0, AsanSpacing.lg, AsanSpacing.lg),
+          sliver: SliverGrid(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildExploreRecipeCard(recipes[index]),
+              childCount: recipes.length,
+            ),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: AsanSpacing.md,
+              mainAxisSpacing: AsanSpacing.sm,
+              childAspectRatio: 163 / 220,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -568,7 +695,10 @@ class _RecipesScreenState extends State<RecipesScreen> {
         : recipe.prepTime + recipe.cookTime;
     return RecipeCard(
       recipeName: recipe.title,
-      mealCategory: recipe.category,
+      mealCategory: _cardDishType(
+        [recipe.category, ...recipe.dishTypes],
+        fallback: 'Recipe',
+      ),
       imageUrl: _recipeImages[recipe.title] ?? (recipe.imageUrl.isEmpty ? null : recipe.imageUrl),
       totalTime: totalTime > 0 ? Recipes.formatTotalTime(totalTime) : 'Open recipe',
       isSaved: isSaved,
@@ -786,8 +916,24 @@ class _RecipesScreenState extends State<RecipesScreen> {
         builder: (context) => RecipeDetailsScreen(
           recipe: recipe,
           ingredients: recipe.ingredients,
+          ingredientQuantities: recipe.ingredientQuantities,
+          ingredientUnits: recipe.ingredientUnits,
           ingredientNotes: recipe.ingredientNotes,
           instructions: recipe.instructions,
+          onAddToGroceries: () async { await widget.onAddToGroceries?.call(
+            List.generate(recipe.ingredients.length, (index) => GroceryItem(
+              name: recipe.ingredients[index],
+              quantity: index < recipe.ingredientQuantities.length
+                  ? recipe.ingredientQuantities[index] : '',
+              unit: index < recipe.ingredientUnits.length
+                  ? recipe.ingredientUnits[index] : '',
+              aisle: index < recipe.ingredientAisles.length
+                  ? recipe.ingredientAisles[index] ?? 'Other' : 'Other',
+              notes: index < recipe.ingredientNotes.length
+                  ? recipe.ingredientNotes[index] : '',
+            )),
+          ); },
+          onViewGroceries: widget.onViewGroceries,
           showEditButton: true,
           onEdit: () {
             _showEditItemDialog(recipe);
@@ -843,6 +989,15 @@ class _RecipesScreenState extends State<RecipesScreen> {
           ),
           imageUrl: imageUrl,
           ingredients: details.ingredients,
+          onAddToGroceries: () async { await widget.onAddToGroceries?.call(
+            List.generate(details.ingredients.length, (index) => GroceryItem(
+              name: details.ingredients[index], quantity: '', unit: '',
+              aisle: index < details.ingredientAisles.length
+                  ? details.ingredientAisles[index] ?? 'Other' : 'Other',
+              notes: '',
+            )),
+          ); },
+          onViewGroceries: widget.onViewGroceries,
           instructions: details.instructions,
           isSaved: isSaved,
           onToggleSaved: () => setState(() {

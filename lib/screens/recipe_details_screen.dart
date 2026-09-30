@@ -6,6 +6,7 @@ import 'package:asan/models/recipes.dart';
 import 'package:asan/styles/theme.dart';
 
 import 'package:asan/widgets/buttons.dart';
+import 'package:asan/widgets/communication.dart';
 import 'package:asan/widgets/containment.dart';
 import 'package:asan/widgets/selections.dart';
 
@@ -15,12 +16,15 @@ class RecipeDetailsScreen extends StatefulWidget {
   final bool isSaved;
   final Set<String> idealFor;
   final List<String> ingredients;
+  final List<String> ingredientQuantities;
+  final List<String> ingredientUnits;
   final List<String> ingredientNotes;
   final List<String> instructions;
   final bool showEditButton;
   final VoidCallback? onEdit;
   final VoidCallback? onToggleSaved;
-  final VoidCallback? onAddToGroceries;
+  final Future<void> Function()? onAddToGroceries;
+  final VoidCallback? onViewGroceries;
   final VoidCallback? onAddToMealPlan;
 
   const RecipeDetailsScreen({
@@ -30,12 +34,15 @@ class RecipeDetailsScreen extends StatefulWidget {
     this.isSaved = false,
     this.idealFor = const {},
     this.ingredients = const [],
+    this.ingredientQuantities = const [],
+    this.ingredientUnits = const [],
     this.ingredientNotes = const [],
     this.instructions = const [],
     this.showEditButton = false,
     this.onEdit,
     this.onToggleSaved,
     this.onAddToGroceries,
+    this.onViewGroceries,
     this.onAddToMealPlan,
   });
 
@@ -54,7 +61,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _ingredientServings = widget.recipe.servings > 0 ? widget.recipe.servings : 1;
+    _ingredientServings = 1;
     _isSaved = widget.isSaved;
   }
 
@@ -67,13 +74,36 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final recipe = widget.recipe;
-    final tags = [...recipe.tags.where((tag) => !asanMealTimes.contains(tag))];
-    final cuisine = recipe.cuisine?.trim();
-    if (cuisine != null &&
-        cuisine.isNotEmpty &&
-        !tags.any((tag) => tag.toLowerCase() == cuisine.toLowerCase())) {
-      tags.add(cuisine);
-    }
+    final cuisineTags = (recipe.cuisine ?? '')
+        .split(',')
+        .map((tag) => tag.trim())
+        .where((tag) => tag.isNotEmpty);
+    final tags = <String>[
+      ...recipe.tags.where((tag) => !asanMealTimes.contains(tag)),
+      ...cuisineTags,
+    ].toSet().toList();
+    final mealTimeValues = <String>{
+      ...widget.idealFor,
+      ...recipe.idealFor,
+      ...recipe.tags,
+      ...recipe.dishTypes,
+      if (recipe.mealCategory != null) recipe.mealCategory!,
+    }.map((value) => value.trim().toLowerCase()).toSet();
+    final mainDishTypeValue = [
+      if (recipe.mealCategory?.trim().isNotEmpty == true)
+        recipe.mealCategory!.trim(),
+      ...recipe.dishTypes.map((type) => type.trim()),
+    ].where((type) =>
+        type.isNotEmpty &&
+        !asanMealTimes.any((mealTime) => mealTime.toLowerCase() == type.toLowerCase()))
+      .firstWhere((_) => true, orElse: () => '');
+    final mainDishType = mainDishTypeValue.isEmpty ? null : mainDishTypeValue;
+    final displayDishType = mainDishType == null || mainDishType.isEmpty
+        ? mainDishType
+        : '${mainDishType[0].toUpperCase()}${mainDishType.substring(1)}';
+    final idealFor = asanMealTimes
+        .where((mealTime) => mealTimeValues.contains(mealTime.toLowerCase()))
+        .toList();
     final screenWidth = MediaQuery.sizeOf(context).width;
     final heroHeight = screenWidth * 3 / 4;
     return Scaffold(
@@ -115,25 +145,11 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                   ),
                   const SizedBox(height: AsanSpacing.sm),
                   _MetaRow(
-                    recipe: recipe,
-                    dishType: recipe.mealCategory?.trim().isNotEmpty == true
-                        ? recipe.mealCategory!.trim()
-                        : recipe.dishTypes.isNotEmpty
-                            ? recipe.dishTypes.first
-                            : null,
+                    dishType: displayDishType,
+                    idealFor: idealFor,
                   ),
-                  if (recipe.idealFor.isNotEmpty || recipe.tags.any(asanMealTimes.contains)) ...[
-                    const SizedBox(height: AsanSpacing.sm),
-                    _LabelValue(
-                      label: 'Ideal for',
-                      value: [...recipe.idealFor, ...recipe.tags.where(asanMealTimes.contains)]
-                          .toSet()
-                          .join(', '),
-                      color: AsanColorScheme.inactive,
-                      showColon: false,
-                      boldLabel: false,
-                    ),
-                  ],
+                  const SizedBox(height: AsanSpacing.sm),
+                  _TimingRow(recipe: recipe),
                   if (tags.isNotEmpty) ...[
                     const SizedBox(height: AsanSpacing.sm),
                     _TagWrap(tags: tags),
@@ -150,6 +166,8 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                         0 => _DetailsTab(recipe: recipe),
                         1 => _IngredientsTab(
                           ingredients: widget.ingredients,
+                          ingredientQuantities: widget.ingredientQuantities,
+                          ingredientUnits: widget.ingredientUnits,
                           ingredientNotes: widget.ingredientNotes,
                           servings: _ingredientServings,
                           baseServings: widget.recipe.servings > 0
@@ -260,7 +278,29 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                           Symbols.add_shopping_cart_rounded,
                           weight: 600,
                         ),
-                        onPressed: widget.onAddToGroceries,
+                        onPressed: widget.onAddToGroceries == null
+                            ? null
+                            : () async {
+                                await widget.onAddToGroceries!();
+                                if (!context.mounted) return;
+                                final count = widget.ingredients.length;
+                                final itemLabel = count == 1
+                                    ? 'ingredient added'
+                                    : 'ingredients added';
+                                AsanSnackBar.show(
+                                  context,
+                                  message: '$count $itemLabel to Groceries',
+                                  actionLabel: widget.onViewGroceries == null
+                                      ? null
+                                      : 'View',
+                                  onAction: widget.onViewGroceries == null
+                                      ? null
+                                      : () {
+                                          Navigator.of(context).pop();
+                                          widget.onViewGroceries!();
+                                        },
+                                );
+                              },
                       ),
                     ),
                     const SizedBox(width: AsanSpacing.sm),
@@ -322,10 +362,42 @@ class _HeroImage extends StatelessWidget {
 }
 
 class _MetaRow extends StatelessWidget {
-  final Recipes recipe;
   final String? dishType;
+  final List<String> idealFor;
 
-  const _MetaRow({required this.recipe, this.dishType});
+  const _MetaRow({required this.dishType, required this.idealFor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      runSpacing: AsanSpacing.xs,
+      children: [
+        if (dishType?.isNotEmpty == true) ...[
+          Text(dishType!, style: AsanTextTheme.labelSmall),
+          const SizedBox(width: AsanSpacing.sm),
+          Container(
+            width: 1,
+            height: 16,
+            color: AsanColorScheme.inactive,
+          ),
+          const SizedBox(width: AsanSpacing.sm),
+        ],
+        if (idealFor.isNotEmpty)
+          Text(
+            'Ideal for ${idealFor.join(', ')}',
+            softWrap: true,
+            style: AsanTextTheme.labelSmall.copyWith(color: AsanColorScheme.inactive),
+          ),
+      ],
+    );
+  }
+}
+
+class _TimingRow extends StatelessWidget {
+  final Recipes recipe;
+
+  const _TimingRow({required this.recipe});
 
   @override
   Widget build(BuildContext context) {
@@ -333,15 +405,7 @@ class _MetaRow extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: AsanSpacing.sm,
       children: [
-        if (dishType?.isNotEmpty == true) ...[
-          Text(dishType!, style: AsanTextTheme.labelSmall),
-          Container(
-            width: 1,
-            height: 16,
-            color: AsanColorScheme.inactive,
-          ),
-        ],
-          ...[
+        ...[
             const Icon(
               Symbols.local_dining_rounded,
               size: 16,
@@ -383,38 +447,6 @@ class _TagWrap extends StatelessWidget {
     spacing: AsanSpacing.xs,
     runSpacing: AsanSpacing.xs,
     children: tags.map((tag) => AsanTag(label: tag)).toList(),
-  );
-}
-
-class _LabelValue extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  final bool showColon;
-  final bool boldLabel;
-
-  const _LabelValue({
-    required this.label,
-    required this.value,
-    this.color = AsanColorScheme.secondary,
-    this.showColon = true,
-    this.boldLabel = true,
-  });
-
-  @override
-  Widget build(BuildContext context) => RichText(
-    text: TextSpan(
-      style: AsanTextTheme.labelSmall.copyWith(color: color),
-      children: [
-        TextSpan(
-          text: showColon ? '$label: ' : '$label ',
-          style: TextStyle(
-            fontWeight: boldLabel ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-        TextSpan(text: value),
-      ],
-    ),
   );
 }
 
@@ -508,6 +540,8 @@ class _NutritionRow extends StatelessWidget {
 
 class _IngredientsTab extends StatelessWidget {
   final List<String> ingredients;
+  final List<String> ingredientQuantities;
+  final List<String> ingredientUnits;
   final List<String> ingredientNotes;
   final int servings;
   final int baseServings;
@@ -515,6 +549,8 @@ class _IngredientsTab extends StatelessWidget {
 
   const _IngredientsTab({
     required this.ingredients,
+    required this.ingredientQuantities,
+    required this.ingredientUnits,
     required this.ingredientNotes,
     required this.servings,
     required this.baseServings,
@@ -568,10 +604,13 @@ class _IngredientsTab extends StatelessWidget {
         for (var i = 0; i < ingredients.length; i++) ...[
           if (i > 0)
             const SizedBox(height: AsanSpacing.xs),
-            const Divider(color: AsanColorScheme.container),
+            const AsanDivider(color: AsanColorScheme.container),
             const SizedBox(height: AsanSpacing.xs),
           _IngredientRow(
             ingredient: ingredients[i],
+            quantityOverride: i < ingredientQuantities.length
+                ? ingredientQuantities[i] : '',
+            unitOverride: i < ingredientUnits.length ? ingredientUnits[i] : '',
             notes: i < ingredientNotes.length ? ingredientNotes[i] : '',
             multiplier: servings / baseServings,
           ),
@@ -583,10 +622,12 @@ class _IngredientsTab extends StatelessWidget {
 
 class _IngredientRow extends StatelessWidget {
   final String ingredient;
+  final String quantityOverride;
+  final String unitOverride;
   final String notes;
   final double multiplier;
 
-  const _IngredientRow({required this.ingredient, required this.notes, required this.multiplier});
+  const _IngredientRow({required this.ingredient, required this.quantityOverride, required this.unitOverride, required this.notes, required this.multiplier});
 
   @override
   Widget build(BuildContext context) {
@@ -595,23 +636,28 @@ class _IngredientRow extends StatelessWidget {
       caseSensitive: false,
     ).firstMatch(ingredient.trim());
     final rawUnit = match?.group(2);
-    final quantity = match == null
-        ? ''
-        : '${_scaleQuantity(match.group(1)!, multiplier)}${rawUnit == null ? '' : ' ${_shortUnit(rawUnit)}'}';
-    final name = (match?.group(3)?.trim() ?? ingredient.trim())
+    final quantity = quantityOverride.trim().isNotEmpty
+        ? '${_scaleQuantity(quantityOverride.trim(), multiplier)}${unitOverride.trim().isEmpty ? '' : ' ${unitOverride.trim()}'}'
+        : match == null
+            ? ''
+            : '${_scaleQuantity(match.group(1)!, multiplier)}${rawUnit == null ? '' : ' ${_shortUnit(rawUnit)}'}';
+    final name = (quantityOverride.trim().isNotEmpty
+            ? ingredient.trim()
+            : match?.group(3)?.trim() ?? ingredient.trim())
         .replaceFirst(RegExp(r'^of\s+', caseSensitive: false), '');
     return LayoutBuilder(
       builder: (context, constraints) => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
+            flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name, style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-                if (notes.trim().isNotEmpty) ...[
+                if (notes.isNotEmpty) ...[
                   const SizedBox(height: AsanSpacing.xs),
-                  Text(notes.trim(), style: AsanTextTheme.labelSmall.copyWith(color: AsanColorScheme.inactive)),
+                  Text(notes, style: AsanTextTheme.labelSmall.copyWith(color: AsanColorScheme.inactive)),
                 ],
               ],
             ),
@@ -619,6 +665,7 @@ class _IngredientRow extends StatelessWidget {
           if (quantity.isNotEmpty) ...[
             const SizedBox(width: AsanSpacing.md),
             Expanded(
+              flex: 2,
               child: Text(quantity, style: AsanTextTheme.bodyMedium, textAlign: TextAlign.right),
             ),
           ],

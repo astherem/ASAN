@@ -2,7 +2,7 @@ class GroceryItem {
   final String name;
   final String quantity;
   final String unit;
-  final String? foodGroup;
+  final String? aisle;
   final String notes;
   final DateTime? purchaseDate;
 
@@ -10,7 +10,7 @@ class GroceryItem {
     required this.name,
     required this.quantity,
     required this.unit,
-    this.foodGroup,
+    this.aisle,
     required this.notes,
     this.purchaseDate,
   });
@@ -19,7 +19,7 @@ class GroceryItem {
     name: name ?? this.name,
     quantity: quantity,
     unit: unit,
-    foodGroup: foodGroup,
+    aisle: aisle,
     notes: notes,
     purchaseDate: purchaseDate,
   );

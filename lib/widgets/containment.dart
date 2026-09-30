@@ -428,7 +428,9 @@ class RecipeCard extends StatelessWidget {
             ),
             const SizedBox(height: AsanSpacing.xs),
             Text(
-              mealCategory,
+              mealCategory.trim().isEmpty
+                  ? ''
+                  : '${mealCategory.trim()[0].toUpperCase()}${mealCategory.trim().substring(1)}',
               style: AsanTextTheme.labelSmall,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -443,17 +445,17 @@ class RecipeCard extends StatelessWidget {
 // DIVIDER
 class AsanDivider extends StatelessWidget {
   final double thickness;
-  final Color color;
+  final Color? color;
 
   const AsanDivider({
     super.key,
     this.thickness = 1,
-    this.color = AsanColorScheme.container,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Divider(height: thickness, thickness: thickness, color: color);
+    return Divider(height: thickness, thickness: thickness, color: AsanColorScheme.container);
   }
 }
 
@@ -551,6 +553,56 @@ class MealCard extends StatelessWidget {
                       ],
                     ),
                   ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// SEARCH CARD
+class AsanSearchCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color? color;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const AsanSearchCard({
+    super.key,
+    required this.title,
+    this.icon = Symbols.search_rounded,
+    this.color,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      color: color ?? AsanColorScheme.container,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AsanSpacing.md),
+          child: Row(
+            children: [
+              Icon(icon, color: AsanColorScheme.onContainer, size: 24, weight: 600, fill: 1),
+              const SizedBox(width: AsanSpacing.sm),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AsanTextTheme.bodyMedium.copyWith(
+                    color: AsanColorScheme.onContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+
                 ),
               ),
             ],

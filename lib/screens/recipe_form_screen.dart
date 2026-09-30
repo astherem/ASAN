@@ -236,10 +236,18 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
         final index = _ingredients.length;
         _ingredients.add(_IngredientEntry()
           ..ingredientController.text = ingredient
+          ..quantityController.text = index < item.ingredientQuantities.length
+              ? item.ingredientQuantities[index]
+              : ''
+          ..unitController.text = index < item.ingredientUnits.length
+              ? item.ingredientUnits[index]
+              : ''
           ..notesController.text = index < item.ingredientNotes.length
               ? item.ingredientNotes[index]
               : ''
-          ..aisle = asanAisles.first);
+          ..aisle = index < item.ingredientAisles.length
+              ? item.ingredientAisles[index] ?? asanAisles.first
+              : asanAisles.first);
       }
       for (final instruction in item.instructions) {
         _steps.add(_StepEntry()..instructionController.text = instruction);
@@ -958,20 +966,14 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
                 const SizedBox(height: AsanSpacing.sm),
                 _ReviewMetaRow(
                   dishType: _mealCategory,
+                  idealFor: _idealFor.where(asanMealTimes.contains).toList(),
+                ),
+                const SizedBox(height: AsanSpacing.sm),
+                _ReviewTimingRow(
                   prepTime: int.tryParse(_prepTimeController.text) ?? 0,
                   cookTime: int.tryParse(_cookTimeController.text) ?? 0,
                   servings: int.tryParse(_servingsController.text) ?? 0,
                 ),
-                if (_idealFor.any(asanMealTimes.contains)) ...[
-                  const SizedBox(height: AsanSpacing.xs),
-                  Text(
-                    'Ideal for ${_idealFor.where(asanMealTimes.contains).join(', ')}',
-                    style: AsanTextTheme.labelSmall.copyWith(
-                      color: AsanColorScheme.inactive,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                ],
                 if (tags.isNotEmpty) ...[
                   const SizedBox(height: AsanSpacing.sm),
                   Wrap(spacing: AsanSpacing.xs, runSpacing: AsanSpacing.xs, children: tags.map((tag) => AsanTag(label: tag)).toList()),
@@ -1036,7 +1038,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
         if (ingredients.isEmpty)
           Padding(padding: const EdgeInsets.only(top: AsanSpacing.lg), child: Center(child: Text('No ingredients added yet.', style: AsanTextTheme.bodyMedium))),
         for (var i = 0; i < ingredients.length; i++) ...[
-          if (i > 0) ...[const SizedBox(height: AsanSpacing.xs), const Divider(color: AsanColorScheme.container), const SizedBox(height: AsanSpacing.xs)],
+          if (i > 0) ...[const SizedBox(height: AsanSpacing.xs), const AsanDivider(color: AsanColorScheme.container), const SizedBox(height: AsanSpacing.xs)],
           _ReviewIngredientRow(entry: ingredients[i]),
         ],
       ],
@@ -1097,6 +1099,10 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
       return;
     }
 
+    final savedIngredients = _ingredients
+        .where((entry) => entry.ingredientController.text.trim().isNotEmpty)
+        .toList();
+
     Navigator.pop(
       context,
       Recipes(
@@ -1117,13 +1123,19 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
         protein: protein,
         tags: _idealFor.where((tag) => !asanMealTimes.contains(tag)).toList(),
         idealFor: _idealFor.where(asanMealTimes.contains).toList(),
-        ingredients: _ingredients
+        ingredients: savedIngredients
             .map((entry) => entry.ingredientController.text.trim())
-            .where((value) => value.isNotEmpty)
             .toList(),
-        ingredientNotes: _ingredients
-            .map((entry) => entry.notesController.text.trim())
+        ingredientQuantities: savedIngredients
+            .map((entry) => entry.quantityController.text.trim())
             .toList(),
+        ingredientUnits: savedIngredients
+            .map((entry) => entry.unitController.text.trim())
+            .toList(),
+        ingredientNotes: savedIngredients
+            .map((entry) => entry.notesController.text)
+            .toList(),
+        ingredientAisles: savedIngredients.map((entry) => entry.aisle).toList(),
         instructions: _steps
             .map((entry) => entry.instructionController.text.trim())
             .where((value) => value.isNotEmpty)
@@ -1199,21 +1211,45 @@ class _ReviewNutritionRow extends StatelessWidget {
 
 class _ReviewMetaRow extends StatelessWidget {
   final String? dishType;
+  final List<String> idealFor;
+
+  const _ReviewMetaRow({this.dishType, required this.idealFor});
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    crossAxisAlignment: WrapCrossAlignment.center,
+    runSpacing: AsanSpacing.xs,
+    children: [
+      if (dishType?.trim().isNotEmpty == true) ...[
+        Text(dishType!.trim(), style: AsanTextTheme.labelSmall),
+        if (idealFor.isNotEmpty) ...[
+          const SizedBox(width: AsanSpacing.sm),
+          Container(width: 1, height: 16, color: AsanColorScheme.inactive),
+          const SizedBox(width: AsanSpacing.sm),
+        ],
+      ],
+      if (idealFor.isNotEmpty)
+        Text(
+          'Ideal for ${idealFor.join(', ')}',
+          softWrap: true,
+          style: AsanTextTheme.labelSmall.copyWith(color: AsanColorScheme.inactive),
+        ),
+    ],
+  );
+}
+
+class _ReviewTimingRow extends StatelessWidget {
   final int prepTime;
   final int cookTime;
   final int servings;
 
-  const _ReviewMetaRow({this.dishType, required this.prepTime, required this.cookTime, required this.servings});
+  const _ReviewTimingRow({required this.prepTime, required this.cookTime, required this.servings});
 
   @override
   Widget build(BuildContext context) => Wrap(
     crossAxisAlignment: WrapCrossAlignment.center,
     spacing: AsanSpacing.sm,
     children: [
-      if (dishType?.trim().isNotEmpty == true) ...[
-        Text(dishType!.trim(), style: AsanTextTheme.labelSmall),
-        Container(width: 1, height: 16, color: AsanColorScheme.inactive.withValues(alpha: 0.5)),
-      ],
       const Icon(Symbols.local_dining_rounded, size: 16, color: AsanColorScheme.secondary, weight: 600),
       Text('${prepTime}m prep', style: AsanTextTheme.labelSmall),
       const Icon(Symbols.skillet_rounded, fill: 1, size: 16, color: AsanColorScheme.secondary),
