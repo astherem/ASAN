@@ -220,7 +220,9 @@ class ApiRecipe {
     final cuisines = recipe['cuisines'] is List
         ? (recipe['cuisines'] as List).whereType<String>().toList()
         : const <String>[];
-    final dishTypes = stringList(recipe['dishTypes']);
+    final dishTypes = stringList(recipe['dishTypes'])
+      .map((type) => type.toLowerCase() == 'morning meal' ? 'Breakfast' : type)
+      .toList();
     final diets = stringList(recipe['diets']);
     final prepTime = number(recipe['preparationMinutes']);
     final cookTime = number(recipe['cookingMinutes']);

@@ -4,12 +4,14 @@ class MealPlans {
   final DateTime date;
   final String mealTime;
   final Recipes recipe;
+  final String? dishType;
   final int? servingsOverride;
 
   const MealPlans({
     required this.date,
     required this.mealTime,
     required this.recipe,
+    this.dishType,
     this.servingsOverride,
   });
 
@@ -24,12 +26,14 @@ class MealPlans {
     DateTime? date,
     String? mealTime,
     Recipes? recipe,
+    String? dishType,
     int? servingsOverride,
   }) {
     return MealPlans (
       date: date ?? this.date,
       mealTime: mealTime ?? this.mealTime,
       recipe: recipe ?? this.recipe,
+      dishType: dishType ?? this.dishType,
       servingsOverride: servingsOverride ?? this.servingsOverride,
     );
   }

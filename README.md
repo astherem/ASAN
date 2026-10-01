@@ -75,13 +75,13 @@ When the app loads successfully, it opens to Recipes. The bottom navigation cont
 
 ### Pantry
 
-- Add and edit pantry items with name, quantity, purchase/expiry dates, notes, and food group.
-- Search by item name and filter by food group or expiry status.
+- Add and edit pantry items with name, quantity, purchase/expiry dates, notes, and aisle.
+- Search by item name and filter by aisle or expiry status.
 - Grouped list sections make it easier to review inventory by category.
 
 ### Groceries
 
-- Add and edit grocery items; search, filter by food group, and sort or group the list.
+- Add and edit grocery items; search, filter by aisle, and sort or group the list.
 - Checking an item removes it from Groceries and adds it to Pantry with its purchase date. The navigation badge tracks the grocery item count.
 
 

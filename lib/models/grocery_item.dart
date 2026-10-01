@@ -1,6 +1,6 @@
 class GroceryItem {
   final String name;
-  final String quantity;
+  final String amount;
   final String unit;
   final String? aisle;
   final String notes;
@@ -8,7 +8,7 @@ class GroceryItem {
 
   const GroceryItem({
     required this.name,
-    required this.quantity,
+    required this.amount,
     required this.unit,
     this.aisle,
     required this.notes,
@@ -17,7 +17,7 @@ class GroceryItem {
 
   GroceryItem copyWith({String? name}) => GroceryItem(
     name: name ?? this.name,
-    quantity: quantity,
+    amount: amount,
     unit: unit,
     aisle: aisle,
     notes: notes,

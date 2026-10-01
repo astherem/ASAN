@@ -50,7 +50,8 @@ class GroceriesScreenState extends State<GroceriesScreen> {
       final addAnyway = await AsanAlertDialog.show(
         context,
         title: 'Already in Groceries',
-        content: 'You already have $names in Groceries. Add them again? Their quantities will be combined with the existing items.',
+        content:
+            'You already have $names in Groceries. Add them again? Their quantities will be combined with the existing items.',
         cancelText: 'Cancel',
         destructiveText: 'Add',
         primaryAction: true,
@@ -68,15 +69,21 @@ class GroceriesScreenState extends State<GroceriesScreen> {
           continue;
         }
         final current = _items[index];
-        final sameUnit = current.unit.trim().toLowerCase() == incoming.unit.trim().toLowerCase();
-        final currentAmount = double.tryParse(current.quantity.trim());
-        final incomingAmount = double.tryParse(incoming.quantity.trim());
-        final quantity = sameUnit && currentAmount != null && incomingAmount != null
+        final sameUnit =
+            current.unit.trim().toLowerCase() ==
+            incoming.unit.trim().toLowerCase();
+        final currentAmount = double.tryParse(current.amount.trim());
+        final incomingAmount = double.tryParse(incoming.amount.trim());
+        final amount =
+            sameUnit && currentAmount != null && incomingAmount != null
             ? '${currentAmount + incomingAmount}'
-            : [current.quantity, incoming.quantity].where((value) => value.trim().isNotEmpty).join(' + ');
+            : [
+                current.amount,
+                incoming.amount,
+              ].where((value) => value.trim().isNotEmpty).join(' + ');
         _items[index] = GroceryItem(
           name: current.name,
-          quantity: quantity,
+          amount: amount,
           unit: current.unit.isNotEmpty ? current.unit : incoming.unit,
           aisle: current.aisle,
           notes: _mergeNotes(current.notes, incoming.notes),
@@ -170,7 +177,7 @@ class GroceriesScreenState extends State<GroceriesScreen> {
         return Dialog.fullscreen(
           child: SafeArea(
             child: Scaffold(
-      resizeToAvoidBottomInset: false,
+              resizeToAvoidBottomInset: false,
               appBar: FullScreenDialogHeader(
                 screenTitle: 'Add Grocery Item',
                 onBackPressed: () async {
@@ -179,9 +186,11 @@ class GroceriesScreenState extends State<GroceriesScreen> {
                     if (context.mounted) Navigator.pop(context);
                     return;
                   }
-                  final shouldDiscard = await AsanAlertDialog.show(context,
+                  final shouldDiscard = await AsanAlertDialog.show(
+                    context,
                     title: 'Discard Changes?',
-                    content: 'You have changes that won\'t be saved if you close. Are you sure you want to discard them?',
+                    content:
+                        'You have changes that won\'t be saved if you close. Are you sure you want to discard them?',
                     cancelText: 'Cancel',
                     destructiveText: 'Discard',
                   );
@@ -288,12 +297,13 @@ class GroceriesScreenState extends State<GroceriesScreen> {
           ),
         ),
       ),
-      body: _groupedItems.isEmpty &&
+      body:
+          _groupedItems.isEmpty &&
               (_searchQuery.trim().isNotEmpty || _activeFilterLabels.isNotEmpty)
           ? AsanEmptyState(
               icon: Symbols.search_off_rounded,
               title: "No grocery items found",
-              message: "No matches for '${_searchQuery.trim()}'."
+              message: "No matches for '${_searchQuery.trim()}'.",
             )
           : _items.isEmpty
           ? AsanEmptyState(
@@ -304,26 +314,26 @@ class GroceriesScreenState extends State<GroceriesScreen> {
               onAction: () => _showAddGroceryItemDialog(context),
             )
           : ListView.separated(
-        controller: _contentScrollController,
-        padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
-        itemCount: _groupedItems.length,
-        itemBuilder: (context, index) {
-          final group = _groupedItems[index];
-          return AsanExpansionTile(
-            key: ValueKey(group.key),
-            title: group.key,
-            itemCount: group.value.length,
-            children: group.value.map(_buildListTile).toList(),
-          );
-        },
-        separatorBuilder: (context, index) => const Column(
-          children: [
-            SizedBox(height: AsanSpacing.md),
-            AsanDivider(),
-            SizedBox(height: AsanSpacing.md),
-          ],
-        ),
-      ),
+              controller: _contentScrollController,
+              padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
+              itemCount: _groupedItems.length,
+              itemBuilder: (context, index) {
+                final group = _groupedItems[index];
+                return AsanExpansionTile(
+                  key: ValueKey(group.key),
+                  title: group.key,
+                  itemCount: group.value.length,
+                  children: group.value.map(_buildListTile).toList(),
+                );
+              },
+              separatorBuilder: (context, index) => const Column(
+                children: [
+                  SizedBox(height: AsanSpacing.md),
+                  AsanDivider(),
+                  SizedBox(height: AsanSpacing.md),
+                ],
+              ),
+            ),
     );
   }
 
@@ -362,9 +372,11 @@ class GroceriesScreenState extends State<GroceriesScreen> {
   Widget _buildListTile(GroceryItem item) => AsanListTile(
     key: ValueKey(item),
     itemName: item.name,
-    quantity: item.quantity,
+    amount: item.amount,
     unit: item.unit,
-    category: item.aisle ?? 'Uncategorized',
+    category: _activeFilters?.sortBy == 'Item name'
+        ? item.aisle ?? 'Uncategorized'
+        : '',
     purchasedDate: '',
     notes: item.notes,
     onChanged: (checked) {
@@ -380,12 +392,21 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     widget.onItemChecked?.call(
       PantryItem(
         name: item.name,
-        quantity: item.quantity,
+        amount: item.amount,
         unit: item.unit,
-        foodGroup: item.aisle,
+        aisle: item.aisle,
         purchaseDate: checkedDate,
         notes: item.notes,
       ),
+    );
+    AsanSnackBar.show(
+      context,
+      message: '${item.name} added to Pantry',
+      actionLabel: 'Undo',
+      onAction: () {
+        setState(() => _items.add(item));
+        widget.onItemCountChanged?.call(_items.length);
+      },
     );
   }
 
@@ -397,18 +418,48 @@ class GroceriesScreenState extends State<GroceriesScreen> {
       builder: (context) => Dialog.fullscreen(
         child: SafeArea(
           child: Scaffold(
-      resizeToAvoidBottomInset: false,
+            resizeToAvoidBottomInset: false,
             appBar: FullScreenDialogHeader(
               screenTitle: 'Edit ${item.name}',
+              trailing: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 34,
+                  height: 34,
+                ),
+                icon: const Icon(
+                  Symbols.delete_rounded,
+                  fill: 1,
+                  size: 28,
+                  color: AsanColorScheme.error,
+                ),
+                onPressed: () async {
+                  final confirmed = await AsanAlertDialog.show(
+                    context,
+                    title: 'Delete Grocery Item?',
+                    content:
+                        'This item will be permanently removed from your groceries. Are you sure you want to delete it?',
+                    cancelText: 'Cancel',
+                    destructiveText: 'Delete Item',
+                  );
+                  if (confirmed == true && context.mounted) {
+                    Navigator.pop(context);
+                    setState(() => _items.remove(item));
+                    widget.onItemCountChanged?.call(_items.length);
+                  }
+                },
+              ),
               onBackPressed: () async {
                 final formState = formKey.currentState;
                 if (formState == null || !formState.hasChanges) {
                   if (context.mounted) Navigator.pop(context);
                   return;
                 }
-                final shouldDiscard = await AsanAlertDialog.show(context,
+                final shouldDiscard = await AsanAlertDialog.show(
+                  context,
                   title: 'Discard Changes?',
-                  content: 'You have changes that won\'t be saved if you close. Are you sure you want to discard them?',
+                  content:
+                      'You have changes that won\'t be saved if you close. Are you sure you want to discard them?',
                   cancelText: 'Cancel',
                   destructiveText: 'Discard',
                 );
@@ -449,7 +500,7 @@ class AddGroceryItemForm extends StatefulWidget {
 
 class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
   late final TextEditingController _itemController;
-  late final TextEditingController _quantityController;
+  late final TextEditingController _amountController;
   late final TextEditingController _unitController;
   late final TextEditingController _notesController;
   String? _aisle;
@@ -458,12 +509,12 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
 
   bool get hasChanges => widget.initialItem == null
       ? _itemController.text.isNotEmpty ||
-            _quantityController.text.isNotEmpty ||
+            _amountController.text.isNotEmpty ||
             _unitController.text.isNotEmpty ||
             _notesController.text.isNotEmpty ||
             _aisle != null
       : _itemController.text.trim() != widget.initialItem!.name ||
-            _quantityController.text.trim() != widget.initialItem!.quantity ||
+            _amountController.text.trim() != widget.initialItem!.amount ||
             _unitController.text.trim() != widget.initialItem!.unit ||
             _notesController.text.trim() != widget.initialItem!.notes ||
             _aisle != widget.initialItem!.aisle;
@@ -473,7 +524,7 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
     super.initState();
     final item = widget.initialItem;
     _itemController = TextEditingController(text: item?.name);
-    _quantityController = TextEditingController(text: item?.quantity);
+    _amountController = TextEditingController(text: item?.amount);
     _unitController = TextEditingController(text: item?.unit);
     _notesController = TextEditingController(text: item?.notes);
     _aisle = item?.aisle;
@@ -482,7 +533,7 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
   @override
   void dispose() {
     _itemController.dispose();
-    _quantityController.dispose();
+    _amountController.dispose();
     _unitController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -522,9 +573,9 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
             children: [
               Expanded(
                 child: AsanTextField(
-                  label: 'Quantity',
-                  hintText: 'Enter quantity',
-                  controller: _quantityController,
+                  label: 'Amount',
+                  hintText: 'Enter amount',
+                  controller: _amountController,
                 ),
               ),
               const SizedBox(width: AsanSpacing.md),
@@ -567,7 +618,7 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
       context,
       GroceryItem(
         name: name,
-        quantity: _quantityController.text.trim(),
+        amount: _amountController.text.trim(),
         unit: _unitController.text.trim(),
         aisle: _aisle,
         notes: _notesController.text.trim(),
@@ -575,5 +626,3 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
     );
   }
 }
-
-

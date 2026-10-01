@@ -22,7 +22,7 @@ class Recipes {
   final int protein;
   final List<String> dishTypes;
   final List<String> ingredients;
-  final List<String> ingredientQuantities;
+  final List<String> ingredientAmounts;
   final List<String> ingredientUnits;
   final List<String> ingredientNotes;
   final List<String?> ingredientAisles;
@@ -55,13 +55,16 @@ class Recipes {
     this.protein = 0,
     this.dishTypes = const [],
     this.ingredients = const [],
-    this.ingredientQuantities = const [],
+    this.ingredientAmounts = const [],
     this.ingredientUnits = const [],
     this.ingredientNotes = const [],
     this.ingredientAisles = const [],
     this.instructions = const [],
-    this.healthScore = 0, this.aggregateLikes = 0, this.pricePerServing = 0,
-    this.sourceName, this.sourceUrl,
+    this.healthScore = 0,
+    this.aggregateLikes = 0,
+    this.pricePerServing = 0,
+    this.sourceName,
+    this.sourceUrl,
   });
 
   Recipes copyWith({
@@ -77,6 +80,25 @@ class Recipes {
     int? prepTime,
     int? cookTime,
     int? totalTime,
+    int? servings,
+    int? calories,
+    int? fats,
+    int? cholesterol,
+    int? sodium,
+    int? carbohydrates,
+    int? protein,
+    List<String>? dishTypes,
+    List<String>? ingredients,
+    List<String>? ingredientAmounts,
+    List<String>? ingredientUnits,
+    List<String>? ingredientNotes,
+    List<String?>? ingredientAisles,
+    List<String>? instructions,
+    int? healthScore,
+    int? aggregateLikes,
+    double? pricePerServing,
+    String? sourceName,
+    String? sourceUrl,
   }) {
     return Recipes(
       name: name ?? this.name,
@@ -91,6 +113,25 @@ class Recipes {
       prepTime: prepTime ?? this.prepTime,
       cookTime: cookTime ?? this.cookTime,
       totalTime: totalTime ?? this.totalTime,
+      servings: servings ?? this.servings,
+      calories: calories ?? this.calories,
+      fats: fats ?? this.fats,
+      cholesterol: cholesterol ?? this.cholesterol,
+      sodium: sodium ?? this.sodium,
+      carbohydrates: carbohydrates ?? this.carbohydrates,
+      protein: protein ?? this.protein,
+      dishTypes: dishTypes ?? this.dishTypes,
+      ingredients: ingredients ?? this.ingredients,
+      ingredientAmounts: ingredientAmounts ?? this.ingredientAmounts,
+      ingredientUnits: ingredientUnits ?? this.ingredientUnits,
+      ingredientNotes: ingredientNotes ?? this.ingredientNotes,
+      ingredientAisles: ingredientAisles ?? this.ingredientAisles,
+      instructions: instructions ?? this.instructions,
+      healthScore: healthScore ?? this.healthScore,
+      aggregateLikes: aggregateLikes ?? this.aggregateLikes,
+      pricePerServing: pricePerServing ?? this.pricePerServing,
+      sourceName: sourceName ?? this.sourceName,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
     );
   }
 
@@ -104,5 +145,4 @@ class Recipes {
   }
 
   String get formattedTotalTime => formatTotalTime(totalTime);
-
 }

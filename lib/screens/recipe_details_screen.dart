@@ -16,14 +16,14 @@ class RecipeDetailsScreen extends StatefulWidget {
   final bool isSaved;
   final Set<String> idealFor;
   final List<String> ingredients;
-  final List<String> ingredientQuantities;
+  final List<String> ingredientAmounts;
   final List<String> ingredientUnits;
   final List<String> ingredientNotes;
   final List<String> instructions;
   final bool showEditButton;
-  final VoidCallback? onEdit;
+  final Future<Recipes?> Function(Recipes recipe)? onEdit;
   final VoidCallback? onToggleSaved;
-  final Future<void> Function()? onAddToGroceries;
+  final Future<void> Function(int servings)? onAddToGroceries;
   final VoidCallback? onViewGroceries;
   final VoidCallback? onAddToMealPlan;
 
@@ -34,7 +34,7 @@ class RecipeDetailsScreen extends StatefulWidget {
     this.isSaved = false,
     this.idealFor = const {},
     this.ingredients = const [],
-    this.ingredientQuantities = const [],
+    this.ingredientAmounts = const [],
     this.ingredientUnits = const [],
     this.ingredientNotes = const [],
     this.instructions = const [],
@@ -57,23 +57,26 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   late int _ingredientServings;
   bool _imageScrolledPastHeader = false;
   late bool _isSaved;
+  late Recipes _recipe;
 
   @override
   void initState() {
     super.initState();
     _ingredientServings = 1;
     _isSaved = widget.isSaved;
+    _recipe = widget.recipe;
   }
 
   @override
   void didUpdateWidget(covariant RecipeDetailsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isSaved != widget.isSaved) _isSaved = widget.isSaved;
+    if (oldWidget.recipe != widget.recipe) _recipe = widget.recipe;
   }
 
   @override
   Widget build(BuildContext context) {
-    final recipe = widget.recipe;
+    final recipe = _recipe;
     final cuisineTags = (recipe.cuisine ?? '')
         .split(',')
         .map((tag) => tag.trim())
@@ -89,14 +92,20 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       ...recipe.dishTypes,
       if (recipe.mealCategory != null) recipe.mealCategory!,
     }.map((value) => value.trim().toLowerCase()).toSet();
-    final mainDishTypeValue = [
-      if (recipe.mealCategory?.trim().isNotEmpty == true)
-        recipe.mealCategory!.trim(),
-      ...recipe.dishTypes.map((type) => type.trim()),
-    ].where((type) =>
-        type.isNotEmpty &&
-        !asanMealTimes.any((mealTime) => mealTime.toLowerCase() == type.toLowerCase()))
-      .firstWhere((_) => true, orElse: () => '');
+    final mainDishTypeValue =
+        [
+              if (recipe.mealCategory?.trim().isNotEmpty == true)
+                recipe.mealCategory!.trim(),
+              ...recipe.dishTypes.map((type) => type.trim()),
+            ]
+            .where(
+              (type) =>
+                  type.isNotEmpty &&
+                  !asanMealTimes.any(
+                    (mealTime) => mealTime.toLowerCase() == type.toLowerCase(),
+                  ),
+            )
+            .firstWhere((_) => true, orElse: () => '');
     final mainDishType = mainDishTypeValue.isEmpty ? null : mainDishTypeValue;
     final displayDishType = mainDishType == null || mainDishType.isEmpty
         ? mainDishType
@@ -112,13 +121,13 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       body: Stack(
         children: [
           NotificationListener<ScrollUpdateNotification>(
-              onNotification: (notification) {
-                final scrolled = notification.metrics.pixels >= heroHeight - 72;
-                if (scrolled != _imageScrolledPastHeader) {
-                  setState(() => _imageScrolledPastHeader = scrolled);
-                }
-                return false;
-              },
+            onNotification: (notification) {
+              final scrolled = notification.metrics.pixels >= heroHeight - 72;
+              if (scrolled != _imageScrolledPastHeader) {
+                setState(() => _imageScrolledPastHeader = scrolled);
+              }
+              return false;
+            },
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -127,63 +136,59 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                     height: heroHeight,
                     child: _HeroImage(
                       imageUrl: widget.imageUrl,
-                      imageBytes: widget.recipe.imageBytes,
+                      imageBytes: recipe.imageBytes,
                     ),
                   ),
                   Container(
-              decoration: const BoxDecoration(
-                color: AsanColorScheme.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              padding: const EdgeInsets.all(AsanSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    recipe.name,
-                    style: AsanTextTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: AsanSpacing.sm),
-                  _MetaRow(
-                    dishType: displayDishType,
-                    idealFor: idealFor,
-                  ),
-                  const SizedBox(height: AsanSpacing.sm),
-                  _TimingRow(recipe: recipe),
-                  if (tags.isNotEmpty) ...[
-                    const SizedBox(height: AsanSpacing.sm),
-                    _TagWrap(tags: tags),
-                  ],
-                  const SizedBox(height: AsanSpacing.md),
-                  AsanSegmentedButton(
-                    views: _tabs,
-                    selectedIndex: _selectedTab,
-                    onChanged: (index) =>
-                        setState(() => _selectedTab = index),
-                  ),
-                  const SizedBox(height: AsanSpacing.md),
-                  switch (_selectedTab) {
-                        0 => _DetailsTab(recipe: recipe),
-                        1 => _IngredientsTab(
-                          ingredients: widget.ingredients,
-                          ingredientQuantities: widget.ingredientQuantities,
-                          ingredientUnits: widget.ingredientUnits,
-                          ingredientNotes: widget.ingredientNotes,
-                          servings: _ingredientServings,
-                          baseServings: widget.recipe.servings > 0
-                              ? widget.recipe.servings
-                              : 1,
-                          onServingsChanged: (value) =>
-                              setState(() => _ingredientServings = value),
-                        ),
-                        _ => _InstructionsTab(
-                          instructions: widget.instructions,
-                          notes: recipe.notes,
-                        ),
-                  },
-                ],
-              ),
+                    decoration: const BoxDecoration(
+                      color: AsanColorScheme.surface,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
                     ),
+                    padding: const EdgeInsets.all(AsanSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(recipe.name, style: AsanTextTheme.headlineSmall),
+                        const SizedBox(height: AsanSpacing.sm),
+                        _MetaRow(dishType: displayDishType, idealFor: idealFor),
+                        const SizedBox(height: AsanSpacing.sm),
+                        _TimingRow(recipe: recipe),
+                        if (tags.isNotEmpty) ...[
+                          const SizedBox(height: AsanSpacing.sm),
+                          _TagWrap(tags: tags),
+                        ],
+                        const SizedBox(height: AsanSpacing.md),
+                        AsanSegmentedButton(
+                          views: _tabs,
+                          selectedIndex: _selectedTab,
+                          onChanged: (index) =>
+                              setState(() => _selectedTab = index),
+                        ),
+                        const SizedBox(height: AsanSpacing.md),
+                        switch (_selectedTab) {
+                          0 => _DetailsTab(recipe: recipe),
+                          1 => _IngredientsTab(
+                            ingredients: recipe.ingredients,
+                            ingredientAmounts: recipe.ingredientAmounts,
+                            ingredientUnits: recipe.ingredientUnits,
+                            ingredientNotes: recipe.ingredientNotes,
+                            servings: _ingredientServings,
+                            baseServings: recipe.servings > 0
+                                ? recipe.servings
+                                : 1,
+                            onServingsChanged: (value) =>
+                                setState(() => _ingredientServings = value),
+                          ),
+                          _ => _InstructionsTab(
+                            instructions: recipe.instructions,
+                            notes: recipe.notes,
+                          ),
+                        },
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -229,7 +234,14 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                       color: AsanColorScheme.secondary,
                       size: 48,
                       showShadow: !_imageScrolledPastHeader,
-                      onPressed: widget.onEdit,
+                      onPressed: () async {
+                        final updatedRecipe = await widget.onEdit?.call(
+                          _recipe,
+                        );
+                        if (updatedRecipe != null && mounted) {
+                          setState(() => _recipe = updatedRecipe);
+                        }
+                      },
                     )
                   else
                     TonalIconButton.round(
@@ -260,63 +272,61 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       bottomNavigationBar: SafeArea(
         top: false,
         child: Container(
-                constraints: const BoxConstraints(minHeight: 66),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AsanSpacing.lg,
-                  vertical: AsanSpacing.md,
+          constraints: const BoxConstraints(minHeight: 66),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AsanSpacing.lg,
+            vertical: AsanSpacing.md,
+          ),
+          decoration: const BoxDecoration(color: AsanColorScheme.surface),
+          child: Row(
+            children: [
+              Expanded(
+                child: SecondaryButton(
+                  label: 'Add to Groceries',
+                  fontSize: 12,
+                  icon: const Icon(
+                    Symbols.add_shopping_cart_rounded,
+                    weight: 600,
+                  ),
+                  onPressed: widget.onAddToGroceries == null
+                      ? null
+                      : () async {
+                          await widget.onAddToGroceries!(_ingredientServings);
+                          if (!context.mounted) return;
+                          final count = _recipe.ingredients.length;
+                          final itemLabel = count == 1
+                              ? 'ingredient added'
+                              : 'ingredients added';
+                          AsanSnackBar.show(
+                            context,
+                            message: '$count $itemLabel to Groceries',
+                            actionLabel: widget.onViewGroceries == null
+                                ? null
+                                : 'View',
+                            onAction: widget.onViewGroceries == null
+                                ? null
+                                : () {
+                                    Navigator.of(context).pop();
+                                    widget.onViewGroceries!();
+                                  },
+                          );
+                        },
                 ),
-                decoration: const BoxDecoration(
-                  color: AsanColorScheme.surface,
+              ),
+              const SizedBox(width: AsanSpacing.sm),
+              Expanded(
+                child: PrimaryButton(
+                  label: 'Add to Meal Plan',
+                  fontSize: 12,
+                  icon: const Icon(
+                    Symbols.calendar_add_on_rounded,
+                    weight: 600,
+                  ),
+                  onPressed: widget.onAddToMealPlan,
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SecondaryButton(
-                        label: 'Add to Groceries',
-                        fontSize: 12,
-                        icon: const Icon(
-                          Symbols.add_shopping_cart_rounded,
-                          weight: 600,
-                        ),
-                        onPressed: widget.onAddToGroceries == null
-                            ? null
-                            : () async {
-                                await widget.onAddToGroceries!();
-                                if (!context.mounted) return;
-                                final count = widget.ingredients.length;
-                                final itemLabel = count == 1
-                                    ? 'ingredient added'
-                                    : 'ingredients added';
-                                AsanSnackBar.show(
-                                  context,
-                                  message: '$count $itemLabel to Groceries',
-                                  actionLabel: widget.onViewGroceries == null
-                                      ? null
-                                      : 'View',
-                                  onAction: widget.onViewGroceries == null
-                                      ? null
-                                      : () {
-                                          Navigator.of(context).pop();
-                                          widget.onViewGroceries!();
-                                        },
-                                );
-                              },
-                      ),
-                    ),
-                    const SizedBox(width: AsanSpacing.sm),
-                    Expanded(
-                      child: PrimaryButton(
-                        label: 'Add to Meal Plan',
-                        fontSize: 12,
-                        icon: const Icon(
-                          Symbols.calendar_add_on_rounded,
-                          weight: 600,
-                        ),
-                        onPressed: widget.onAddToMealPlan,
-                      ),
-                    ),
-                  ],
-                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -332,7 +342,11 @@ class _HeroImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (imageBytes != null) {
-      return Image.memory(imageBytes!, width: double.infinity, fit: BoxFit.cover);
+      return Image.memory(
+        imageBytes!,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      );
     }
     if (imageUrl == null || imageUrl!.isEmpty) {
       return Container(
@@ -369,27 +383,27 @@ class _MetaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      runSpacing: AsanSpacing.xs,
-      children: [
-        if (dishType?.isNotEmpty == true) ...[
-          Text(dishType!, style: AsanTextTheme.labelSmall),
-          const SizedBox(width: AsanSpacing.sm),
-          Container(
-            width: 1,
-            height: 16,
-            color: AsanColorScheme.inactive,
-          ),
-          const SizedBox(width: AsanSpacing.sm),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (dishType?.isNotEmpty == true) ...[
+            Center(child: Text(dishType!, style: AsanTextTheme.labelSmall)),
+            const SizedBox(width: AsanSpacing.sm),
+            if (idealFor.isNotEmpty) const AsanDivider(vertical: true),
+            const SizedBox(width: AsanSpacing.sm),
+          ],
+          if (idealFor.isNotEmpty)
+            Expanded(
+              child: Text(
+                'Ideal for ${idealFor.join(', ')}',
+                style: AsanTextTheme.labelSmall.copyWith(
+                  color: AsanColorScheme.inactive,
+                ),
+              ),
+            ),
         ],
-        if (idealFor.isNotEmpty)
-          Text(
-            'Ideal for ${idealFor.join(', ')}',
-            softWrap: true,
-            style: AsanTextTheme.labelSmall.copyWith(color: AsanColorScheme.inactive),
-          ),
-      ],
+      ),
     );
   }
 }
@@ -406,23 +420,23 @@ class _TimingRow extends StatelessWidget {
       spacing: AsanSpacing.sm,
       children: [
         ...[
-            const Icon(
-              Symbols.local_dining_rounded,
-              size: 16,
-              color: AsanColorScheme.secondary,
-              weight: 600,
-            ),
-            Text('${recipe.prepTime}m prep', style: AsanTextTheme.labelSmall),
-          ],
-          ...[
-            const Icon(
-              Symbols.skillet_rounded,
-              fill: 1,
-              size: 16,
-              color: AsanColorScheme.secondary,
-            ),
-            Text('${recipe.cookTime}m cook', style: AsanTextTheme.labelSmall),
-          ],
+          const Icon(
+            Symbols.local_dining_rounded,
+            size: 16,
+            color: AsanColorScheme.secondary,
+            weight: 600,
+          ),
+          Text('${recipe.prepTime}m prep', style: AsanTextTheme.labelSmall),
+        ],
+        ...[
+          const Icon(
+            Symbols.skillet_rounded,
+            fill: 1,
+            size: 16,
+            color: AsanColorScheme.secondary,
+          ),
+          Text('${recipe.cookTime}m cook', style: AsanTextTheme.labelSmall),
+        ],
         if (recipe.servings > 0) ...[
           const Icon(
             Symbols.group_rounded,
@@ -462,15 +476,10 @@ class _DetailsTab extends StatelessWidget {
       children: [
         Text(
           'Description',
-          style: AsanTextTheme.bodyMedium.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: AsanSpacing.sm),
-        Text(
-          _display(recipe.description),
-          style: AsanTextTheme.bodyMedium,
-        ),
+        Text(_display(recipe.description), style: AsanTextTheme.bodyMedium),
         const SizedBox(height: AsanSpacing.md),
         Container(
           padding: const EdgeInsets.all(AsanSpacing.md),
@@ -488,20 +497,36 @@ class _DetailsTab extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AsanSpacing.sm),
-              _NutritionRow(label: 'Calories', value: recipe.calories == 0 ? null : recipe.calories, unit: 'kcal'),
-              _NutritionRow(label: 'Fats', value: recipe.fats == 0 ? null : recipe.fats, unit: 'g'),
+              _NutritionRow(
+                label: 'Calories',
+                value: recipe.calories == 0 ? null : recipe.calories,
+                unit: 'kcal',
+              ),
+              _NutritionRow(
+                label: 'Fats',
+                value: recipe.fats == 0 ? null : recipe.fats,
+                unit: 'g',
+              ),
               _NutritionRow(
                 label: 'Cholesterol',
                 value: recipe.cholesterol == 0 ? null : recipe.cholesterol,
                 unit: 'mg',
               ),
-              _NutritionRow(label: 'Sodium', value: recipe.sodium == 0 ? null : recipe.sodium, unit: 'mg'),
+              _NutritionRow(
+                label: 'Sodium',
+                value: recipe.sodium == 0 ? null : recipe.sodium,
+                unit: 'mg',
+              ),
               _NutritionRow(
                 label: 'Carbohydrates',
                 value: recipe.carbohydrates == 0 ? null : recipe.carbohydrates,
                 unit: 'g',
               ),
-              _NutritionRow(label: 'Protein', value: recipe.protein == 0 ? null : recipe.protein, unit: 'g'),
+              _NutritionRow(
+                label: 'Protein',
+                value: recipe.protein == 0 ? null : recipe.protein,
+                unit: 'g',
+              ),
             ],
           ),
         ),
@@ -510,7 +535,8 @@ class _DetailsTab extends StatelessWidget {
   }
 }
 
-String _display(String? value) => value == null || value.trim().isEmpty ? '-' : value;
+String _display(String? value) =>
+    value == null || value.trim().isEmpty ? '-' : value;
 
 class _NutritionRow extends StatelessWidget {
   final String label;
@@ -531,7 +557,10 @@ class _NutritionRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: AsanTextTheme.bodyMedium),
-          Text(value == null ? '-' : '$value $unit', style: AsanTextTheme.bodyMedium),
+          Text(
+            value == null ? '-' : '$value $unit',
+            style: AsanTextTheme.bodyMedium,
+          ),
         ],
       ),
     );
@@ -540,7 +569,7 @@ class _NutritionRow extends StatelessWidget {
 
 class _IngredientsTab extends StatelessWidget {
   final List<String> ingredients;
-  final List<String> ingredientQuantities;
+  final List<String> ingredientAmounts;
   final List<String> ingredientUnits;
   final List<String> ingredientNotes;
   final int servings;
@@ -549,7 +578,7 @@ class _IngredientsTab extends StatelessWidget {
 
   const _IngredientsTab({
     required this.ingredients,
-    required this.ingredientQuantities,
+    required this.ingredientAmounts,
     required this.ingredientUnits,
     required this.ingredientNotes,
     required this.servings,
@@ -565,21 +594,33 @@ class _IngredientsTab extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text('Ingredients for', style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+              child: Text(
+                'Ingredients for',
+                style: AsanTextTheme.bodyMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             TonalIconButton.round(
               icon: const Icon(Symbols.remove_rounded, size: 16, weight: 600),
-              color: servings < 1 ? AsanColorScheme.inactive : AsanColorScheme.secondary,
+              color: servings <= 1
+                  ? AsanColorScheme.inactive
+                  : AsanColorScheme.secondary,
               backgroundColor: AsanColorScheme.container,
               size: 32,
               showShadow: false,
-              onPressed: servings > 1 ? () => onServingsChanged(servings - 1) : null,
+              onPressed: servings > 1
+                  ? () => onServingsChanged(servings - 1)
+                  : null,
             ),
             const SizedBox(width: AsanSpacing.xs),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.sm),
-              child: Text('$servings ${servings == 1 ? 'serving' : 'servings'}',
-                  style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+              child: Text(
+                '$servings ${servings == 1 ? 'serving' : 'servings'}',
+                style: AsanTextTheme.bodyMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             const SizedBox(width: AsanSpacing.xs),
@@ -598,18 +639,21 @@ class _IngredientsTab extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: AsanSpacing.lg),
             child: Center(
-              child: Text('No ingredients added yet.', style: AsanTextTheme.bodyMedium),
+              child: Text(
+                'No ingredients added yet.',
+                style: AsanTextTheme.bodyMedium,
+              ),
             ),
           ),
         for (var i = 0; i < ingredients.length; i++) ...[
-          if (i > 0)
-            const SizedBox(height: AsanSpacing.xs),
-            const AsanDivider(color: AsanColorScheme.container),
-            const SizedBox(height: AsanSpacing.xs),
+          if (i > 0) const SizedBox(height: AsanSpacing.sm),
+          const AsanDivider(color: AsanColorScheme.container),
+          const SizedBox(height: AsanSpacing.sm),
           _IngredientRow(
             ingredient: ingredients[i],
-            quantityOverride: i < ingredientQuantities.length
-                ? ingredientQuantities[i] : '',
+            amountOverride: i < ingredientAmounts.length
+                ? ingredientAmounts[i]
+                : '',
             unitOverride: i < ingredientUnits.length ? ingredientUnits[i] : '',
             notes: i < ingredientNotes.length ? ingredientNotes[i] : '',
             multiplier: servings / baseServings,
@@ -622,12 +666,18 @@ class _IngredientsTab extends StatelessWidget {
 
 class _IngredientRow extends StatelessWidget {
   final String ingredient;
-  final String quantityOverride;
+  final String amountOverride;
   final String unitOverride;
   final String notes;
   final double multiplier;
 
-  const _IngredientRow({required this.ingredient, required this.quantityOverride, required this.unitOverride, required this.notes, required this.multiplier});
+  const _IngredientRow({
+    required this.ingredient,
+    required this.amountOverride,
+    required this.unitOverride,
+    required this.notes,
+    required this.multiplier,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -636,15 +686,16 @@ class _IngredientRow extends StatelessWidget {
       caseSensitive: false,
     ).firstMatch(ingredient.trim());
     final rawUnit = match?.group(2);
-    final quantity = quantityOverride.trim().isNotEmpty
-        ? '${_scaleQuantity(quantityOverride.trim(), multiplier)}${unitOverride.trim().isEmpty ? '' : ' ${unitOverride.trim()}'}'
+    final amount = amountOverride.trim().isNotEmpty
+        ? '${_scaleAmount(amountOverride.trim(), multiplier)}${unitOverride.trim().isEmpty ? '' : ' ${unitOverride.trim()}'}'
         : match == null
-            ? ''
-            : '${_scaleQuantity(match.group(1)!, multiplier)}${rawUnit == null ? '' : ' ${_shortUnit(rawUnit)}'}';
-    final name = (quantityOverride.trim().isNotEmpty
-            ? ingredient.trim()
-            : match?.group(3)?.trim() ?? ingredient.trim())
-        .replaceFirst(RegExp(r'^of\s+', caseSensitive: false), '');
+        ? ''
+        : '${_scaleAmount(match.group(1)!, multiplier)}${rawUnit == null ? '' : ' ${_shortUnit(rawUnit)}'}';
+    final name =
+        (amountOverride.trim().isNotEmpty
+                ? ingredient.trim()
+                : match?.group(3)?.trim() ?? ingredient.trim())
+            .replaceFirst(RegExp(r'^of\s+', caseSensitive: false), '');
     return LayoutBuilder(
       builder: (context, constraints) => Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -654,19 +705,33 @@ class _IngredientRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  name,
+                  style: AsanTextTheme.bodyMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 if (notes.isNotEmpty) ...[
                   const SizedBox(height: AsanSpacing.xs),
-                  Text(notes, style: AsanTextTheme.labelSmall.copyWith(color: AsanColorScheme.inactive)),
+                  Text(
+                    notes,
+                    style: AsanTextTheme.labelSmall.copyWith(
+                      color: AsanColorScheme.inactive,
+                    ),
+                  ),
                 ],
               ],
             ),
           ),
-          if (quantity.isNotEmpty) ...[
+          if (amount.isNotEmpty) ...[
             const SizedBox(width: AsanSpacing.md),
             Expanded(
               flex: 2,
-              child: Text(quantity, style: AsanTextTheme.bodyMedium, textAlign: TextAlign.right),
+              child: Text(
+                amount,
+                style: AsanTextTheme.bodyMedium,
+                textAlign: TextAlign.right,
+              ),
             ),
           ],
         ],
@@ -713,14 +778,15 @@ class _IngredientRow extends StatelessWidget {
     }
   }
 
-  String _scaleQuantity(String raw, double multiplier) {
+  String _scaleAmount(String raw, double multiplier) {
     final parts = raw.trim().split(RegExp(r'\s+'));
     double amount = 0;
     for (final part in parts) {
       if (part.contains('/')) {
         final fraction = part.split('/');
         if (fraction.length == 2) {
-          amount += (double.tryParse(fraction[0]) ?? 0) /
+          amount +=
+              (double.tryParse(fraction[0]) ?? 0) /
               (double.tryParse(fraction[1]) ?? 1);
         }
       } else {
@@ -776,7 +842,10 @@ class _InstructionsTab extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: AsanSpacing.lg),
             child: Center(
-              child: Text('No instructions added yet.', style: AsanTextTheme.bodyMedium),
+              child: Text(
+                'No instructions added yet.',
+                style: AsanTextTheme.bodyMedium,
+              ),
             ),
           ),
         for (var i = 0; i < instructions.length; i++) ...[
@@ -808,7 +877,12 @@ class _InstructionsTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Recipe Note', style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  'Recipe Note',
+                  style: AsanTextTheme.bodyMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: AsanSpacing.sm),
                 Text(notes, style: AsanTextTheme.bodyMedium),
               ],

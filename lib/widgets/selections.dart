@@ -472,20 +472,24 @@ class _AsanFilterListState extends State<AsanFilterList> {
     AsanFilterMenuType.recipes => 'Dish type',
     AsanFilterMenuType.meals => 'Meal time',
     AsanFilterMenuType.groceries => 'Aisle',
-    _ => 'Food group',
   };
 
   List<String> get _sortOptions => switch (widget.menuType) {
     AsanFilterMenuType.pantry => const [
       'Expiration date',
-      'Food group',
+      'Aisle',
       'Item name',
       'Purchase date',
     ],
     AsanFilterMenuType.meals => const ['Meal time', 'Recipe name', 'Meal category'],
-    AsanFilterMenuType.recipes => const ['Dish type', 'Cuisine', 'Recipe name', 'Total time',],
+    AsanFilterMenuType.recipes => const [
+      'Dish type',
+      'Cuisine',
+      'Diet',
+      'Recipe name',
+      'Total time',
+    ],
     AsanFilterMenuType.groceries => const ['Aisle', 'Item name'],
-    _ => const ['Food group', 'Item name'],
   };
 
   String get _statusTitle => widget.menuType == AsanFilterMenuType.pantry
@@ -722,7 +726,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        _isRecipes ? 'Diet' : widget.menuType == AsanFilterMenuType.meals ? 'Recipe Category' : widget.menuType == AsanFilterMenuType.groceries ? 'Aisle' : 'Food Group',
+                        _isRecipes ? 'Diet' : widget.menuType == AsanFilterMenuType.meals ? 'Recipe Category' : 'Aisle',
                         style: AsanTextTheme.labelSmall.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -736,7 +740,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                         spacing: AsanSpacing.sm,
                         runSpacing: AsanSpacing.sm,
                         children:
-                            (_isRecipes ? asanDiets : widget.menuType == AsanFilterMenuType.meals ? asanDiets : widget.menuType == AsanFilterMenuType.groceries ? asanAisles : asanFoodGroups)
+                            (_isRecipes ? asanDiets : widget.menuType == AsanFilterMenuType.meals ? asanDiets : asanAisles)
                                 .map((group) {
                                   final selectedSet = _isRecipes || widget.menuType == AsanFilterMenuType.meals
                                       ? _mealCategories
@@ -1226,6 +1230,7 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
   void _selectDate(DateTime date) {
     if (date.isBefore(_firstDate) || date.isAfter(_lastDate)) return;
     setState(() => _selectedDate = date);
+    widget.onDateSelected?.call(date);
   }
 
   Future<void> _selectMonth() async {
@@ -1344,17 +1349,6 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
             onDateSelected: _selectDate,
           ),
           const Spacer(),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AsanTextButton.black(label: 'Cancel', onPressed: widget.onCancel),
-              const SizedBox(width: 16),
-              AsanTextButton.green(
-                label: 'Select',
-                onPressed: () => widget.onDateSelected?.call(_selectedDate),
-              ),
-            ],
-          ),
         ],
       ),
     );

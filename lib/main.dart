@@ -7,6 +7,7 @@ import 'package:asan/screens/pantry_screen.dart';
 import 'package:asan/screens/recipes_screen.dart';
 
 import 'package:asan/models/pantry_item.dart';
+import 'package:asan/models/recipes.dart';
 import 'package:asan/services/api/recipe_api.dart';
 import 'package:asan/styles/theme.dart';
 
@@ -30,6 +31,7 @@ class _AsanState extends State<Asan> {
   int _selectedIndex = 0;
   int _groceriesItemCount = 0;
   final List<PantryItem> _receivedPantryItems = [];
+  final List<Recipes> _recipes = [];
 
   @override
   Widget build(BuildContext context) {
@@ -68,10 +70,16 @@ class _AsanState extends State<Asan> {
           index: _selectedIndex,
           children: [
             RecipesScreen(
+              incomingRecipes: _recipes,
+              onRecipesChanged: (recipes) => setState(() {
+                _recipes
+                  ..clear()
+                  ..addAll(recipes);
+              }),
               onAddToGroceries: (items) async => await _groceriesKey.currentState?.addItems(items),
               onViewGroceries: () => setState(() => _selectedIndex = 3),
             ),
-            const MealPlanScreen(),
+            MealPlanScreen(recipes: _recipes),
             PantryScreen(incomingItems: _receivedPantryItems),
             GroceriesScreen(
               key: _groceriesKey,

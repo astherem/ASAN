@@ -10,7 +10,7 @@ import 'package:asan/widgets/buttons.dart';
 // LIST TILE
 class AsanListTile extends StatefulWidget {
   final String itemName;
-  final String quantity;
+  final String amount;
   final String unit;
   final String category;
   final String purchasedDate;
@@ -22,7 +22,7 @@ class AsanListTile extends StatefulWidget {
   const AsanListTile({
     super.key,
     required this.itemName,
-    required this.quantity,
+    required this.amount,
     required this.unit,
     required this.category,
     required this.purchasedDate,
@@ -81,7 +81,7 @@ class _AsanListTileState extends State<AsanListTile> {
                         ),
                         const SizedBox(width: AsanSpacing.md),
                         Text(
-                          '${widget.quantity} ${widget.unit}',
+                          '${widget.amount} ${widget.unit}',
                           style: AsanTextTheme.bodyMedium.copyWith(
                             color: textColor,
                           ),
@@ -321,121 +321,124 @@ class RecipeCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                width: double.infinity,
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (imageBytes != null)
-                        Image.memory(imageBytes!, fit: BoxFit.cover)
-                      else if (imageUrl == null || imageUrl!.isEmpty)
-                        Container(
-                          color: AsanColorScheme.container,
-                          child: const Icon(
-                            Symbols.restaurant_rounded,
-                            size: 36,
-                            color: AsanColorScheme.inactive,
-                          ),
-                        )
-                      else
-                        Image.network(
-                          imageUrl!,
-                          fit: BoxFit.cover,
-                          webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                color: AsanColorScheme.container,
-                                child: const Icon(
-                                  Symbols.restaurant_rounded,
-                                  size: 36,
-                                  color: AsanColorScheme.inactive,
-                                ),
-                              ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.all(AsanSpacing.sm),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            if (showBookmark)
-                              TonalIconButton.round(
-                                icon: Icon(
-                                  Symbols.bookmark_rounded,
-                                  weight: 600,
-                                  fill: isSaved ? 1 : 0,
-                                  color: isSaved
-                                      ? AsanColorScheme.primary
-                                      : AsanColorScheme.secondary,
-                                ),
-                                onPressed: onIconPressed,
-                              ),
-                            const Spacer(),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AsanColorScheme.surface,
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Symbols.schedule_rounded,
-                                      size: 16,
-                                      weight: 600,
-                                      color: AsanColorScheme.secondary,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      totalTime,
-                                      style: AsanTextTheme.labelSmall.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+        child: SizedBox.expand(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (imageBytes != null)
+                          Image.memory(imageBytes!, fit: BoxFit.cover)
+                        else if (imageUrl == null || imageUrl!.isEmpty)
+                          Container(
+                            color: AsanColorScheme.container,
+                            child: const Icon(
+                              Symbols.restaurant_rounded,
+                              size: 36,
+                              color: AsanColorScheme.inactive,
                             ),
-                          ],
+                          )
+                        else
+                          Image.network(
+                            imageUrl!,
+                            fit: BoxFit.cover,
+                            webHtmlElementStrategy:
+                                WebHtmlElementStrategy.prefer,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  color: AsanColorScheme.container,
+                                  child: const Icon(
+                                    Symbols.restaurant_rounded,
+                                    size: 36,
+                                    color: AsanColorScheme.inactive,
+                                  ),
+                                ),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.all(AsanSpacing.sm),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (showBookmark)
+                                TonalIconButton.round(
+                                  icon: Icon(
+                                    Symbols.bookmark_rounded,
+                                    weight: 600,
+                                    fill: isSaved ? 1 : 0,
+                                    color: isSaved
+                                        ? AsanColorScheme.primary
+                                        : AsanColorScheme.secondary,
+                                  ),
+                                  onPressed: onIconPressed,
+                                ),
+                              const Spacer(),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AsanColorScheme.surface,
+                                    borderRadius: BorderRadius.circular(50),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Symbols.schedule_rounded,
+                                        size: 16,
+                                        weight: 600,
+                                        color: AsanColorScheme.secondary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        totalTime,
+                                        style: AsanTextTheme.labelSmall
+                                            .copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: AsanSpacing.sm),
-            Text(
-              recipeName,
-              style: AsanTextTheme.bodyMedium.copyWith(
-                fontWeight: FontWeight.bold,
+              const SizedBox(height: AsanSpacing.sm),
+              Text(
+                recipeName,
+                style: AsanTextTheme.bodyMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: AsanSpacing.xs),
-            Text(
-              mealCategory.trim().isEmpty
-                  ? ''
-                  : '${mealCategory.trim()[0].toUpperCase()}${mealCategory.trim().substring(1)}',
-              style: AsanTextTheme.labelSmall,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(height: AsanSpacing.xs),
+              Text(
+                mealCategory.trim().isEmpty
+                    ? ''
+                    : '${mealCategory.trim()[0].toUpperCase()}${mealCategory.trim().substring(1)}',
+                style: AsanTextTheme.labelSmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -446,16 +449,29 @@ class RecipeCard extends StatelessWidget {
 class AsanDivider extends StatelessWidget {
   final double thickness;
   final Color? color;
+  final bool vertical;
 
   const AsanDivider({
     super.key,
     this.thickness = 1,
     this.color,
+    this.vertical = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Divider(height: thickness, thickness: thickness, color: AsanColorScheme.container);
+    if (vertical) {
+      return VerticalDivider(
+        width: thickness,
+        thickness: thickness,
+        color: color ?? AsanColorScheme.container,
+      );
+    }
+    return Divider(
+      height: thickness,
+      thickness: thickness,
+      color: color ?? AsanColorScheme.container,
+    );
   }
 }
 
@@ -487,8 +503,10 @@ class MealCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: SizedBox(
           height: 70,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
@@ -512,11 +530,14 @@ class MealCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       recipeName,
                       style: AsanTextTheme.bodyMedium.copyWith(
                         fontWeight: FontWeight.bold,
+                        height: 22 / 16,
+                        color: AsanColorScheme.secondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -524,13 +545,17 @@ class MealCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       mealCategory,
-                      style: AsanTextTheme.labelSmall,
+                      style: AsanTextTheme.labelSmall.copyWith(
+                        height: 16 / 12,
+                        color: AsanColorScheme.secondary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Icon(
                           Symbols.schedule_rounded,
@@ -538,7 +563,13 @@ class MealCard extends StatelessWidget {
                           color: AsanColorScheme.secondary,
                         ),
                         const SizedBox(width: 4),
-                        Text(totalTime, style: AsanTextTheme.labelSmall),
+                        Text(
+                          totalTime,
+                          style: AsanTextTheme.labelSmall.copyWith(
+                            height: 16 / 12,
+                            color: AsanColorScheme.secondary,
+                          ),
+                        ),
                         const SizedBox(width: AsanSpacing.sm),
                         const Icon(
                           Symbols.group_rounded,
@@ -548,7 +579,10 @@ class MealCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           '$servings serving${servings == 1 ? '' : 's'}',
-                          style: AsanTextTheme.labelSmall,
+                          style: AsanTextTheme.labelSmall.copyWith(
+                            height: 16 / 12,
+                            color: AsanColorScheme.secondary,
+                          ),
                         ),
                       ],
                     ),
@@ -556,6 +590,7 @@ class MealCard extends StatelessWidget {
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
@@ -593,7 +628,13 @@ class AsanSearchCard extends StatelessWidget {
           padding: const EdgeInsets.all(AsanSpacing.md),
           child: Row(
             children: [
-              Icon(icon, color: AsanColorScheme.onContainer, size: 24, weight: 600, fill: 1),
+              Icon(
+                icon,
+                color: AsanColorScheme.onContainer,
+                size: 24,
+                weight: 600,
+                fill: 1,
+              ),
               const SizedBox(width: AsanSpacing.sm),
               Expanded(
                 child: Text(
@@ -602,7 +643,6 @@ class AsanSearchCard extends StatelessWidget {
                     color: AsanColorScheme.onContainer,
                     fontWeight: FontWeight.bold,
                   ),
-
                 ),
               ),
             ],
@@ -623,7 +663,10 @@ class AsanTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.sm, vertical: AsanSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AsanSpacing.sm,
+        vertical: AsanSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: color ?? AsanColorScheme.container,
         borderRadius: BorderRadius.circular(100),

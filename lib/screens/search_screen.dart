@@ -64,6 +64,7 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _loading = false;
   String? _error;
   late AsanFilterSelection? _filters = widget.initialFilters;
+  bool _showResults = false;
 
   List<String> get _activeFilterLabels => [
     ...?_filters?.totalTimeRanges,
@@ -72,6 +73,13 @@ class _SearchScreenState extends State<SearchScreen> {
     ...?_filters?.mealCategories,
     ...?_filters?.cuisines,
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _showResults = _activeFilterLabels.isNotEmpty;
+    if (_showResults) _search('');
+  }
 
   @override
   void dispose() {
@@ -147,6 +155,7 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       _filters = selection;
       _query = query;
+      _showResults = query.isNotEmpty || _activeFilterLabels.isNotEmpty;
       _recipes = const [];
       _error = null;
       _loading = query.isNotEmpty;
@@ -173,6 +182,7 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       _filters = selection;
       _query = query;
+      _showResults = query.isNotEmpty || _activeFilterLabels.isNotEmpty;
       _recipes = const [];
       _error = null;
       _loading = query.isNotEmpty;
@@ -190,6 +200,7 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       _query = '';
       _filters = null;
+      _showResults = false;
       _recipes = const [];
       _error = null;
       _loading = false;
@@ -274,6 +285,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 _debounce?.cancel();
                 setState(() {
                   _query = value;
+                  _showResults = value.trim().isNotEmpty || _activeFilterLabels.isNotEmpty;
                   if (value.trim().isEmpty) {
                     ++_request;
                     _recipes = const [];
@@ -304,7 +316,7 @@ class _SearchScreenState extends State<SearchScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: _query.trim().isEmpty
+      body: !_showResults
           ? ListView(
               padding: const EdgeInsets.all(AsanSpacing.lg),
               children: [

@@ -145,6 +145,14 @@ class _PantryScreenState extends State<PantryScreen> {
     );
     if (item != null && mounted) {
       setState(() => _items.add(item));
+      AsanSnackBar.show(
+        context,
+        message: '${item.name} added to Pantry',
+        actionLabel: 'Undo',
+        onAction: () {
+          if (mounted) setState(() => _items.remove(item));
+        },
+      );
     }
   }
 
@@ -289,14 +297,14 @@ class _PantryScreenState extends State<PantryScreen> {
         .where(
           (item) => filters?.foodGroups.isEmpty ?? true
               ? true
-              : filters!.foodGroups.contains(item.foodGroup),
+            : filters!.foodGroups.contains(item.aisle),
         )
         .toList();
     final sortBy = filters?.sortBy ?? 'Expiration date';
     items.sort((first, second) {
       final result = switch (sortBy) {
-        'Food group' => (first.foodGroup ?? 'Uncategorized').compareTo(
-          second.foodGroup ?? 'Uncategorized',
+        'Aisle' => (first.aisle ?? 'Uncategorized').compareTo(
+          second.aisle ?? 'Uncategorized',
         ),
         'Item name' => first.name.toLowerCase().compareTo(
           second.name.toLowerCase(),
@@ -315,7 +323,7 @@ class _PantryScreenState extends State<PantryScreen> {
       final label = item.consumed
           ? 'Consumed'
           : switch (sortBy) {
-              'Food group' => item.foodGroup ?? 'Uncategorized',
+              'Aisle' => item.aisle ?? 'Uncategorized',
               'Item name' =>
                 item.name.trim().isEmpty
                     ? '#'
@@ -344,13 +352,13 @@ class _PantryScreenState extends State<PantryScreen> {
   Widget _buildListTile(PantryItem item) => AsanListTile(
     key: ValueKey(item),
     itemName: item.name,
-    quantity: item.quantity,
+    amount: item.amount,
     unit: item.unit,
     category: item.consumed
-        ? item.foodGroup ?? 'Uncategorized'
-        : _activeSort == 'Food group'
+      ? item.aisle ?? 'Uncategorized'
+      : _activeSort == 'Aisle'
         ? 'expires ${_formatDate(item.expiryDate)}'
-        : item.foodGroup ?? 'Uncategorized',
+      : item.aisle ?? 'Uncategorized',
     purchasedDate: item.consumed
         ? 'consumed ${_formatConsumedDate(item.consumedDate)}'
         : _activeSort == 'Item name' || _activeSort == 'Purchase date'
@@ -369,6 +377,20 @@ class _PantryScreenState extends State<PantryScreen> {
             consumedDate: checked ? DateTime.now() : null,
           ),
         );
+        AsanSnackBar.show(
+          context,
+          message: checked
+              ? '${item.name} marked as consumed'
+              : '${item.name} marked as not consumed',
+          actionLabel: 'Undo',
+          onAction: () {
+            if (!mounted || index >= _items.length) return;
+            setState(() => _items[index] = item.copyWith(
+              consumed: !checked,
+              consumedDate: item.consumedDate,
+            ));
+          },
+        );
       }
     },
     onTap: () => _showEditItemDialog(item),
@@ -385,6 +407,29 @@ class _PantryScreenState extends State<PantryScreen> {
       resizeToAvoidBottomInset: false,
             appBar: FullScreenDialogHeader(
               screenTitle: 'Edit ${item.name}',
+              trailing: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                icon: const Icon(
+                  Symbols.delete_rounded,
+                  fill: 1,
+                  size: 28,
+                  color: AsanColorScheme.error,
+                ),
+                onPressed: () async {
+                  final confirmed = await AsanAlertDialog.show(
+                    context,
+                    title: 'Delete Pantry Item?',
+                    content: 'This item will be permanently removed from your pantry. Are you sure you want to delete it?',
+                    cancelText: 'Cancel',
+                    destructiveText: 'Delete Item',
+                  );
+                  if (confirmed == true && context.mounted) {
+                    Navigator.pop(context);
+                    setState(() => _items.remove(item));
+                  }
+                },
+              ),
               onBackPressed: () async {
                 final formState = formKey.currentState;
                 if (formState == null || !formState.hasChanges) {
@@ -488,28 +533,28 @@ class AddPantryItemForm extends StatefulWidget {
 
 class _AddPantryItemFormState extends State<AddPantryItemForm> {
   late final TextEditingController _itemController;
-  late final TextEditingController _quantityController;
+  late final TextEditingController _amountController;
   late final TextEditingController _unitController;
   late final TextEditingController _notesController;
-  String? _foodGroup;
+  String? _aisle;
   DateTime? _purchaseDate;
   DateTime? _expiryDate;
   bool _itemHasError = false;
-  bool _foodGroupHasError = false;
+  bool _aisleHasError = false;
 
   bool get hasChanges => widget.initialItem == null
       ? _itemController.text.isNotEmpty ||
-            _quantityController.text.isNotEmpty ||
+            _amountController.text.isNotEmpty ||
             _unitController.text.isNotEmpty ||
             _notesController.text.isNotEmpty ||
-            _foodGroup != null ||
+            _aisle != null ||
             _purchaseDate != null ||
             _expiryDate != null
       : _itemController.text.trim() != widget.initialItem!.name ||
-            _quantityController.text.trim() != widget.initialItem!.quantity ||
+            _amountController.text.trim() != widget.initialItem!.amount ||
             _unitController.text.trim() != widget.initialItem!.unit ||
             _notesController.text.trim() != widget.initialItem!.notes ||
-            _foodGroup != widget.initialItem!.foodGroup ||
+            _aisle != widget.initialItem!.aisle ||
             _purchaseDate != widget.initialItem!.purchaseDate ||
             _expiryDate != widget.initialItem!.expiryDate;
 
@@ -536,10 +581,10 @@ class _AddPantryItemFormState extends State<AddPantryItemForm> {
     super.initState();
     final item = widget.initialItem;
     _itemController = TextEditingController(text: item?.name);
-    _quantityController = TextEditingController(text: item?.quantity);
+    _amountController = TextEditingController(text: item?.amount);
     _unitController = TextEditingController(text: item?.unit);
     _notesController = TextEditingController(text: item?.notes);
-    _foodGroup = item?.foodGroup;
+    _aisle = item?.aisle;
     _purchaseDate = item?.purchaseDate;
     _expiryDate = item?.expiryDate;
   }
@@ -547,7 +592,7 @@ class _AddPantryItemFormState extends State<AddPantryItemForm> {
   @override
   void dispose() {
     _itemController.dispose();
-    _quantityController.dispose();
+    _amountController.dispose();
     _unitController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -571,16 +616,16 @@ class _AddPantryItemFormState extends State<AddPantryItemForm> {
           ),
           const SizedBox(height: AsanSpacing.md),
           AsanDropdownMenu(
-            label: 'Food Group',
-            items: asanFoodGroups,
-            value: _foodGroup,
-            hintText: 'Select a food group',
-            hasError: _foodGroupHasError,
+            label: 'Aisle',
+            items: asanAisles,
+            value: _aisle,
+            hintText: 'Select an aisle',
+            hasError: _aisleHasError,
             required: true,
             onChanged: (value) {
               setState(() {
-                _foodGroup = value;
-                _foodGroupHasError = false;
+                _aisle = value;
+                _aisleHasError = false;
               });
             },
           ),
@@ -589,9 +634,9 @@ class _AddPantryItemFormState extends State<AddPantryItemForm> {
             children: [
               Expanded(
                 child: AsanTextField(
-                  label: 'Quantity',
-                  hintText: 'Enter quantity',
-                  controller: _quantityController,
+                  label: 'Amount',
+                  hintText: 'Enter amount',
+                  controller: _amountController,
                 ),
               ),
               const SizedBox(width: AsanSpacing.md),
@@ -645,20 +690,20 @@ class _AddPantryItemFormState extends State<AddPantryItemForm> {
 
   void _submit() {
     final name = _itemController.text.trim();
-    final hasFoodGroup = _foodGroup != null;
+    final hasAisle = _aisle != null;
     setState(() {
       _itemHasError = name.isEmpty;
-      _foodGroupHasError = !hasFoodGroup;
+      _aisleHasError = !hasAisle;
     });
-    if (name.isEmpty || !hasFoodGroup) return;
+    if (name.isEmpty || !hasAisle) return;
 
     Navigator.pop(
       context,
       PantryItem(
         name: name,
-        quantity: _quantityController.text.trim(),
+        amount: _amountController.text.trim(),
         unit: _unitController.text.trim(),
-        foodGroup: _foodGroup,
+        aisle: _aisle,
         purchaseDate: _purchaseDate,
         expiryDate: _expiryDate,
         notes: _notesController.text.trim(),
