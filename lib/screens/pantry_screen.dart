@@ -120,6 +120,7 @@ class _PantryScreenState extends State<PantryScreen> {
       resizeToAvoidBottomInset: false,
               appBar: FullScreenDialogHeader(
                 screenTitle: 'Add Pantry Item',
+                bottomPadding: AsanSpacing.xs,
                 onBackPressed: () async {
                   final formState = formKey.currentState;
                   if (formState == null || !formState.hasChanges) {
@@ -303,8 +304,8 @@ class _PantryScreenState extends State<PantryScreen> {
     final sortBy = filters?.sortBy ?? 'Expiration date';
     items.sort((first, second) {
       final result = switch (sortBy) {
-        'Aisle' => (first.aisle ?? 'Uncategorized').compareTo(
-          second.aisle ?? 'Uncategorized',
+        'Aisle' => (first.aisle ?? 'Uncategorized').toLowerCase().compareTo(
+          (second.aisle ?? 'Uncategorized').toLowerCase(),
         ),
         'Item name' => first.name.toLowerCase().compareTo(
           second.name.toLowerCase(),
@@ -323,7 +324,7 @@ class _PantryScreenState extends State<PantryScreen> {
       final label = item.consumed
           ? 'Consumed'
           : switch (sortBy) {
-              'Aisle' => item.aisle ?? 'Uncategorized',
+              'Aisle' => (item.aisle ?? 'Uncategorized').toUpperCase(),
               'Item name' =>
                 item.name.trim().isEmpty
                     ? '#'

@@ -9,6 +9,7 @@ class AsanFilterSelection {
   final Set<String> mealTimes;
   final Set<String> mealCategories;
   final Set<String> cuisines;
+  final Set<String> days;
 
   const AsanFilterSelection({
     required this.sortBy,
@@ -21,6 +22,7 @@ class AsanFilterSelection {
     this.mealTimes = const {},
     this.mealCategories = const {},
     this.cuisines = const {},
+    this.days = const {},
   });
 
   AsanFilterSelection copyWith({
@@ -34,6 +36,7 @@ class AsanFilterSelection {
     Set<String>? mealTimes,
     Set<String>? mealCategories,
     Set<String>? cuisines,
+    Set<String>? days,
   }) {
     return AsanFilterSelection(
       sortBy: sortBy ?? this.sortBy,
@@ -46,6 +49,7 @@ class AsanFilterSelection {
       mealTimes: mealTimes ?? this.mealTimes,
       mealCategories: mealCategories ?? this.mealCategories,
       cuisines: cuisines ?? this.cuisines,
+      days: days ?? this.days,
     );
   }
 }

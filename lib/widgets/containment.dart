@@ -300,6 +300,7 @@ class RecipeCard extends StatelessWidget {
   final bool showBookmark;
   final VoidCallback? onIconPressed;
   final VoidCallback? onTap;
+  final VoidCallback? onViewPressed;
 
   const RecipeCard({
     super.key,
@@ -312,6 +313,7 @@ class RecipeCard extends StatelessWidget {
     this.showBookmark = true,
     this.onIconPressed,
     this.onTap,
+    this.onViewPressed,
   });
 
   @override
@@ -383,8 +385,8 @@ class RecipeCard extends StatelessWidget {
                                 alignment: Alignment.centerLeft,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: AsanSpacing.sm,
+                                    vertical: AsanSpacing.xs,
                                   ),
                                   decoration: BoxDecoration(
                                     color: AsanColorScheme.surface,
@@ -437,6 +439,12 @@ class RecipeCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (onViewPressed != null)
+                AsanTextButton(
+                  label: 'View',
+                  onPressed: onViewPressed,
+                  padding: const EdgeInsets.symmetric(vertical: AsanSpacing.sm),
+                ),
             ],
           ),
         ),
@@ -479,7 +487,10 @@ class AsanDivider extends StatelessWidget {
 class MealCard extends StatelessWidget {
   final String recipeName;
   final String mealCategory;
+  final String? mealTime;
+  final bool showMealTimeTag;
   final String? imageUrl;
+  final Uint8List? imageBytes;
   final String totalTime;
   final int servings;
   final VoidCallback? onTap;
@@ -488,7 +499,10 @@ class MealCard extends StatelessWidget {
     super.key,
     required this.recipeName,
     required this.mealCategory,
+    this.mealTime,
+    this.showMealTimeTag = false,
     this.imageUrl,
+    this.imageBytes,
     required this.totalTime,
     required this.servings,
     this.onTap,
@@ -501,19 +515,17 @@ class MealCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          height: 70,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: 62,
-                  height: 62,
-                  child: imageUrl == null || imageUrl!.isEmpty
+              AspectRatio(
+                aspectRatio: 1,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: imageBytes != null
+                      ? Image.memory(imageBytes!, fit: BoxFit.cover)
+                      : imageUrl == null || imageUrl!.isEmpty
                       ? Container(
                           color: AsanColorScheme.container,
                           child: const Icon(
@@ -531,6 +543,7 @@ class MealCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: AsanSpacing.xs,
                   children: [
                     Text(
                       recipeName,
@@ -542,17 +555,33 @@ class MealCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      mealCategory,
-                      style: AsanTextTheme.labelSmall.copyWith(
-                        height: 16 / 12,
-                        color: AsanColorScheme.secondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        if (showMealTimeTag && mealTime?.trim().isNotEmpty == true) ...[
+                          AsanTag(
+                            label: mealTime!,
+                            textColor: AsanColorScheme.secondary,
+                            color: switch (mealTime!.toLowerCase()) {
+                              'breakfast' => AsanColorScheme.yellow,
+                              'brunch' => AsanColorScheme.orange,
+                              'lunch' => AsanColorScheme.blue,
+                              'snack' => AsanColorScheme.pink,
+                              'dinner' => AsanColorScheme.purple,
+                              _ => AsanColorScheme.container,
+                            },
+                          ),
+                          const SizedBox(width: 5),
+                        ],
+                        Expanded(
+                          child: Text(
+                            mealCategory,
+                            style: AsanTextTheme.labelSmall.copyWith(height: 16 / 12, color: AsanColorScheme.secondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -560,28 +589,38 @@ class MealCard extends StatelessWidget {
                         const Icon(
                           Symbols.schedule_rounded,
                           size: 16,
+                          weight: 600,
                           color: AsanColorScheme.secondary,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          totalTime,
-                          style: AsanTextTheme.labelSmall.copyWith(
-                            height: 16 / 12,
-                            color: AsanColorScheme.secondary,
+                        Flexible(
+                          child: Text(
+                            totalTime,
+                            style: AsanTextTheme.labelSmall.copyWith(
+                              height: 16 / 12,
+                              color: AsanColorScheme.secondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: AsanSpacing.sm),
                         const Icon(
                           Symbols.group_rounded,
                           size: 16,
+                          weight: 600,
                           color: AsanColorScheme.secondary,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '$servings serving${servings == 1 ? '' : 's'}',
-                          style: AsanTextTheme.labelSmall.copyWith(
-                            height: 16 / 12,
-                            color: AsanColorScheme.secondary,
+                        Flexible(
+                          child: Text(
+                            '$servings serving${servings == 1 ? '' : 's'}',
+                            style: AsanTextTheme.labelSmall.copyWith(
+                              height: 16 / 12,
+                              color: AsanColorScheme.secondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -590,7 +629,6 @@ class MealCard extends StatelessWidget {
                 ),
               ),
             ],
-            ),
           ),
         ),
       ),
@@ -657,8 +695,14 @@ class AsanSearchCard extends StatelessWidget {
 class AsanTag extends StatelessWidget {
   final String label;
   final Color? color;
+  final Color? textColor;
 
-  const AsanTag({super.key, required this.label, this.color});
+  const AsanTag({
+    super.key,
+    required this.label,
+    this.color,
+    this.textColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -674,7 +718,8 @@ class AsanTag extends StatelessWidget {
       child: Text(
         label,
         style: AsanTextTheme.labelSmall.copyWith(
-          color: color != null ? Colors.white : AsanColorScheme.onSurface,
+          color: textColor ??
+              (color != null ? Colors.white : AsanColorScheme.onSurface),
           fontWeight: FontWeight.bold,
         ),
       ),

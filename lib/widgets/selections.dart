@@ -452,12 +452,14 @@ class AsanFilterList extends StatefulWidget {
   final ScrollController? scrollController;
   final AsanFilterMenuType menuType;
   final AsanFilterSelection? initialSelection;
+  final bool showDaySort;
 
   const AsanFilterList({
     super.key,
     this.scrollController,
     required this.menuType,
     this.initialSelection,
+    this.showDaySort = false,
   });
 
   @override
@@ -470,7 +472,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
   String get _defaultSortBy => switch (widget.menuType) {
     AsanFilterMenuType.pantry => 'Expiration date',
     AsanFilterMenuType.recipes => 'Dish type',
-    AsanFilterMenuType.meals => 'Meal time',
+    AsanFilterMenuType.meals => widget.showDaySort ? 'Day' : 'Meal time',
     AsanFilterMenuType.groceries => 'Aisle',
   };
 
@@ -481,7 +483,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
       'Item name',
       'Purchase date',
     ],
-    AsanFilterMenuType.meals => const ['Meal time', 'Recipe name', 'Meal category'],
+    AsanFilterMenuType.meals => [if (widget.showDaySort) 'Day', 'Meal time', 'Dish type', 'Cuisine', 'Recipe name', 'Total time'],
     AsanFilterMenuType.recipes => const [
       'Dish type',
       'Cuisine',
@@ -516,11 +518,10 @@ class _AsanFilterListState extends State<AsanFilterList> {
   final Set<String> _mealTimes = {};
   final Set<String> _mealCategories = {};
   final Set<String> _cuisines = {};
+  final Set<String> _days = {};
 
   void _reset() {
     setState(() {
-      _sortBy = _defaultSortBy;
-      _sortAscending = true;
       _statuses.clear();
       _foodGroups.clear();
       _totalTimeRanges.clear();
@@ -528,6 +529,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
       _mealTimes.clear();
       _mealCategories.clear();
       _cuisines.clear();
+      _days.clear();
     });
   }
 
@@ -535,7 +537,9 @@ class _AsanFilterListState extends State<AsanFilterList> {
   void initState() {
     super.initState();
     final selection = widget.initialSelection;
-    _sortBy = selection?.sortBy ?? _defaultSortBy;
+    _sortBy = selection != null && _sortOptions.contains(selection.sortBy)
+        ? selection.sortBy
+        : _defaultSortBy;
     _sortAscending = selection?.sortAscending ?? true;
     _statuses.addAll(
       widget.menuType == AsanFilterMenuType.pantry
@@ -548,6 +552,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
     _mealTimes.addAll(selection?.mealTimes ?? const {});
     _mealCategories.addAll(selection?.mealCategories ?? const {});
     _cuisines.addAll(selection?.cuisines ?? const {});
+    _days.addAll(selection?.days ?? const {});
   }
 
   @override
@@ -707,23 +712,54 @@ class _AsanFilterListState extends State<AsanFilterList> {
                       const SizedBox(height: AsanSpacing.md),
                     ],
                     if (widget.menuType == AsanFilterMenuType.meals) ...[
-                      _FilterSection(
-                        title: 'Meal Time',
-                        options: const ['Breakfast', 'Lunch', 'Dinner'],
-                        selected: '',
-                        selectedValues: _mealTimeCategories,
-                        isCheckbox: true,
-                        onSelected: (value) => setState(() {
-                          _mealTimeCategories.contains(value)
-                              ? _mealTimeCategories.remove(value)
-                              : _mealTimeCategories.add(value);
-                        }),
+                      if (widget.showDaySort) ...[
+                      _FilterChipSection(
+                        title: 'Day',
+                        options: const ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                        selected: _days,
+                        onSelected: (value) => setState(() => _days.contains(value) ? _days.remove(value) : _days.add(value)),
                       ),
                       const SizedBox(height: AsanSpacing.md),
                       const AsanDivider(),
                       const SizedBox(height: AsanSpacing.md),
+                      ],
+                      _FilterChipSection(
+                        title: 'Meal Time',
+                        options: asanMealTimes,
+                        selected: _mealTimeCategories,
+                        onSelected: (value) => setState(() => _mealTimeCategories.contains(value)
+                            ? _mealTimeCategories.remove(value)
+                            : _mealTimeCategories.add(value)),
+                      ),
+                      const SizedBox(height: AsanSpacing.md),
+                      const AsanDivider(),
+                      const SizedBox(height: AsanSpacing.md),
+                      _FilterChipSection(
+                        title: 'Total Time', options: asanTotalTimes,
+                        selected: _totalTimeRanges,
+                        onSelected: (value) => setState(() => _totalTimeRanges.contains(value)
+                            ? _totalTimeRanges.remove(value) : _totalTimeRanges.add(value)),
+                      ),
+                      const SizedBox(height: AsanSpacing.md),
+                      const AsanDivider(),
+                      const SizedBox(height: AsanSpacing.md),
+                      _FilterChipSection(
+                        title: 'Dish Type', options: asanDishTypes,
+                        selected: _mealCategories,
+                        onSelected: (value) => setState(() => _mealCategories.contains(value)
+                            ? _mealCategories.remove(value) : _mealCategories.add(value)),
+                      ),
+                      const SizedBox(height: AsanSpacing.md),
+                      const AsanDivider(),
+                      const SizedBox(height: AsanSpacing.md),
+                      _FilterChipSection(
+                        title: 'Cuisine', options: asanCuisines,
+                        selected: _cuisines,
+                        onSelected: (value) => setState(() => _cuisines.contains(value)
+                            ? _cuisines.remove(value) : _cuisines.add(value)),
+                      ),
                     ],
-                    Align(
+                    if (widget.menuType != AsanFilterMenuType.meals) Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         _isRecipes ? 'Diet' : widget.menuType == AsanFilterMenuType.meals ? 'Recipe Category' : 'Aisle',
@@ -732,8 +768,8 @@ class _AsanFilterListState extends State<AsanFilterList> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: AsanSpacing.sm),
-                    Align(
+                    if (widget.menuType != AsanFilterMenuType.meals) const SizedBox(height: AsanSpacing.sm),
+                    if (widget.menuType != AsanFilterMenuType.meals) Align(
                       alignment: Alignment.centerLeft,
                       child: Wrap(
                         alignment: WrapAlignment.start,
@@ -817,7 +853,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                           foodGroups: _isRecipes
                               ? const {}
                               : Set.unmodifiable(_foodGroups),
-                          totalTimeRanges: _isRecipes
+                          totalTimeRanges: _isRecipes || widget.menuType == AsanFilterMenuType.meals
                               ? Set.unmodifiable(_totalTimeRanges)
                               : const {},
                           mealTimeCategories: _isRecipes || widget.menuType == AsanFilterMenuType.meals
@@ -827,7 +863,8 @@ class _AsanFilterListState extends State<AsanFilterList> {
                           mealCategories: _isRecipes || widget.menuType == AsanFilterMenuType.meals
                               ? Set.unmodifiable(_mealCategories)
                               : const {},
-                          cuisines: _isRecipes ? Set.unmodifiable(_cuisines) : const {},
+                          cuisines: _isRecipes || widget.menuType == AsanFilterMenuType.meals ? Set.unmodifiable(_cuisines) : const {},
+                          days: widget.menuType == AsanFilterMenuType.meals ? Set.unmodifiable(_days) : const {},
                         ),
                       ),
                     ),
@@ -872,6 +909,42 @@ class _SheetHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FilterChipSection extends StatelessWidget {
+  final String title;
+  final List<String> options;
+  final Set<String> selected;
+  final ValueChanged<String> onSelected;
+
+  const _FilterChipSection({
+    required this.title,
+    required this.options,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: double.infinity,
+    child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(title, style: AsanTextTheme.labelSmall.copyWith(fontWeight: FontWeight.bold)),
+      const SizedBox(height: AsanSpacing.sm),
+      Wrap(
+        alignment: WrapAlignment.start,
+        runAlignment: WrapAlignment.start,
+        spacing: AsanSpacing.sm,
+        runSpacing: AsanSpacing.sm,
+        children: options.map((value) => AsanFilterChip(
+          label: value,
+          isSelected: selected.contains(value),
+          onPressed: () => onSelected(value),
+        )).toList(),
+      ),
+    ],
+  ));
 }
 
 class _FilterSection extends StatelessWidget {
@@ -1160,6 +1233,8 @@ class AsanDatePicker extends StatefulWidget {
   final DateTime? lastDate;
   final ValueChanged<DateTime>? onDateSelected;
   final VoidCallback? onCancel;
+  final Set<DateTime>? selectedDates;
+  final ValueChanged<DateTime>? onDateToggled;
 
   const AsanDatePicker({
     super.key,
@@ -1168,6 +1243,8 @@ class AsanDatePicker extends StatefulWidget {
     this.lastDate,
     this.onDateSelected,
     this.onCancel,
+    this.selectedDates,
+    this.onDateToggled,
   });
 
   @override
@@ -1229,6 +1306,11 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
 
   void _selectDate(DateTime date) {
     if (date.isBefore(_firstDate) || date.isAfter(_lastDate)) return;
+    if (widget.onDateToggled != null) {
+      widget.onDateToggled!(date);
+      setState(() => _selectedDate = date);
+      return;
+    }
     setState(() => _selectedDate = date);
     widget.onDateSelected?.call(date);
   }
@@ -1305,14 +1387,14 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
   Widget build(BuildContext context) {
     return Container(
       width: 342,
-      height: 419,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AsanColorScheme.surface,
+        color: AsanColorScheme.container,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
             height: 38,
@@ -1344,11 +1426,11 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
           _CalendarGrid(
             month: _visibleMonth,
             selectedDate: _selectedDate,
+            selectedDates: widget.selectedDates,
             firstDate: _firstDate,
             lastDate: _lastDate,
             onDateSelected: _selectDate,
           ),
-          const Spacer(),
         ],
       ),
     );
@@ -1425,6 +1507,7 @@ class _MonthSelector extends StatelessWidget {
 class _CalendarGrid extends StatelessWidget {
   final DateTime month;
   final DateTime selectedDate;
+  final Set<DateTime>? selectedDates;
   final DateTime firstDate;
   final DateTime lastDate;
   final ValueChanged<DateTime> onDateSelected;
@@ -1432,6 +1515,7 @@ class _CalendarGrid extends StatelessWidget {
   const _CalendarGrid({
     required this.month,
     required this.selectedDate,
+    this.selectedDates,
     required this.firstDate,
     required this.lastDate,
     required this.onDateSelected,
@@ -1470,7 +1554,7 @@ class _CalendarGrid extends StatelessWidget {
                 return const SizedBox(width: 40, height: 40);
               }
 
-              final isSelected = DateUtils.isSameDay(date, selectedDate);
+              final isSelected = selectedDates?.contains(DateUtils.dateOnly(date)) ?? DateUtils.isSameDay(date, selectedDate);
               final isToday = DateUtils.isSameDay(date, today);
               final isOutsideRange =
                   date.isBefore(firstDate) || date.isAfter(lastDate);

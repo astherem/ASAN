@@ -145,6 +145,7 @@ class RecipesScreen extends StatefulWidget {
   final VoidCallback? onViewGroceries;
   final List<Recipes> incomingRecipes;
   final ValueChanged<List<Recipes>>? onRecipesChanged;
+  final ValueChanged<Recipes>? onAddToMealPlan;
   final AsanFilterSelection? initialFilters;
   final String initialQuery;
   final ValueChanged<Recipes>? onRecipeSelected;
@@ -153,6 +154,7 @@ class RecipesScreen extends StatefulWidget {
     super.key,
     this.incomingRecipes = const [],
     this.onRecipesChanged,
+    this.onAddToMealPlan,
     this.initialFilters,
     this.initialQuery = '',
     this.onRecipeSelected,
@@ -604,7 +606,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                               children: group.value.map((recipe) {
                                 return SizedBox(
                                   width: width,
-                                  height: width * 220 / 163,
+                                  height: width * (widget.onRecipeSelected == null ? 220 : 252) / 163,
                                   child: RecipeCard(
                                     recipeName: recipe.name,
                                     mealCategory: _cardDishType([
@@ -614,6 +616,9 @@ class _RecipesScreenState extends State<RecipesScreen> {
                                     imageBytes: recipe.imageBytes,
                                     totalTime: recipe.formattedTotalTime,
                                     showBookmark: false,
+                                    onViewPressed: widget.onRecipeSelected != null
+                                        ? () => _showRecipeDetails(recipe)
+                                        : null,
                                     onTap: () => widget.onRecipeSelected != null
                                         ? widget.onRecipeSelected!(recipe)
                                         : _showRecipeDetails(recipe),
@@ -948,19 +953,30 @@ class _RecipesScreenState extends State<RecipesScreen> {
     final sortBy = _activeFilters?.sortBy ?? 'Dish type';
     final ascending = _activeFilters?.sortAscending ?? true;
 
-    String dishType(ApiRecipe recipe) => recipe.dishTypes
-        .map((type) => type.trim())
-        .firstWhere(
-          (type) => type.isNotEmpty,
-          orElse: () => recipe.category.trim().isEmpty
-              ? 'Unknown dish type'
-              : recipe.category.trim(),
-        );
+    String dishType(ApiRecipe recipe) {
+      final type = recipe.dishTypes
+          .map((type) => type.trim())
+          .firstWhere(
+            (type) => type.isNotEmpty,
+            orElse: () => recipe.category.trim().isEmpty
+                ? 'Unknown dish type'
+                : recipe.category.trim(),
+          );
+      return type.isEmpty
+          ? type
+          : '${type[0].toUpperCase()}${type.substring(1).toLowerCase()}';
+    }
 
-    String cuisine(ApiRecipe recipe) =>
-        recipe.cuisine?.trim().isNotEmpty == true
-        ? recipe.cuisine!.trim()
-        : 'Unknown cuisine';
+    String cuisine(ApiRecipe recipe) {
+      final storedCuisine = recipe.cuisine?.trim();
+      if (storedCuisine?.isNotEmpty == true) return storedCuisine!;
+      return asanCuisines.firstWhere(
+        (value) => recipe.tags.any(
+          (tag) => tag.trim().toLowerCase() == value.toLowerCase(),
+        ),
+        orElse: () => 'Unknown cuisine',
+      );
+    }
 
     String diet(ApiRecipe recipe) => asanDiets.firstWhere(
       (value) => recipe.tags.any(
@@ -1325,13 +1341,16 @@ class _RecipesScreenState extends State<RecipesScreen> {
         .where(
           (item) => filters?.cuisines.isEmpty ?? true
               ? true
-              : filters!.cuisines.any(
-                  (cuisine) => (item.cuisine ?? '')
+          : filters!.cuisines.any(
+              (cuisine) => (item.cuisine ?? '')
                       .toLowerCase()
                       .split(',')
                       .map((part) => part.trim())
-                      .contains(cuisine.toLowerCase()),
-                ),
+                      .contains(cuisine.toLowerCase()) ||
+                  item.tags.any(
+                    (tag) => tag.trim().toLowerCase() == cuisine.toLowerCase(),
+                  ),
+            ),
         )
         .toList();
     final sortBy = filters?.sortBy ?? 'Meal category';
@@ -1339,7 +1358,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
         ? recipe.totalTime
         : recipe.prepTime + recipe.cookTime;
 
-    String firstDishType(Recipes recipe) => recipe.dishTypes
+    String firstDishType(Recipes recipe) {
+      final type = recipe.dishTypes
         .map((type) => type.trim())
         .firstWhere(
           (type) => type.isNotEmpty,
@@ -1347,12 +1367,32 @@ class _RecipesScreenState extends State<RecipesScreen> {
               ? recipe.mealCategory!.trim()
               : 'Uncategorized',
         );
+      return type.isEmpty
+          ? type
+          : '${type[0].toUpperCase()}${type.substring(1).toLowerCase()}';
+    }
+
+    String cuisine(Recipes recipe) {
+      final storedCuisine = recipe.cuisine?.trim();
+      if (storedCuisine?.isNotEmpty == true) return storedCuisine!;
+      return asanCuisines.firstWhere(
+        (value) => recipe.tags.any(
+          (tag) => tag.trim().toLowerCase() == value.toLowerCase(),
+        ),
+        orElse: () => 'Unknown cuisine',
+      );
+    }
+
+    String diet(Recipes recipe) => asanDiets.firstWhere(
+      (value) => recipe.tags.any(
+        (tag) => tag.trim().toLowerCase() == value.toLowerCase(),
+      ),
+      orElse: () => 'Unknown diet',
+    );
 
     String timeGroup(Recipes recipe) {
       final minutes = totalTime(recipe);
-      if (minutes <= 0) return 'Unknown time';
-      final upperBound = ((minutes + 9) ~/ 10) * 10;
-      return '$upperBound mins or less';
+      return asanTotalTimeRangeFor(minutes) ?? 'Unknown time';
     }
 
     items.sort((first, second) {
@@ -1360,20 +1400,13 @@ class _RecipesScreenState extends State<RecipesScreen> {
         'Dish type' => firstDishType(
           first,
         ).toLowerCase().compareTo(firstDishType(second).toLowerCase()),
-        'Cuisine' =>
-          (first.cuisine?.trim().isNotEmpty == true
-                  ? first.cuisine!.trim()
-                  : 'Unknown cuisine')
-              .toLowerCase()
-              .compareTo(
-                (second.cuisine?.trim().isNotEmpty == true
-                        ? second.cuisine!.trim()
-                        : 'Unknown cuisine')
-                    .toLowerCase(),
-              ),
-        'Meal category' => (first.mealCategory ?? 'Uncategorized').compareTo(
-          second.mealCategory ?? 'Uncategorized',
+        'Cuisine' => cuisine(first).toLowerCase().compareTo(
+          cuisine(second).toLowerCase(),
         ),
+        'Diet' => diet(first).toLowerCase().compareTo(diet(second).toLowerCase()),
+        'Meal category' => (first.mealCategory ?? 'Uncategorized')
+            .toLowerCase()
+            .compareTo((second.mealCategory ?? 'Uncategorized').toLowerCase()),
         'Recipe name' => first.name.toLowerCase().compareTo(
           second.name.toLowerCase(),
         ),
@@ -1388,10 +1421,9 @@ class _RecipesScreenState extends State<RecipesScreen> {
       final label = switch (sortBy) {
         'Dish type' => firstDishType(item),
         'Cuisine' =>
-          item.cuisine?.trim().isNotEmpty == true
-              ? item.cuisine!.trim()
-              : 'Unknown cuisine',
-        'Meal category' => item.mealCategory ?? 'Uncategorized',
+          cuisine(item),
+        'Diet' => diet(item),
+        'Meal category' => (item.mealCategory ?? 'Uncategorized').toUpperCase(),
         'Total time' => timeGroup(item),
         'Recipe name' =>
           item.name.trim().isEmpty ? '#' : item.name.trim()[0].toUpperCase(),
@@ -1449,6 +1481,9 @@ class _RecipesScreenState extends State<RecipesScreen> {
       MaterialPageRoute(
         builder: (context) => RecipeDetailsScreen(
           recipe: recipe,
+          headerVerticalPadding: widget.onRecipeSelected != null
+              ? AsanSpacing.md
+              : AsanSpacing.sm,
           ingredients: recipe.ingredients,
           ingredientAmounts: recipe.ingredientAmounts,
           ingredientUnits: recipe.ingredientUnits,
@@ -1481,6 +1516,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
             );
           },
           onViewGroceries: widget.onViewGroceries,
+          onAddToMealPlan: () => widget.onAddToMealPlan?.call(recipe),
           showEditButton: true,
           onEdit: (currentRecipe) {
             return _showEditItemDialog(currentRecipe);
@@ -1514,6 +1550,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
         builder: (context) => RecipeDetailsScreen(
           recipe: Recipes(
             name: details.title,
+            imageUrl: imageUrl,
             mealCategory: details.category,
             description: details.description,
             difficulty: details.difficulty,
@@ -1533,6 +1570,9 @@ class _RecipesScreenState extends State<RecipesScreen> {
             carbohydrates: details.carbohydrates,
             protein: details.protein,
             dishTypes: details.dishTypes,
+            ingredients: details.ingredients,
+            ingredientAisles: details.ingredientAisles,
+            instructions: details.instructions,
           ),
           imageUrl: imageUrl,
           ingredients: details.ingredients,
@@ -1552,6 +1592,30 @@ class _RecipesScreenState extends State<RecipesScreen> {
             );
           },
           onViewGroceries: widget.onViewGroceries,
+          onAddToMealPlan: () => widget.onAddToMealPlan?.call(Recipes(
+            name: details.title,
+            imageUrl: imageUrl,
+            mealCategory: details.category,
+            description: details.description,
+            difficulty: details.difficulty,
+            cuisine: details.cuisine,
+            tags: details.tags,
+            idealFor: details.tags.where(asanMealTimes.contains).toList(),
+            prepTime: details.prepTime,
+            cookTime: details.cookTime,
+            totalTime: details.totalTime > 0 ? details.totalTime : details.prepTime + details.cookTime,
+            servings: details.servings,
+            calories: details.calories,
+            fats: details.fats,
+            cholesterol: details.cholesterol,
+            sodium: details.sodium,
+            carbohydrates: details.carbohydrates,
+            protein: details.protein,
+            dishTypes: details.dishTypes,
+            ingredients: details.ingredients,
+            ingredientAisles: details.ingredientAisles,
+            instructions: details.instructions,
+          )),
           instructions: details.instructions,
           isSaved: isSaved,
           onToggleSaved: () => setState(() {

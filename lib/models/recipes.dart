@@ -3,6 +3,7 @@ import 'dart:typed_data';
 class Recipes {
   final String name;
   final Uint8List? imageBytes;
+  final String? imageUrl;
   final String? mealCategory;
   final String? difficulty;
   final String? cuisine;
@@ -36,6 +37,7 @@ class Recipes {
   const Recipes({
     required this.name,
     this.imageBytes,
+    this.imageUrl,
     this.description = '',
     this.mealCategory,
     this.difficulty,
@@ -70,6 +72,7 @@ class Recipes {
   Recipes copyWith({
     String? name,
     Uint8List? imageBytes,
+    String? imageUrl,
     String? description,
     String? mealCategory,
     String? difficulty,
@@ -103,6 +106,7 @@ class Recipes {
     return Recipes(
       name: name ?? this.name,
       imageBytes: imageBytes ?? this.imageBytes,
+      imageUrl: imageUrl ?? this.imageUrl,
       description: description ?? this.description,
       mealCategory: mealCategory ?? this.mealCategory,
       difficulty: difficulty ?? this.difficulty,

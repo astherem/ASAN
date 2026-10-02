@@ -21,6 +21,7 @@ class RecipeDetailsScreen extends StatefulWidget {
   final List<String> ingredientNotes;
   final List<String> instructions;
   final bool showEditButton;
+  final double headerVerticalPadding;
   final Future<Recipes?> Function(Recipes recipe)? onEdit;
   final VoidCallback? onToggleSaved;
   final Future<void> Function(int servings)? onAddToGroceries;
@@ -39,6 +40,7 @@ class RecipeDetailsScreen extends StatefulWidget {
     this.ingredientNotes = const [],
     this.instructions = const [],
     this.showEditButton = false,
+    this.headerVerticalPadding = AsanSpacing.sm,
     this.onEdit,
     this.onToggleSaved,
     this.onAddToGroceries,
@@ -199,10 +201,11 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             right: 0,
             child: Container(
               padding: EdgeInsets.only(
-                top: MediaQuery.paddingOf(context).top + AsanSpacing.md,
+                top: MediaQuery.paddingOf(context).top +
+                    widget.headerVerticalPadding,
                 left: AsanSpacing.lg,
                 right: AsanSpacing.lg,
-                bottom: AsanSpacing.md,
+                bottom: widget.headerVerticalPadding,
               ),
               decoration: BoxDecoration(
                 color: _imageScrolledPastHeader

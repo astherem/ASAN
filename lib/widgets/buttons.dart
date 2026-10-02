@@ -213,6 +213,7 @@ import 'package:flutter/material.dart';
     final Widget? child;
     final VoidCallback? onPressed;
     final Color color;
+    final EdgeInsetsGeometry padding;
 
     const AsanTextButton({
       super.key,
@@ -220,6 +221,7 @@ import 'package:flutter/material.dart';
       this.child,
       this.onPressed,
       this.color = AsanColorScheme.primary,
+      this.padding = const EdgeInsets.all(8),
     }) : assert(label != null || child != null);
 
     const AsanTextButton.green({
@@ -228,6 +230,7 @@ import 'package:flutter/material.dart';
       this.child,
       this.onPressed,
     }) : color = AsanColorScheme.primary,
+        padding = const EdgeInsets.all(8),
         assert(label != null || child != null);
 
     const AsanTextButton.black({
@@ -236,10 +239,12 @@ import 'package:flutter/material.dart';
       this.child,
       this.onPressed,
     }) : color = AsanColorScheme.secondary,
+        padding = const EdgeInsets.all(8),
         assert(label != null || child != null);
 
     const AsanTextButton.red({super.key, this.label, this.child, this.onPressed})
       : color = AsanColorScheme.error,
+        padding = const EdgeInsets.all(8),
         assert(label != null || child != null);
 
     @override
@@ -248,7 +253,7 @@ import 'package:flutter/material.dart';
         onPressed: onPressed,
         style: TextButton.styleFrom(
           foregroundColor: color,
-          padding: const EdgeInsets.all(8),
+          padding: padding,
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           shape: const RoundedRectangleBorder(),

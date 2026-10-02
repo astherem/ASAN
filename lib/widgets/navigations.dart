@@ -104,18 +104,20 @@ class FullScreenDialogHeader extends StatelessWidget
   final String screenTitle;
   final VoidCallback? onBackPressed;
   final Widget? trailing;
+  final double bottomPadding;
 
   const FullScreenDialogHeader({
     super.key,
     required this.screenTitle,
     this.onBackPressed,
     this.trailing,
+    this.bottomPadding = AsanSpacing.md,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AsanSpacing.md),
+      padding: EdgeInsets.only(top: AsanSpacing.md, bottom: bottomPadding),
       child: SizedBox(
         height: 34,
         child: Stack(
@@ -141,11 +143,15 @@ class FullScreenDialogHeader extends StatelessWidget
                     },
               ),
             ),
-            Center(
+            Positioned(
+              left: 60,
+              right: 60,
               child: Text(
                 screenTitle,
                 style: AsanTextTheme.headlineSmall,
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (trailing != null)
@@ -160,7 +166,8 @@ class FullScreenDialogHeader extends StatelessWidget
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(34 + (AsanSpacing.md * 2));
+  Size get preferredSize =>
+      Size.fromHeight(34 + AsanSpacing.md + bottomPadding);
 }
 
 // NAVIGATION BAR

@@ -1238,12 +1238,10 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
         cookTime < 0 ||
         servings == null ||
         servings <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
+      AsanSnackBar.show(
+        context,
+        message:
             'Enter whole numbers: times must be 0 or more, and servings must be at least 1.',
-          ),
-        ),
       );
       return;
     }

@@ -180,6 +180,7 @@ class GroceriesScreenState extends State<GroceriesScreen> {
               resizeToAvoidBottomInset: false,
               appBar: FullScreenDialogHeader(
                 screenTitle: 'Add Grocery Item',
+                bottomPadding: AsanSpacing.xs,
                 onBackPressed: () async {
                   final formState = formKey.currentState;
                   if (formState == null || !formState.hasChanges) {
@@ -353,8 +354,8 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     items.sort((first, second) {
       final result = sortBy == 'Item name'
           ? first.name.toLowerCase().compareTo(second.name.toLowerCase())
-          : (first.aisle ?? 'Uncategorized').compareTo(
-              second.aisle ?? 'Uncategorized',
+          : (first.aisle ?? 'Uncategorized').toLowerCase().compareTo(
+              (second.aisle ?? 'Uncategorized').toLowerCase(),
             );
       return (filters?.sortAscending ?? true) ? result : -result;
     });
@@ -363,7 +364,7 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     for (final item in items) {
       final label = sortBy == 'Item name'
           ? (item.name.trim().isEmpty ? '#' : item.name.trim()[0].toUpperCase())
-          : item.aisle ?? 'Uncategorized';
+          : (item.aisle ?? 'Uncategorized').toUpperCase();
       (groups[label] ??= []).add(item);
     }
     return groups.entries.toList();

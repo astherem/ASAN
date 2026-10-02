@@ -28,6 +28,7 @@ class Asan extends StatefulWidget {
 
 class _AsanState extends State<Asan> {
   final _groceriesKey = GlobalKey<GroceriesScreenState>();
+  final _mealPlanKey = GlobalKey<MealPlanScreenState>();
   int _selectedIndex = 0;
   int _groceriesItemCount = 0;
   final List<PantryItem> _receivedPantryItems = [];
@@ -71,15 +72,35 @@ class _AsanState extends State<Asan> {
           children: [
             RecipesScreen(
               incomingRecipes: _recipes,
-              onRecipesChanged: (recipes) => setState(() {
-                _recipes
-                  ..clear()
-                  ..addAll(recipes);
-              }),
+              onRecipesChanged: (recipes) {
+                for (var i = 0; i < _recipes.length && i < recipes.length; i++) {
+                  final previous = _recipes[i];
+                  final updated = recipes[i];
+                  if (!identical(previous, updated)) {
+                    _mealPlanKey.currentState?.updatePlannedRecipe(
+                      previous,
+                      updated,
+                    );
+                  }
+                }
+                setState(() {
+                  _recipes
+                    ..clear()
+                    ..addAll(recipes);
+                });
+              },
               onAddToGroceries: (items) async => await _groceriesKey.currentState?.addItems(items),
               onViewGroceries: () => setState(() => _selectedIndex = 3),
+              onAddToMealPlan: (recipe) {
+                setState(() => _selectedIndex = 1);
+                _mealPlanKey.currentState?.addMealFromRecipe(recipe);
+              },
             ),
-            MealPlanScreen(recipes: _recipes),
+            MealPlanScreen(
+              key: _mealPlanKey,
+              recipes: _recipes,
+              onViewMealPlan: () => setState(() => _selectedIndex = 1),
+            ),
             PantryScreen(incomingItems: _receivedPantryItems),
             GroceriesScreen(
               key: _groceriesKey,
