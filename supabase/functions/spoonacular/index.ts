@@ -15,8 +15,8 @@ Deno.serve(async (request: Request) => {
     const body = await request.json();
     const action = body?.action;
     let endpoint: URL;
-    if (action === "search" && typeof body.query === "string" && body.query.length <= 100) {
-      endpoint = new URL(body.query.trim()
+    if (action === "search" && typeof body.query === "string" && body.query.length <= 100 && (body.type === undefined || (typeof body.type === "string" && body.type.length <= 100))) {
+      endpoint = new URL(body.query.trim() || body.type?.trim()
         ? "https://api.spoonacular.com/recipes/complexSearch"
         : "https://api.spoonacular.com/recipes/random");
       endpoint.searchParams.set("number", "20");
@@ -24,6 +24,7 @@ Deno.serve(async (request: Request) => {
       endpoint.searchParams.set("addRecipeNutrition", "true");
       endpoint.searchParams.set("instructionsRequired", "true");
       if (body.query.trim()) endpoint.searchParams.set("query", body.query.trim());
+      if (typeof body.type === "string" && body.type.trim()) endpoint.searchParams.set("type", body.type.trim());
     } else if (action === "information" && /^\d{1,20}$/.test(String(body.id ?? ""))) {
       endpoint = new URL(`https://api.spoonacular.com/recipes/${body.id}/information`);
       endpoint.searchParams.set("includeNutrition", "true");
@@ -49,7 +50,7 @@ Deno.serve(async (request: Request) => {
       );
     }
     const result = await upstream.json();
-    if (action === "search" && !body.query.trim()) {
+    if (action === "search" && !body.query.trim() && !body.type?.trim()) {
       return json({ results: Array.isArray(result.recipes) ? result.recipes : [] }, 200, quotaHeaders);
     }
     return json(result, 200, quotaHeaders);

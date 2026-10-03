@@ -14,6 +14,7 @@ class RecipeDetailsScreen extends StatefulWidget {
   final Recipes recipe;
   final String? imageUrl;
   final bool isSaved;
+  final int? servingsOverride;
   final Set<String> idealFor;
   final List<String> ingredients;
   final List<String> ingredientAmounts;
@@ -33,6 +34,7 @@ class RecipeDetailsScreen extends StatefulWidget {
     required this.recipe,
     this.imageUrl,
     this.isSaved = false,
+    this.servingsOverride,
     this.idealFor = const {},
     this.ingredients = const [],
     this.ingredientAmounts = const [],
@@ -64,7 +66,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _ingredientServings = 1;
+    _ingredientServings = widget.servingsOverride ?? 1;
     _isSaved = widget.isSaved;
     _recipe = widget.recipe;
   }
@@ -83,10 +85,10 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
         .split(',')
         .map((tag) => tag.trim())
         .where((tag) => tag.isNotEmpty);
-    final tags = <String>[
+    final tags = uniqueStrings([
       ...recipe.tags.where((tag) => !asanMealTimes.contains(tag)),
       ...cuisineTags,
-    ].toSet().toList();
+    ]);
     final mealTimeValues = <String>{
       ...widget.idealFor,
       ...recipe.idealFor,
@@ -111,7 +113,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     final mainDishType = mainDishTypeValue.isEmpty ? null : mainDishTypeValue;
     final displayDishType = mainDishType == null || mainDishType.isEmpty
         ? mainDishType
-        : '${mainDishType[0].toUpperCase()}${mainDishType.substring(1)}';
+        : '${mainDishType[0].toUpperCase()}${mainDishType.substring(1).toLowerCase()}';
     final idealFor = asanMealTimes
         .where((mealTime) => mealTimeValues.contains(mealTime.toLowerCase()))
         .toList();
@@ -154,9 +156,15 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                       children: [
                         Text(recipe.name, style: AsanTextTheme.headlineSmall),
                         const SizedBox(height: AsanSpacing.sm),
-                        _MetaRow(dishType: displayDishType, idealFor: idealFor),
+                        _MetaRow(
+                          dishType: displayDishType,
+                          idealFor: idealFor,
+                        ),
                         const SizedBox(height: AsanSpacing.sm),
-                        _TimingRow(recipe: recipe),
+                        _TimingRow(
+                          recipe: recipe,
+                          servings: widget.servingsOverride,
+                        ),
                         if (tags.isNotEmpty) ...[
                           const SizedBox(height: AsanSpacing.sm),
                           _TagWrap(tags: tags),
@@ -413,8 +421,9 @@ class _MetaRow extends StatelessWidget {
 
 class _TimingRow extends StatelessWidget {
   final Recipes recipe;
+  final int? servings;
 
-  const _TimingRow({required this.recipe});
+  const _TimingRow({required this.recipe, this.servings});
 
   @override
   Widget build(BuildContext context) {
@@ -440,14 +449,17 @@ class _TimingRow extends StatelessWidget {
           ),
           Text('${recipe.cookTime}m cook', style: AsanTextTheme.labelSmall),
         ],
-        if (recipe.servings > 0) ...[
+        if ((servings ?? recipe.servings) > 0) ...[
           const Icon(
             Symbols.group_rounded,
             size: 16,
             color: AsanColorScheme.secondary,
             fill: 1,
           ),
-          Text('${recipe.servings} servings', style: AsanTextTheme.labelSmall),
+          Text(
+            '${servings ?? recipe.servings} servings',
+            style: AsanTextTheme.labelSmall,
+          ),
         ],
       ],
     );

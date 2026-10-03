@@ -4,15 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/models/filter_selection.dart';
+import 'package:asan/models/recipes.dart';
+import 'package:asan/models/grocery_item.dart';
 
 import 'package:asan/services/api/recipe_api.dart';
 
 import 'package:asan/styles/theme.dart';
 
 import 'package:asan/widgets/buttons.dart';
+import 'package:asan/widgets/communication.dart';
 import 'package:asan/widgets/containment.dart';
 import 'package:asan/widgets/inputs.dart';
 import 'package:asan/widgets/selections.dart';
+import 'package:asan/screens/recipe_details_screen.dart';
 
 class _SearchCardOption {
   final String title;
@@ -48,8 +52,23 @@ const _dishTypeSearchCards = <_SearchCardOption>[
 
 class SearchScreen extends StatefulWidget {
   final AsanFilterSelection? initialFilters;
+  final Future<void> Function(List<GroceryItem>)? onAddToGroceries;
+  final VoidCallback? onViewGroceries;
+  final ValueChanged<Recipes>? onAddToMealPlan;
+  final ValueChanged<Recipes>? onRecipeSelected;
+  final bool Function(String title)? isRecipeSaved;
+  final ValueChanged<String>? onToggleSaved;
 
-  const SearchScreen({super.key, this.initialFilters});
+  const SearchScreen({
+    super.key,
+    this.initialFilters,
+    this.onAddToGroceries,
+    this.onViewGroceries,
+    this.onAddToMealPlan,
+    this.onRecipeSelected,
+    this.isRecipeSaved,
+    this.onToggleSaved,
+  });
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -63,6 +82,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<ApiRecipe> _recipes = const [];
   bool _loading = false;
   String? _error;
+  int? _httpStatusCode;
   late AsanFilterSelection? _filters = widget.initialFilters;
   bool _showResults = false;
 
@@ -88,16 +108,20 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  Future<void> _search(String query) async {
+  Future<void> _search(String query, {String? type}) async {
     final request = ++_request;
-    setState(() { _loading = true; _error = null; });
+    setState(() { _loading = true; _error = null; _httpStatusCode = null; });
     try {
-      final recipes = await _recipeApi.search(query);
+      final recipes = await _recipeApi.search(query, type: type);
       if (!mounted || request != _request) return;
       setState(() { _recipes = recipes; _loading = false; });
     } on RecipeApiException catch (error) {
       if (!mounted || request != _request) return;
-      setState(() { _error = error.message; _loading = false; });
+      setState(() {
+        _error = error.message;
+        _httpStatusCode = error.statusCode;
+        _loading = false;
+      });
     } catch (_) {
       if (!mounted || request != _request) return;
       setState(() { _error = 'Could not load recipes. Please try again.'; _loading = false; });
@@ -128,15 +152,128 @@ class _SearchScreenState extends State<SearchScreen> {
     final filters = _filters;
     if (filters == null) return _recipes;
     return _recipes.where((recipe) {
+      // Spoonacular exposes meal times as dish types (for example,
+      // "morning meal"), while user recipes and other providers may expose
+      // them as tags. Check both so a successful search is not hidden here.
+      String normalizeMealTime(String value) {
+        final normalized = value.trim().toLowerCase();
+        return normalized == 'morning meal' ? 'breakfast' : normalized;
+      }
+
       final time = recipe.totalTime > 0 ? recipe.totalTime : recipe.prepTime + recipe.cookTime;
       final timeMatch = filters.totalTimeRanges.isEmpty || filters.totalTimeRanges.contains(asanTotalTimeRangeFor(time));
       final dietMatch = filters.mealCategories.isEmpty || recipe.tags.any((tag) => filters.mealCategories.any((value) => value.toLowerCase() == tag.toLowerCase()));
-      final mealMatch = filters.mealTimes.isEmpty || recipe.tags.any((tag) => filters.mealTimes.any((value) => value.toLowerCase() == tag.toLowerCase()));
+      final recipeMealTimes = [...recipe.tags, ...recipe.dishTypes, recipe.category]
+          .map(normalizeMealTime)
+          .toSet();
+      final mealMatch = filters.mealTimes.isEmpty || filters.mealTimes.any((value) => recipeMealTimes.contains(normalizeMealTime(value)));
       final types = [...recipe.dishTypes, recipe.category];
       final typeMatch = filters.mealTimeCategories.isEmpty || types.any((type) => filters.mealTimeCategories.any((value) => value.toLowerCase() == type.toLowerCase()));
       final cuisineMatch = filters.cuisines.isEmpty || filters.cuisines.any((value) => (recipe.cuisine ?? '').toLowerCase().split(',').map((part) => part.trim()).contains(value.toLowerCase()));
       return timeMatch && dietMatch && mealMatch && typeMatch && cuisineMatch;
     }).toList();
+  }
+
+  Future<void> _openRecipeDetails(ApiRecipe recipe) async {
+    ApiRecipe details;
+    try {
+      details = await _recipeApi.getById(recipe.id);
+    } catch (_) {
+      details = recipe;
+    }
+    if (!mounted) return;
+    final imageUrl = await _recipeApi.imageFor(details.title, imageUrl: details.imageUrl);
+    if (!mounted) return;
+    final savedRecipe = Recipes(
+      name: details.title,
+      imageUrl: imageUrl,
+      mealCategory: details.category,
+      description: details.description,
+      difficulty: details.difficulty,
+      cuisine: details.cuisine,
+      tags: details.tags,
+      idealFor: details.tags,
+      prepTime: details.prepTime,
+      cookTime: details.cookTime,
+      totalTime: details.totalTime > 0 ? details.totalTime : details.prepTime + details.cookTime,
+      servings: details.servings,
+      calories: details.calories,
+      fats: details.fats,
+      cholesterol: details.cholesterol,
+      sodium: details.sodium,
+      carbohydrates: details.carbohydrates,
+      protein: details.protein,
+      dishTypes: details.dishTypes,
+      ingredients: details.ingredients,
+      ingredientAisles: details.ingredientAisles,
+      instructions: details.instructions,
+    );
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute<void>(
+      builder: (context) => RecipeDetailsScreen(
+        recipe: savedRecipe,
+        imageUrl: imageUrl,
+        ingredients: details.ingredients,
+        instructions: details.instructions,
+        isSaved: widget.isRecipeSaved?.call(details.title) ?? false,
+        onToggleSaved: widget.onToggleSaved == null
+            ? null
+            : () => widget.onToggleSaved!(details.title),
+        onAddToGroceries: widget.onAddToGroceries == null
+            ? null
+            : (servings) async {
+                final baseServings = details.servings > 0 ? details.servings : 1;
+                await widget.onAddToGroceries!(List.generate(
+                  details.ingredients.length,
+                  (index) => _groceryItemFromIngredient(
+                    details.ingredients[index],
+                    index < details.ingredientAisles.length
+                        ? details.ingredientAisles[index]
+                        : null,
+                    servings / baseServings,
+                  ),
+                ));
+              },
+        onViewGroceries: widget.onViewGroceries,
+        onAddToMealPlan: widget.onAddToMealPlan == null && widget.onRecipeSelected == null
+            ? null
+            : () {
+                Navigator.of(context).pop();
+                if (widget.onRecipeSelected != null) {
+                  Navigator.of(context).pop();
+                  widget.onRecipeSelected!(savedRecipe);
+                } else {
+                  widget.onAddToMealPlan!(savedRecipe);
+                }
+              },
+      ),
+    ));
+  }
+
+  GroceryItem _groceryItemFromIngredient(String ingredient, String? aisle, double multiplier) {
+    final match = RegExp(r'^(\d+(?:\s+\d+/\d+|[./]\d+)?)(?:\s+(cups?|tbsp|tablespoons?|tsp|teaspoons?|g|kg|mg|ml|l|oz|ounces?|lb|lbs|pounds?|cloves?|cans?|slices?|pieces?|pinches?))?\s+(.+)$', caseSensitive: false).firstMatch(ingredient.trim());
+    if (match == null) {
+      return GroceryItem(name: ingredient.trim(), amount: '', unit: '', aisle: aisle ?? 'Other', notes: '');
+    }
+    final rawAmount = match.group(1)!;
+    final amount = double.tryParse(rawAmount) ?? 0;
+    final rawUnit = match.group(2)?.toLowerCase();
+    final unit = switch (rawUnit) {
+      'cups' || 'cup' => 'cup',
+      'tablespoons' || 'tablespoon' || 'tbsp' => 'tbsp',
+      'teaspoons' || 'teaspoon' || 'tsp' => 'tsp',
+      'ounces' || 'ounce' || 'oz' => 'oz',
+      'pounds' || 'pound' || 'lbs' || 'lb' => 'lb',
+      'pinches' => 'pinch',
+      _ => rawUnit ?? '',
+    };
+    return GroceryItem(
+      name: match.group(3)!.trim().replaceFirst(RegExp(r'^of\s+', caseSensitive: false), ''),
+      amount: amount == 0 ? rawAmount : (amount * multiplier).toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), ''),
+      unit: unit,
+      aisle: aisle ?? 'Other',
+      notes: '',
+    );
   }
 
   void _toggle(Set<String> values, String value, {required bool dishType}) {
@@ -163,7 +300,10 @@ class _SearchScreenState extends State<SearchScreen> {
     if (query.isEmpty) {
       ++_request;
     } else {
-      _search(query);
+      final mealTimeType = selection.mealTimes.length == 1
+          ? selection.mealTimes.first
+          : null;
+      _search(mealTimeType == null ? query : '', type: mealTimeType);
     }
   }
 
@@ -190,7 +330,10 @@ class _SearchScreenState extends State<SearchScreen> {
     if (query.isEmpty) {
       ++_request;
     } else {
-      _search(query);
+      final mealTimeType = selection.mealTimes.length == 1
+          ? selection.mealTimes.first
+          : null;
+      _search(mealTimeType == null ? query : '', type: mealTimeType);
     }
   }
 
@@ -341,11 +484,28 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                 Expanded(child: _error != null && _recipes.isEmpty
-          ? Center(child: Padding(padding: const EdgeInsets.all(AsanSpacing.lg), child: Text(_error!, textAlign: TextAlign.center)))
+          ? AsanEmptyState(
+              icon: Symbols.error_rounded,
+              title: _httpStatusCode == null
+                  ? 'Recipes could not be loaded'
+                  : 'Error $_httpStatusCode',
+              message: _error!,
+              actionIcon: const Icon(Symbols.refresh_rounded, weight: 600),
+              actionLabel: 'Try again',
+              onAction: () => _search(_query),
+            )
           : _loading && _recipes.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : recipes.isEmpty
-                  ? Center(child: Text(_query.isEmpty ? 'Search for a recipe' : 'No recipes found', style: AsanTextTheme.bodyMedium))
+                  ? AsanEmptyState(
+                      icon: Symbols.search_off_rounded,
+                      title: _query.trim().isEmpty
+                          ? 'No recipes match these filters'
+                          : 'No recipes found',
+                      message: _query.trim().isEmpty
+                          ? 'Try removing a filter to see more recipes.'
+                          : 'No recipes match "${_query.trim()}".',
+                    )
                   : GridView.builder(
                       padding: const EdgeInsets.all(AsanSpacing.lg),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -364,6 +524,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           imageUrl: image.isEmpty ? null : image,
                           totalTime: recipe.totalTime > 0 ? '${recipe.totalTime} min' : 'Open recipe',
                           showBookmark: false,
+                          onTap: () => _openRecipeDetails(recipe),
                         );
                       },
                     )),

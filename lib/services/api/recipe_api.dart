@@ -300,13 +300,29 @@ class RecipeApi {
         : null;
   }
 
-  Future<List<ApiRecipe>> search(String query) async {
+  Future<List<ApiRecipe>> search(String query, {String? type}) async {
     final trimmedQuery = query.trim();
-    if (trimmedQuery.length > 100) {
+    final trimmedType = type?.trim();
+    if (trimmedQuery.length > 100 || (trimmedType?.length ?? 0) > 100) {
       throw const RecipeApiException('Search must be 100 characters or fewer.');
     }
     _checkSupabaseConfig();
-    final response = await _invokeSpoonacular({'action': 'search', 'query': trimmedQuery});
+    final payload = <String, Object>{'action': 'search', 'query': trimmedQuery};
+    if (trimmedType != null && trimmedType.isNotEmpty) payload['type'] = trimmedType;
+    late final Map<String, dynamic> response;
+    try {
+      response = await _invokeSpoonacular(payload);
+    } on RecipeApiException catch (error) {
+      // Provider gateway failures are often transient; retry once before
+      // reporting the search as failed.
+      if (error.statusCode != 502 &&
+          error.statusCode != 503 &&
+          error.statusCode != 504) {
+        rethrow;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      response = await _invokeSpoonacular(payload);
+    }
     final recipes = response['results'];
     if (recipes is! List) throw const RecipeApiException('Spoonacular returned invalid data.');
     return recipes.whereType<Map<String, dynamic>>().map(ApiRecipe.fromSpoonacularJson).toList();

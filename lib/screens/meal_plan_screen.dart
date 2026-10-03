@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/models/meal_plans.dart';
 import 'package:asan/models/recipes.dart';
+import 'package:asan/models/grocery_item.dart';
 import 'package:asan/models/filter_selection.dart';
 import 'package:asan/screens/recipes_screen.dart';
 import 'package:asan/screens/recipe_details_screen.dart';
@@ -20,8 +21,10 @@ class MealPlanScreen extends StatefulWidget {
   final List<MealPlans> incomingEntries;
   final List<Recipes> recipes;
   final VoidCallback? onViewMealPlan;
+  final VoidCallback? onViewGroceries;
+  final Future<bool> Function(List<GroceryItem>)? onAddToGroceries;
 
-  const MealPlanScreen({super.key, this.incomingEntries = const [], this.recipes = const [], this.onViewMealPlan});
+  const MealPlanScreen({super.key, this.incomingEntries = const [], this.recipes = const [], this.onViewMealPlan, this.onViewGroceries, this.onAddToGroceries});
 
   @override
   State<MealPlanScreen> createState() => MealPlanScreenState();
@@ -106,7 +109,6 @@ class MealPlanScreenState extends State<MealPlanScreen> {
 
   Future<void> addMealFromRecipe(Recipes recipe) => _addMeal(initialRecipe: recipe);
 
-  /// Replaces the recipe snapshot held by every planned meal that references it.
   void updatePlannedRecipe(Recipes previous, Recipes updated) {
     var changed = false;
     for (var i = 0; i < _entries.length; i++) {
@@ -216,8 +218,146 @@ class MealPlanScreenState extends State<MealPlanScreen> {
     return date.subtract(Duration(days: date.weekday % 7));
   }
 
+  Future<void> _addVisibleMealsToGroceries() async {
+    final visibleEntries = _selectedRange == 0
+        ? _groupedEntriesForSelectedDate.values.expand((entries) => entries)
+        : _groupedEntriesForSelectedWeek.values.expand((entries) => entries);
+    final items = <GroceryItem>[];
+    for (final recipe in visibleEntries.map((entry) => entry.recipe)) {
+      for (var i = 0; i < recipe.ingredients.length; i++) {
+        final ingredient = recipe.ingredients[i].trim();
+        final parsed = _parseFormattedIngredient(ingredient);
+        if (ingredient.isEmpty) continue;
+        items.add(GroceryItem(
+          name: parsed?.name ?? ingredient,
+          amount: i < recipe.ingredientAmounts.length && recipe.ingredientAmounts[i].trim().isNotEmpty
+              ? recipe.ingredientAmounts[i]
+              : parsed?.amount ?? '',
+          unit: i < recipe.ingredientUnits.length && recipe.ingredientUnits[i].trim().isNotEmpty
+              ? recipe.ingredientUnits[i]
+              : parsed?.unit ?? '',
+          aisle: i < recipe.ingredientAisles.length ? recipe.ingredientAisles[i] ?? 'Other' : 'Other',
+          notes: i < recipe.ingredientNotes.length ? recipe.ingredientNotes[i] : '',
+        ));
+      }
+    }
+    if (items.isEmpty) {
+      AsanSnackBar.show(context, message: 'No ingredients for $_dateLabel meal plan.');
+      return;
+    }
+    final added = await widget.onAddToGroceries?.call(items) ?? false;
+    if (!added) return;
+    if (mounted) {
+      AsanSnackBar.show(
+        context,
+        message: '${items.length} ingredients added to groceries',
+        actionLabel: 'View',
+        onAction: widget.onViewGroceries,
+      );
+    }
+  }
+
   String _formatDate(DateTime date) =>
       '${_months[date.month - 1].substring(0, 3)} ${date.day}';
+
+  String _formatGroupTitle(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return trimmed;
+    return '${trimmed[0].toUpperCase()}${trimmed.substring(1).toLowerCase()}';
+  }
+
+  Future<void> _editMeal(MealPlans meal) async {
+    final entries = await _showMealForm(meal: meal);
+    if (entries == null || !mounted) return;
+    final index = _entries.indexOf(meal);
+    if (index < 0) return;
+    setState(() {
+      _entries.removeAt(index);
+      _entries.insertAll(index, entries);
+    });
+  }
+
+  Future<List<MealPlans>?> _showMealForm({MealPlans? meal}) async {
+    final formKey = GlobalKey<_MealPlanFormState>();
+    // Existing add flow below builds the fullscreen form; edits use the same
+    // fields with a single date and meal time preselected.
+    return showDialog<List<MealPlans>>(
+      context: context,
+      useSafeArea: false,
+      builder: (dialogContext) => Dialog.fullscreen(
+        child: SafeArea(
+          child: Scaffold(
+            resizeToAvoidBottomInset: false,
+            appBar: FullScreenDialogHeader(
+              screenTitle: meal == null ? 'Add Meal to Plan' : 'Edit Planned Meal',
+              bottomPadding: AsanSpacing.xs,
+              onBackPressed: () async {
+                final formState = formKey.currentState;
+                if (formState == null || !formState.hasChanges) {
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  return;
+                }
+                final discard = await AsanAlertDialog.show(
+                  dialogContext,
+                  title: 'Discard Changes?',
+                  content: 'You have changes that won\'t be saved if you close. Are you sure you want to discard them?',
+                  cancelText: 'Cancel',
+                  destructiveText: 'Discard',
+                );
+                if (discard == true && dialogContext.mounted) Navigator.pop(dialogContext);
+              },
+            ),
+            body: _MealPlanForm(
+              key: formKey,
+              recipes: [
+                ...widget.recipes,
+                if (meal != null && !widget.recipes.any((r) => r.name == meal.recipe.name)) meal.recipe,
+              ],
+              initialDate: meal?.date ?? _selectedDate,
+              initialMealTime: meal?.mealTime,
+              initialDishType: meal?.dishType,
+              initialRecipe: meal?.recipe,
+              initialServings: meal?.servings,
+              isEditing: meal != null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _deleteMeal(MealPlans meal) {
+    setState(() => _entries.remove(meal));
+    AsanSnackBar.show(context, message: '${meal.recipe.name} removed from plan');
+  }
+
+  ({String amount, String unit, String name})? _parseFormattedIngredient(
+    String ingredient,
+  ) {
+    final match = RegExp(
+      r'^(\d+(?:\s+\d+/\d+|[./]\d+)?)(?:\s+(cups?|tbsp|tablespoons?|tsp|teaspoons?|g|kg|mg|ml|l|oz|ounces?|lb|lbs|pounds?|cloves?|cans?|slices?|pieces?|pinch(?:es)?))?\s+(.+)$',
+      caseSensitive: false,
+    ).firstMatch(ingredient);
+    if (match == null) return null;
+    final rawUnit = match.group(2) ?? '';
+    final unit = switch (rawUnit.toLowerCase()) {
+      'cup' || 'cups' => 'cup',
+      'tablespoon' || 'tablespoons' || 'tbsp' => 'tbsp',
+      'teaspoon' || 'teaspoons' || 'tsp' => 'tsp',
+      'ounce' || 'ounces' || 'oz' => 'oz',
+      'pound' || 'pounds' || 'lb' || 'lbs' => 'lb',
+      'clove' || 'cloves' => 'cloves',
+      'slice' || 'slices' => 'slices',
+      'piece' || 'pieces' => 'pcs',
+      'pinch' || 'pinches' => 'pinch',
+      _ => rawUnit,
+    };
+    final name = match.group(3)!.trim().replaceFirst(
+      RegExp(r'^of\s+', caseSensitive: false),
+      '',
+    );
+    return (amount: match.group(1)!, unit: unit, name: name);
+  }
 
   String get _dateLabel {
     if (_selectedRange == 0) return _formattedDate;
@@ -253,10 +393,11 @@ class MealPlanScreenState extends State<MealPlanScreen> {
         if (range == null || !filters!.totalTimeRanges.contains(range)) continue;
       }
       final key = switch (sortBy) {
-        'Dish type' => _primaryDishType(entry).isEmpty ? 'Uncategorized' : _primaryDishType(entry),
-        'Cuisine' => _primaryCuisine(entry.recipe).isEmpty ? 'Uncategorized' : _primaryCuisine(entry.recipe),
-        'Recipe name' => entry.recipe.name.trim().isEmpty ? 'Untitled recipe' : entry.recipe.name.trim(),
-        'Total time' => entry.recipe.formattedTotalTime,
+        'Dish type' => _formatGroupTitle(_primaryDishType(entry).isEmpty ? 'Uncategorized' : _primaryDishType(entry)),
+        'Cuisine' => _formatGroupTitle(_primaryCuisine(entry.recipe).isEmpty ? 'Uncategorized' : _primaryCuisine(entry.recipe)),
+        'Recipe name' => _recipeNameGroupTitle(entry.recipe.name),
+        'Total time' =>
+          asanTotalTimeRangeFor(entry.recipe.totalTime) ?? 'Unknown time',
         'Day' => '${_weekdayName(date)}, ${_formatDate(date)}',
         _ => entry.mealTime,
       };
@@ -277,6 +418,11 @@ class MealPlanScreenState extends State<MealPlanScreen> {
     return groups;
   }
 
+  int _totalTimeGroupOrder(String label) {
+    final index = asanTotalTimes.indexOf(label);
+    return index < 0 ? asanTotalTimes.length : index;
+  }
+
   Map<String, List<MealPlans>> get _groupedEntriesForSelectedDate => _groupedEntriesForDate(_selectedDate);
 
   Map<String, List<MealPlans>> get _groupedEntriesForSelectedWeek {
@@ -287,8 +433,10 @@ class MealPlanScreenState extends State<MealPlanScreen> {
       if (_activeFilters?.days.isNotEmpty == true && !_activeFilters!.days.contains(_weekdayName(date))) continue;
       final dateGroups = _groupedEntriesForDate(date);
       if (sortBy == 'Day') {
+        final entries = dateGroups.values.expand((items) => items).toList();
+        if (_activeFilterLabels.isNotEmpty && entries.isEmpty) continue;
         final title = '${_weekdayName(date)}, ${_formatDate(date)}';
-        groups[title] = dateGroups.values.expand((items) => items).toList();
+        groups[title] = entries;
       } else {
         for (final group in dateGroups.entries) {
           (groups[group.key] ??= []).addAll(group.value);
@@ -328,7 +476,6 @@ class MealPlanScreenState extends State<MealPlanScreen> {
         .map((cuisine) => cuisine.trim())
         .where((cuisine) => cuisine.isNotEmpty)
         .toSet();
-    // Some sources store cuisine labels in tags instead of the cuisine field.
     for (final cuisine in asanCuisines) {
       if (recipe.tags.any(
         (tag) => tag.trim().toLowerCase() == cuisine.toLowerCase(),
@@ -357,6 +504,13 @@ class MealPlanScreenState extends State<MealPlanScreen> {
     return types.isEmpty ? '' : types.first;
   }
 
+  String _recipeNameGroupTitle(String name) {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) return '#';
+    final initial = trimmedName[0].toUpperCase();
+    return RegExp(r'^[A-Z]$').hasMatch(initial) ? initial : '#';
+  }
+
   @override
   Widget build(BuildContext context) {
     final sortBy = _sortBy;
@@ -373,6 +527,8 @@ class MealPlanScreenState extends State<MealPlanScreen> {
       weekGroupTitles.sort((a, b) {
         final order = sortBy == 'Meal time'
             ? _mealTimeOrder.indexOf(a).compareTo(_mealTimeOrder.indexOf(b))
+            : sortBy == 'Total time'
+            ? _totalTimeGroupOrder(a).compareTo(_totalTimeGroupOrder(b))
             : a.toLowerCase().compareTo(b.toLowerCase());
         return (_activeFilters?.sortAscending ?? true) ? order : -order;
       });
@@ -385,6 +541,8 @@ class MealPlanScreenState extends State<MealPlanScreen> {
     groupTitles.sort((a, b) {
       final comparison = sortBy == 'Meal time'
           ? _mealTimeOrder.indexOf(a).compareTo(_mealTimeOrder.indexOf(b))
+          : sortBy == 'Total time'
+          ? _totalTimeGroupOrder(a).compareTo(_totalTimeGroupOrder(b))
           : a.toLowerCase().compareTo(b.toLowerCase());
       return (_activeFilters?.sortAscending ?? true) ? comparison : -comparison;
     });
@@ -420,10 +578,7 @@ class MealPlanScreenState extends State<MealPlanScreen> {
                   children: [
                     FilledIconButton(
                       icon: const Icon(Symbols.add_shopping_cart_rounded, weight: 600),
-                      onPressed: () {
-                        // TODO: add every meal on _selectedDate to
-                        // groceries once that flow exists.
-                      },
+                      onPressed: _addVisibleMealsToGroceries,
                     ),
                     const SizedBox(width: AsanSpacing.sm),
                     Expanded(
@@ -532,6 +687,8 @@ class MealPlanScreenState extends State<MealPlanScreen> {
                     showAdd: sortBy == 'Day' || sortBy == 'Meal time' || sortBy == 'Dish type',
                     showMealTimeTag: true,
                     showEmptyMessage: false,
+                    onEdit: _editMeal,
+                    onDelete: _deleteMeal,
                     onAdd: () => sortBy == 'Day'
                         ? _addMeal(initialDate: _dateForWeekTitle(weekGroupTitles[i]))
                         : sortBy == 'Meal time'
@@ -576,6 +733,8 @@ class MealPlanScreenState extends State<MealPlanScreen> {
             _MealTimeSection(
               title: groupTitles[i],
               entries: groups[groupTitles[i]]!,
+              onEdit: _editMeal,
+              onDelete: _deleteMeal,
               showAdd: sortBy == 'Meal time' || sortBy == 'Dish type',
               onAdd: () => sortBy == 'Meal time'
                   ? _addMeal(mealTime: groupTitles[i])
@@ -662,6 +821,84 @@ class _DateNavigator extends StatelessWidget {
   }
 }
 
+class _SwipeableMealCard extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _SwipeableMealCard({required this.child, required this.onEdit, required this.onDelete});
+
+  @override
+  State<_SwipeableMealCard> createState() => _SwipeableMealCardState();
+}
+
+class _SwipeableMealCardState extends State<_SwipeableMealCard> {
+  static const _actionsWidth = 96.0 + 2 * AsanSpacing.sm;
+  bool _revealed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SizedBox(
+          height: 88,
+          child: Stack(
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                left: _revealed ? -_actionsWidth : 0,
+                right: _revealed ? 0 : -_actionsWidth,
+                top: 0,
+                bottom: 0,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onHorizontalDragUpdate: (details) {
+                    if (details.delta.dx < 0 && !_revealed) setState(() => _revealed = true);
+                    if (details.delta.dx > 0 && _revealed) setState(() => _revealed = false);
+                  },
+                  onHorizontalDragEnd: (details) {
+                    if ((details.primaryVelocity ?? 0) < -250) setState(() => _revealed = true);
+                    if ((details.primaryVelocity ?? 0) > 250) setState(() => _revealed = false);
+                  },
+                  child: Row(
+                    children: [
+                      SizedBox(width: constraints.maxWidth, child: widget.child),
+                      const SizedBox(width: AsanSpacing.sm),
+                      _action(Symbols.edit_rounded, AsanColorScheme.secondary, () {
+                        setState(() => _revealed = false);
+                        widget.onEdit();
+                      }),
+                      const SizedBox(width: AsanSpacing.sm),
+                      _action(Symbols.delete_rounded,  AsanColorScheme.error, () {
+                        setState(() => _revealed = false);
+                        widget.onDelete();
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+      ),
+    );
+  }
+
+  Widget _action(IconData icon, Color color, VoidCallback onPressed) =>
+      SizedBox(
+        width: 48,
+        height: 88,
+        child: Center(
+          child: TonalIconButton.square(
+            color: color,
+            icon: Icon(icon, size: 24, weight: 600),
+            size: 48,
+            borderRadius: BorderRadius.circular(8),
+            onPressed: onPressed,
+          ),
+        ),
+      );
+}
+
 class _MealTimeSection extends StatelessWidget {
   final String title;
   final List<MealPlans> entries;
@@ -669,8 +906,10 @@ class _MealTimeSection extends StatelessWidget {
   final bool showAdd;
   final bool showMealTimeTag;
   final bool showEmptyMessage;
+  final ValueChanged<MealPlans> onEdit;
+  final ValueChanged<MealPlans> onDelete;
 
-  const _MealTimeSection({required this.title, required this.entries, required this.onAdd, required this.showAdd, this.showMealTimeTag = false, this.showEmptyMessage = true});
+  const _MealTimeSection({required this.title, required this.entries, required this.onAdd, required this.showAdd, required this.onEdit, required this.onDelete, this.showMealTimeTag = false, this.showEmptyMessage = true});
 
   @override
   Widget build(BuildContext context) {
@@ -688,7 +927,7 @@ class _MealTimeSection extends StatelessWidget {
             ),
             if (showAdd) TonalIconButton.square(
               color: AsanColorScheme.secondary,
-              icon: const Icon(Symbols.add_rounded, weight: 600, size: 16),
+              icon: const Icon(Symbols.add_rounded, weight: 500, size: 16),
               size: 22,
               borderRadius: BorderRadius.circular(4),
               onPressed: onAdd,
@@ -710,7 +949,10 @@ class _MealTimeSection extends StatelessWidget {
         else
           for (var i = 0; i < entries.length; i++) ...[
             if (i > 0) const SizedBox(height: AsanSpacing.sm),
-            MealCard(
+            _SwipeableMealCard(
+              onEdit: () => onEdit(entries[i]),
+              onDelete: () => onDelete(entries[i]),
+              child: MealCard(
               recipeName: entries[i].recipe.name,
               imageBytes: entries[i].recipe.imageBytes,
               imageUrl: entries[i].recipe.imageUrl,
@@ -729,6 +971,7 @@ class _MealTimeSection extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => RecipeDetailsScreen(
                       recipe: recipe,
+                      servingsOverride: entries[i].servings,
                       imageUrl: recipe.imageUrl,
                       ingredients: recipe.ingredients,
                       ingredientAmounts: recipe.ingredientAmounts,
@@ -739,6 +982,7 @@ class _MealTimeSection extends StatelessWidget {
                   ),
                 );
               },
+              ),
             ),
           ],
       ],
@@ -857,6 +1101,8 @@ class _MealPlanForm extends StatefulWidget {
   final String? initialMealTime;
   final String? initialDishType;
   final Recipes? initialRecipe;
+  final int? initialServings;
+  final bool isEditing;
 
   const _MealPlanForm({
     super.key,
@@ -865,6 +1111,8 @@ class _MealPlanForm extends StatefulWidget {
     this.initialMealTime,
     this.initialDishType,
     this.initialRecipe,
+    this.initialServings,
+    this.isEditing = false,
   });
 
   @override
@@ -880,12 +1128,24 @@ class _MealPlanFormState extends State<_MealPlanForm> {
   bool _hasError = false;
   bool _servingsHasError = false;
 
-  bool get hasChanges => _recipe != null ||
-      _dates.length != 1 || !_dates.contains(DateUtils.dateOnly(widget.initialDate)) ||
-      _mealTimes.length != (widget.initialMealTime == null ? 0 : 1) ||
-      (widget.initialMealTime != null && !_mealTimes.contains(widget.initialMealTime)) ||
-      _dishType != widget.initialDishType ||
-      _servingsController.text.isNotEmpty;
+  bool get hasChanges {
+    if (widget.isEditing) {
+      return !identical(_recipe, widget.initialRecipe) ||
+          _dates.length != 1 ||
+          !_dates.contains(DateUtils.dateOnly(widget.initialDate)) ||
+          _mealTimes.length != 1 ||
+          !_mealTimes.contains(widget.initialMealTime) ||
+          _dishType != widget.initialDishType ||
+          _servingsController.text != widget.initialServings.toString();
+    }
+    return _recipe != null ||
+        _dates.length != 1 ||
+        !_dates.contains(DateUtils.dateOnly(widget.initialDate)) ||
+        _mealTimes.length != (widget.initialMealTime == null ? 0 : 1) ||
+        (widget.initialMealTime != null && !_mealTimes.contains(widget.initialMealTime)) ||
+        _dishType != widget.initialDishType ||
+        _servingsController.text.isNotEmpty;
+  }
 
   @override
   void initState() {
@@ -894,6 +1154,9 @@ class _MealPlanFormState extends State<_MealPlanForm> {
     _mealTimes = {if (widget.initialMealTime != null) widget.initialMealTime!};
     _dishType = widget.initialDishType;
     _recipe = widget.initialRecipe;
+    if (widget.initialServings != null) {
+      _servingsController.text = widget.initialServings.toString();
+    }
   }
 
   @override
@@ -904,10 +1167,9 @@ class _MealPlanFormState extends State<_MealPlanForm> {
 
   @override
   Widget build(BuildContext context) {
-    final dishTypes = <String>{...asanDishTypes, ...?_recipe?.dishTypes}
+    final dishTypes = uniqueStrings([...asanDishTypes, ...?_recipe?.dishTypes])
       ..removeWhere((type) =>
-          type.trim().toLowerCase() == 'breakfast' ||
-          type.trim().toLowerCase() == 'brunch');
+          type.toLowerCase() == 'breakfast' || type.toLowerCase() == 'brunch');
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AsanSpacing.lg,
@@ -1005,7 +1267,7 @@ class _MealPlanFormState extends State<_MealPlanForm> {
           ),
           const SizedBox(height: AsanSpacing.md),
           PrimaryButton(
-            label: 'Add to Plan',
+            label: widget.isEditing ? 'Save Changes' : 'Add to Plan',
             height: 38,
             onPressed: _submit,
           ),

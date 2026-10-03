@@ -89,7 +89,9 @@ class _AsanState extends State<Asan> {
                     ..addAll(recipes);
                 });
               },
-              onAddToGroceries: (items) async => await _groceriesKey.currentState?.addItems(items),
+              onAddToGroceries: (items) async {
+                await _groceriesKey.currentState?.addItems(items);
+              },
               onViewGroceries: () => setState(() => _selectedIndex = 3),
               onAddToMealPlan: (recipe) {
                 setState(() => _selectedIndex = 1);
@@ -100,6 +102,9 @@ class _AsanState extends State<Asan> {
               key: _mealPlanKey,
               recipes: _recipes,
               onViewMealPlan: () => setState(() => _selectedIndex = 1),
+              onViewGroceries: () => setState(() => _selectedIndex = 3),
+              onAddToGroceries: (items) async =>
+                  await _groceriesKey.currentState?.addItems(items) ?? false,
             ),
             PantryScreen(incomingItems: _receivedPantryItems),
             GroceriesScreen(

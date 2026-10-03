@@ -231,7 +231,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
     );
     _mealCategory = item?.mealCategory;
     if (item != null) {
-      _idealFor.addAll({...item.idealFor, ...item.tags});
+      _idealFor.addAll(uniqueStrings([...item.idealFor, ...item.tags]));
       for (final ingredient in item.ingredients) {
         final index = _ingredients.length;
         _ingredients.add(

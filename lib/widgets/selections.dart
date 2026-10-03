@@ -10,6 +10,18 @@ import 'package:asan/widgets/containment.dart';
 import 'package:asan/widgets/inputs.dart';
 
 // DROPDOWN MENU
+List<String> uniqueStrings(Iterable<String> values) {
+  final seen = <String>{};
+  final result = <String>[];
+  for (final value in values) {
+    final trimmed = value.trim();
+    if (trimmed.isNotEmpty && seen.add(trimmed.toLowerCase())) {
+      result.add(trimmed);
+    }
+  }
+  return result;
+}
+
 double dropdownSheetInitialSize(
   BuildContext context, {
   required int itemCount,
@@ -68,6 +80,7 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
 
   Future<void> _openList() async {
     setState(() => _isOpen = true);
+    final items = uniqueStrings(widget.items);
     final selectedValue = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -79,7 +92,7 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
         expand: false,
         initialChildSize: dropdownSheetInitialSize(
           context,
-          itemCount: widget.items.length,
+          itemCount: items.length,
           showSearch: true,
         ),
         minChildSize: 0.5,
@@ -92,7 +105,7 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
               : widget.label == 'Dish Type'
               ? 'Select Dish Type'
               : widget.label,
-          items: widget.items,
+          items: items,
           selectedValue: widget.value,
           searchHint: widget.searchHint ?? 'Search ${widget.label.toLowerCase()}...',
           scrollController: scrollController,
@@ -248,7 +261,7 @@ class _AsanDropdownListState extends State<AsanDropdownList> {
   @override
   Widget build(BuildContext context) {
     final query = _searchQuery.toLowerCase();
-    final filteredItems = widget.items
+    final filteredItems = uniqueStrings(widget.items)
         .where((item) => item.toLowerCase().contains(query))
         .toList();
 
@@ -1312,7 +1325,6 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
       return;
     }
     setState(() => _selectedDate = date);
-    widget.onDateSelected?.call(date);
   }
 
   Future<void> _selectMonth() async {
@@ -1389,7 +1401,7 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
       width: 342,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AsanColorScheme.container,
+        color: AsanColorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -1431,6 +1443,23 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
             lastDate: _lastDate,
             onDateSelected: _selectDate,
           ),
+          if (widget.onDateSelected != null || widget.onCancel != null) ...[
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                AsanTextButton.black(
+                  label: 'Cancel',
+                  onPressed: widget.onCancel,
+                ),
+                const SizedBox(width: 8),
+                AsanTextButton.green(
+                  label: 'Select',
+                  onPressed: () => widget.onDateSelected?.call(_selectedDate),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

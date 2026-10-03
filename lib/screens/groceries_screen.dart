@@ -32,12 +32,10 @@ class GroceriesScreenState extends State<GroceriesScreen> {
   final List<GroceryItem> _items = [];
   String _searchQuery = '';
   AsanFilterSelection? _activeFilters;
-  late final ScrollController _contentScrollController;
   late final ScrollController _filterScrollController;
-  bool _isContentScrolled = false;
 
-  Future<void> addItems(List<GroceryItem> items) async {
-    if (items.isEmpty || !mounted) return;
+  Future<bool> addItems(List<GroceryItem> items) async {
+    if (items.isEmpty || !mounted) return false;
     String ingredientKey(GroceryItem item) =>
         '${item.name.trim().toLowerCase()}|${item.aisle?.trim().toLowerCase() ?? ''}';
 
@@ -56,7 +54,7 @@ class GroceriesScreenState extends State<GroceriesScreen> {
         destructiveText: 'Add',
         primaryAction: true,
       );
-      if (addAnyway != true || !mounted) return;
+      if (addAnyway != true || !mounted) return false;
     }
 
     setState(() {
@@ -92,6 +90,7 @@ class GroceriesScreenState extends State<GroceriesScreen> {
       }
     });
     widget.onItemCountChanged?.call(_items.length);
+    return true;
   }
 
   String _mergeNotes(String first, String second) {
@@ -107,25 +106,13 @@ class GroceriesScreenState extends State<GroceriesScreen> {
   @override
   void initState() {
     super.initState();
-    _contentScrollController = ScrollController()
-      ..addListener(_handleContentScroll);
     _filterScrollController = ScrollController();
   }
 
   @override
   void dispose() {
-    _contentScrollController
-      ..removeListener(_handleContentScroll)
-      ..dispose();
     _filterScrollController.dispose();
     super.dispose();
-  }
-
-  void _handleContentScroll() {
-    final isScrolled = _contentScrollController.offset > 0;
-    if (isScrolled != _isContentScrolled) {
-      setState(() => _isContentScrolled = isScrolled);
-    }
   }
 
   List<String> get _activeFilterLabels => [
@@ -218,7 +205,6 @@ class GroceriesScreenState extends State<GroceriesScreen> {
       resizeToAvoidBottomInset: false,
       appBar: AsanAppBar(
         screenTitle: 'Groceries',
-        forceElevated: _isContentScrolled,
         icon: const Icon(Symbols.add_rounded),
         onIconPressed: () {
           _showAddGroceryItemDialog(context);
@@ -303,8 +289,12 @@ class GroceriesScreenState extends State<GroceriesScreen> {
               (_searchQuery.trim().isNotEmpty || _activeFilterLabels.isNotEmpty)
           ? AsanEmptyState(
               icon: Symbols.search_off_rounded,
-              title: "No grocery items found",
-              message: "No matches for '${_searchQuery.trim()}'.",
+              title: _searchQuery.trim().isNotEmpty
+                  ? 'No grocery items found'
+                  : 'No grocery items match these filters',
+              message: _searchQuery.trim().isNotEmpty
+                  ? 'No grocery items match "${_searchQuery.trim()}".'
+                  : 'Try removing or changing a filter.',
             )
           : _items.isEmpty
           ? AsanEmptyState(
@@ -315,7 +305,6 @@ class GroceriesScreenState extends State<GroceriesScreen> {
               onAction: () => _showAddGroceryItemDialog(context),
             )
           : ListView.separated(
-              controller: _contentScrollController,
               padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
               itemCount: _groupedItems.length,
               itemBuilder: (context, index) {
@@ -324,7 +313,13 @@ class GroceriesScreenState extends State<GroceriesScreen> {
                   key: ValueKey(group.key),
                   title: group.key,
                   itemCount: group.value.length,
-                  children: group.value.map(_buildListTile).toList(),
+                  children: [
+                    for (var i = 0; i < group.value.length; i++) ...[
+                      const SizedBox(height: AsanSpacing.xs),
+                      if (i > 0) const SizedBox(height: AsanSpacing.xs),
+                      _buildListTile(group.value[i]),
+                    ],
+                  ],
                 );
               },
               separatorBuilder: (context, index) => const Column(
@@ -364,10 +359,16 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     for (final item in items) {
       final label = sortBy == 'Item name'
           ? (item.name.trim().isEmpty ? '#' : item.name.trim()[0].toUpperCase())
-          : (item.aisle ?? 'Uncategorized').toUpperCase();
+          : _formatGroupTitle(item.aisle ?? 'Uncategorized');
       (groups[label] ??= []).add(item);
     }
     return groups.entries.toList();
+  }
+
+  String _formatGroupTitle(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return trimmed;
+    return '${trimmed[0].toUpperCase()}${trimmed.substring(1).toLowerCase()}';
   }
 
   Widget _buildListTile(GroceryItem item) => AsanListTile(
@@ -552,7 +553,11 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
             hintText: 'Enter item name',
             controller: _itemController,
             hasError: _itemHasError,
+            errorText: 'Item name is required.',
             required: true,
+            onChanged: (_) {
+              if (_itemHasError) setState(() => _itemHasError = false);
+            },
           ),
           const SizedBox(height: AsanSpacing.md),
           AsanDropdownMenu(
@@ -561,6 +566,7 @@ class _AddGroceryItemFormState extends State<AddGroceryItemForm> {
             value: _aisle,
             hintText: 'Select an aisle',
             hasError: _aisleHasError,
+            errorText: 'Select an aisle.',
             required: true,
             onChanged: (value) {
               setState(() {

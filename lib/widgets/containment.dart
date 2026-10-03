@@ -434,7 +434,7 @@ class RecipeCard extends StatelessWidget {
               Text(
                 mealCategory.trim().isEmpty
                     ? ''
-                    : '${mealCategory.trim()[0].toUpperCase()}${mealCategory.trim().substring(1)}',
+                    : '${mealCategory.trim()[0].toUpperCase()}${mealCategory.trim().substring(1).toLowerCase()}',
                 style: AsanTextTheme.labelSmall,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -515,12 +515,12 @@ class MealCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              AspectRatio(
-                aspectRatio: 1,
+              SizedBox(
+                width: 88,
+                height: 88,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: imageBytes != null
@@ -534,7 +534,21 @@ class MealCard extends StatelessWidget {
                             color: AsanColorScheme.inactive,
                           ),
                         )
-                      : Image.network(imageUrl!, fit: BoxFit.cover),
+                      : Image.network(
+                          imageUrl!,
+                          fit: BoxFit.cover,
+                          webHtmlElementStrategy:
+                              WebHtmlElementStrategy.prefer,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: AsanColorScheme.container,
+                                child: const Icon(
+                                  Symbols.restaurant_rounded,
+                                  size: 24,
+                                  color: AsanColorScheme.inactive,
+                                ),
+                              ),
+                        ),
                 ),
               ),
               const SizedBox(width: AsanSpacing.sm),
@@ -558,17 +572,19 @@ class MealCard extends StatelessWidget {
                     Row(
                       children: [
                         if (showMealTimeTag && mealTime?.trim().isNotEmpty == true) ...[
-                          AsanTag(
-                            label: mealTime!,
-                            textColor: AsanColorScheme.secondary,
-                            color: switch (mealTime!.toLowerCase()) {
-                              'breakfast' => AsanColorScheme.yellow,
-                              'brunch' => AsanColorScheme.orange,
-                              'lunch' => AsanColorScheme.blue,
-                              'snack' => AsanColorScheme.pink,
-                              'dinner' => AsanColorScheme.purple,
-                              _ => AsanColorScheme.container,
-                            },
+                          Flexible(
+                            child: AsanTag(
+                              label: mealTime!,
+                              textColor: AsanColorScheme.secondary,
+                              color: switch (mealTime!.toLowerCase()) {
+                                'breakfast' => AsanColorScheme.yellow,
+                                'brunch' => AsanColorScheme.orange,
+                                'lunch' => AsanColorScheme.blue,
+                                'snack' => AsanColorScheme.pink,
+                                'dinner' => AsanColorScheme.purple,
+                                _ => AsanColorScheme.container,
+                              },
+                            ),
                           ),
                           const SizedBox(width: 5),
                         ],
@@ -630,7 +646,6 @@ class MealCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
       ),
     );
   }
@@ -706,6 +721,10 @@ class AsanTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayLabel = label.isEmpty
+        ? label
+        : '${label[0].toUpperCase()}${label.substring(1).toLowerCase()}';
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AsanSpacing.sm,
@@ -716,12 +735,14 @@ class AsanTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(
-        label,
+        displayLabel,
         style: AsanTextTheme.labelSmall.copyWith(
           color: textColor ??
               (color != null ? Colors.white : AsanColorScheme.onSurface),
           fontWeight: FontWeight.bold,
         ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

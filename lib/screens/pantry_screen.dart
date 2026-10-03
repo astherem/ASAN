@@ -26,16 +26,12 @@ class _PantryScreenState extends State<PantryScreen> {
   final List<PantryItem> _items = [];
   String _searchQuery = '';
   AsanFilterSelection? _activeFilters;
-  late final ScrollController _contentScrollController;
   late final ScrollController _filterScrollController;
-  bool _isContentScrolled = false;
   int _receivedItemCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _contentScrollController = ScrollController()
-      ..addListener(_handleContentScroll);
     _filterScrollController = ScrollController();
     _items.addAll(widget.incomingItems);
     _receivedItemCount = widget.incomingItems.length;
@@ -53,18 +49,8 @@ class _PantryScreenState extends State<PantryScreen> {
 
   @override
   void dispose() {
-    _contentScrollController
-      ..removeListener(_handleContentScroll)
-      ..dispose();
     _filterScrollController.dispose();
     super.dispose();
-  }
-
-  void _handleContentScroll() {
-    final isScrolled = _contentScrollController.offset > 0;
-    if (isScrolled != _isContentScrolled) {
-      setState(() => _isContentScrolled = isScrolled);
-    }
   }
 
   List<String> get _activeFilterLabels => [
@@ -163,7 +149,6 @@ class _PantryScreenState extends State<PantryScreen> {
       resizeToAvoidBottomInset: false,
       appBar: AsanAppBar(
         screenTitle: 'Pantry',
-        forceElevated: _isContentScrolled,
         icon: const Icon(Symbols.add_rounded),
         onIconPressed: () {
           _showAddPantryItemDialog(context);
@@ -247,8 +232,12 @@ class _PantryScreenState extends State<PantryScreen> {
               (_searchQuery.trim().isNotEmpty || _activeFilterLabels.isNotEmpty)
           ? AsanEmptyState(
               icon: Symbols.search_off_rounded,
-              title: "No pantry items found",
-              message: "No matches for '${_searchQuery.trim()}'."
+              title: _searchQuery.trim().isNotEmpty
+                  ? 'No pantry items found'
+                  : 'No pantry items match these filters',
+              message: _searchQuery.trim().isNotEmpty
+                  ? 'No pantry items match "${_searchQuery.trim()}".'
+                  : 'Try removing or changing a filter.',
             )
           : _items.isEmpty
           ? AsanEmptyState(
@@ -259,16 +248,21 @@ class _PantryScreenState extends State<PantryScreen> {
               onAction: () => _showAddPantryItemDialog(context),
             )
           : ListView.separated(
-        controller: _contentScrollController,
         padding: const EdgeInsets.all(AsanSpacing.lg).copyWith(top: 0),
         itemCount: _groupedItems.length,
         itemBuilder: (context, index) {
           final group = _groupedItems[index];
           return AsanExpansionTile(
             key: ValueKey(group.key),
-            title: group.key,
+            title: _formatGroupTitle(group.key),
             itemCount: group.value.length,
-            children: group.value.map(_buildListTile).toList(),
+            children: [
+              for (var i = 0; i < group.value.length; i++) ...[
+                const SizedBox(height: AsanSpacing.xs),
+                if (i > 0) const SizedBox(height: AsanSpacing.xs),
+                _buildListTile(group.value[i]),
+              ],
+            ],
           );
         },
         separatorBuilder: (context, index) => const Column(
@@ -324,18 +318,18 @@ class _PantryScreenState extends State<PantryScreen> {
       final label = item.consumed
           ? 'Consumed'
           : switch (sortBy) {
-              'Aisle' => (item.aisle ?? 'Uncategorized').toUpperCase(),
+              'Aisle' => _formatGroupTitle(item.aisle ?? 'Uncategorized'),
               'Item name' =>
                 item.name.trim().isEmpty
                     ? '#'
                     : item.name.trim()[0].toUpperCase(),
               'Purchase date' =>
                 item.purchaseDate == null
-                    ? 'No purchase date'
+                    ? 'no purchase date'
                     : _formatDate(item.purchaseDate!),
               _ =>
                 item.expiryDate == null
-                    ? 'No expiration date'
+                    ? 'no expiration date'
                     : _formatDate(item.expiryDate!),
             };
       (groups[label] ??= []).add(item);
@@ -350,6 +344,12 @@ class _PantryScreenState extends State<PantryScreen> {
     return entries;
   }
 
+  String _formatGroupTitle(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return trimmed;
+    return '${trimmed[0].toUpperCase()}${trimmed.substring(1).toLowerCase()}';
+  }
+
   Widget _buildListTile(PantryItem item) => AsanListTile(
     key: ValueKey(item),
     itemName: item.name,
@@ -358,14 +358,14 @@ class _PantryScreenState extends State<PantryScreen> {
     category: item.consumed
       ? item.aisle ?? 'Uncategorized'
       : _activeSort == 'Aisle'
-        ? 'expires ${_formatDate(item.expiryDate)}'
-      : item.aisle ?? 'Uncategorized',
+        ? item.expiryDate == null
+            ? 'no expiration date'
+            : 'expires ${_formatDate(item.expiryDate)}'
+        : item.aisle ?? 'Uncategorized',
     purchasedDate: item.consumed
         ? 'consumed ${_formatConsumedDate(item.consumedDate)}'
-        : _activeSort == 'Item name' || _activeSort == 'Purchase date'
-        ? 'expires ${_formatDate(item.expiryDate)}'
         : item.purchaseDate == null
-        ? ''
+        ? 'no purchase date'
         : 'bought ${_formatDate(item.purchaseDate!)}',
     notes: item.notes,
     isChecked: item.consumed,
@@ -613,7 +613,11 @@ class _AddPantryItemFormState extends State<AddPantryItemForm> {
             hintText: 'Enter item name',
             controller: _itemController,
             hasError: _itemHasError,
+            errorText: 'Item name is required.',
             required: true,
+            onChanged: (_) {
+              if (_itemHasError) setState(() => _itemHasError = false);
+            },
           ),
           const SizedBox(height: AsanSpacing.md),
           AsanDropdownMenu(
@@ -622,6 +626,7 @@ class _AddPantryItemFormState extends State<AddPantryItemForm> {
             value: _aisle,
             hintText: 'Select an aisle',
             hasError: _aisleHasError,
+            errorText: 'Aisle is required.',
             required: true,
             onChanged: (value) {
               setState(() {

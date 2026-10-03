@@ -13,7 +13,7 @@ class AsanBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+      constraints: const BoxConstraints(minWidth: 16, minHeight: 16, maxHeight: 16),
       padding: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
         color: AsanColorScheme.secondary,

@@ -335,7 +335,15 @@ class _RecipesScreenState extends State<RecipesScreen> {
 
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => SearchScreen(initialFilters: categoryFilters),
+        builder: (_) => SearchScreen(
+          initialFilters: categoryFilters,
+          onAddToGroceries: widget.onAddToGroceries,
+          onViewGroceries: widget.onViewGroceries,
+          onAddToMealPlan: widget.onAddToMealPlan,
+          onRecipeSelected: widget.onRecipeSelected,
+          isRecipeSaved: (title) => _savedRecipeTitles.contains(title),
+          onToggleSaved: _toggleSavedRecipe,
+        ),
       ),
     );
   }
@@ -385,8 +393,15 @@ class _RecipesScreenState extends State<RecipesScreen> {
                       child: GestureDetector(
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) =>
-                                SearchScreen(initialFilters: _activeFilters),
+                            builder: (_) => SearchScreen(
+                              initialFilters: _activeFilters,
+                              onAddToGroceries: widget.onAddToGroceries,
+                              onViewGroceries: widget.onViewGroceries,
+                              onAddToMealPlan: widget.onAddToMealPlan,
+                              onRecipeSelected: widget.onRecipeSelected,
+                              isRecipeSaved: (title) => _savedRecipeTitles.contains(title),
+                              onToggleSaved: _toggleSavedRecipe,
+                            ),
                           ),
                         ),
                         child: AbsorbPointer(
@@ -505,7 +520,15 @@ class _RecipesScreenState extends State<RecipesScreen> {
     child: GestureDetector(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => SearchScreen(initialFilters: _activeFilters),
+          builder: (_) => SearchScreen(
+            initialFilters: _activeFilters,
+            onAddToGroceries: widget.onAddToGroceries,
+            onViewGroceries: widget.onViewGroceries,
+            onAddToMealPlan: widget.onAddToMealPlan,
+            onRecipeSelected: widget.onRecipeSelected,
+            isRecipeSaved: (title) => _savedRecipeTitles.contains(title),
+            onToggleSaved: _toggleSavedRecipe,
+          ),
         ),
       ),
       child: AbsorbPointer(
@@ -545,8 +568,12 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 hasScrollBody: false,
                 child: AsanEmptyState(
                   icon: Symbols.search_off_rounded,
-                  title: "No recipes found",
-                  message: "No matches for '${_searchQuery.trim()}'.",
+                  title: _searchQuery.trim().isNotEmpty
+                      ? 'No recipes found'
+                      : 'No recipes match these filters',
+                  message: _searchQuery.trim().isNotEmpty
+                      ? 'No recipes match "${_searchQuery.trim()}".'
+                      : 'Try removing or changing a filter.',
                 ),
               )
             : _items.isEmpty
@@ -566,11 +593,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 child: AsanEmptyState(
                   icon: Symbols.search_off_rounded,
                   title: _searchQuery.trim().isNotEmpty
-                      ? "No results for '${_searchQuery.trim()}'"
-                      : 'No recipes found',
+                      ? 'No recipes found'
+                      : 'No recipes match these filters',
                   message: _searchQuery.trim().isNotEmpty
-                      ? "did you mean '${_searchQuery.trim()}'"
-                      : 'Try a different search or adjust your filters.',
+                      ? 'No recipes match "${_searchQuery.trim()}".'
+                      : 'Try removing or changing a filter.',
                 ),
               )
             : SliverList(
@@ -681,13 +708,13 @@ class _RecipesScreenState extends State<RecipesScreen> {
                   : Symbols.bookmark_rounded,
               title: hasSearchOrFilters
                   ? (_searchQuery.trim().isNotEmpty
-                        ? "No results for '${_searchQuery.trim()}'"
-                        : 'No recipes found')
+                        ? 'No recipes found'
+                        : 'No recipes match these filters')
                   : 'No saved recipes yet',
               message: hasSearchOrFilters
                   ? (_searchQuery.trim().isNotEmpty
-                        ? "did you mean '${_searchQuery.trim()}'"
-                        : 'Try a different search or adjust your filters.')
+                        ? 'No recipes match "${_searchQuery.trim()}".'
+                        : 'Try removing or changing a filter.')
                   : 'When you save recipes, they will show up here.',
               actionLabel: hasSearchOrFilters ? null : 'Save Recipes',
               onAction: hasSearchOrFilters
@@ -707,12 +734,12 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 ? Symbols.search_off_rounded
                 : Symbols.restaurant_menu_rounded,
             title: _searchQuery.trim().isNotEmpty
-                ? "No results for '${_searchQuery.trim()}'"
+                ? 'No recipes found'
                 : _activeFilterLabels.isNotEmpty
                 ? 'No recipes match these filters'
                 : 'No recipes to explore yet',
             message: _searchQuery.trim().isNotEmpty
-                ? "did you mean '${_searchQuery.trim()}'"
+                ? 'No recipes match "${_searchQuery.trim()}".'
                 : _activeFilterLabels.isNotEmpty
                 ? 'Try adjusting your filters.'
                 : 'Recipes will appear here when they are available.',
@@ -816,11 +843,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
                     _buildExploreRecipeCard(categoryRecipes[index]),
                 childCount: categoryRecipes.length,
               ),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: AsanSpacing.md,
                 mainAxisSpacing: AsanSpacing.sm,
-                childAspectRatio: 163 / 220,
+                childAspectRatio: 163 / (widget.onRecipeSelected != null ? 252 : 220),
               ),
             ),
           ],
@@ -870,7 +897,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                               AsanSpacing.md) /
                           2;
                       return SizedBox(
-                        height: cardWidth + 56,
+                        height: cardWidth + (widget.onRecipeSelected != null ? 88 : 56),
                         child: ScrollConfiguration(
                           behavior: ScrollConfiguration.of(context).copyWith(
                             dragDevices: {
@@ -937,11 +964,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
               (context, index) => _buildExploreRecipeCard(recipes[index]),
               childCount: recipes.length,
             ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: AsanSpacing.md,
               mainAxisSpacing: AsanSpacing.sm,
-              childAspectRatio: 163 / 220,
+              childAspectRatio: 163 / (widget.onRecipeSelected != null ? 252 : 220),
             ),
           ),
         ),
@@ -1000,7 +1027,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
       'Total time' =>
         totalTime(recipe) <= 0
             ? 'Unknown time'
-            : '${((totalTime(recipe) + 9) ~/ 10) * 10} mins or less',
+            : asanTotalTimeRangeFor(totalTime(recipe)) ?? 'Unknown time',
       _ => dishType(recipe),
     };
 
@@ -1034,11 +1061,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
         final result = sortBy == 'Total time'
             ? (first.key == 'Unknown time'
                       ? 1 << 30
-                      : int.parse(first.key.split(' ').first))
+                      : asanTotalTimes.indexOf(first.key))
                   .compareTo(
                     second.key == 'Unknown time'
                         ? 1 << 30
-                        : int.parse(second.key.split(' ').first),
+                        : asanTotalTimes.indexOf(second.key),
                   )
             : first.key.toLowerCase().compareTo(second.key.toLowerCase());
         return ascending ? result : -result;
@@ -1080,11 +1107,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
                     _buildExploreRecipeCard(selectedGroup.value[index]),
                 childCount: selectedGroup.value.length,
               ),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: AsanSpacing.md,
                 mainAxisSpacing: AsanSpacing.md,
-                childAspectRatio: 163 / 220,
+                childAspectRatio: 163 / (widget.onRecipeSelected != null ? 252 : 220),
               ),
             ),
           ],
@@ -1135,7 +1162,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                             AsanSpacing.md) /
                         2;
                     return SizedBox(
-                      height: width + 56,
+                      height: width + (widget.onRecipeSelected != null ? 88 : 56),
                       child: ScrollConfiguration(
                         behavior: ScrollConfiguration.of(context).copyWith(
                           dragDevices: {
@@ -1190,6 +1217,9 @@ class _RecipesScreenState extends State<RecipesScreen> {
           ? Recipes.formatTotalTime(totalTime)
           : 'Open recipe',
       isSaved: isSaved,
+      onViewPressed: widget.onRecipeSelected != null
+          ? () => _showExploreRecipeDetails(recipe)
+          : null,
       onIconPressed: () => setState(() {
         if (isSaved) {
           _savedRecipeTitles.remove(recipe.title);
@@ -1197,9 +1227,41 @@ class _RecipesScreenState extends State<RecipesScreen> {
           _savedRecipeTitles.add(recipe.title);
         }
       }),
-      onTap: () => _showExploreRecipeDetails(recipe),
+      onTap: () => widget.onRecipeSelected != null
+          ? widget.onRecipeSelected!(_apiRecipeToRecipe(
+              recipe,
+              _recipeImages[recipe.title] ?? recipe.imageUrl,
+            ))
+          : _showExploreRecipeDetails(recipe),
     );
   }
+
+  Recipes _apiRecipeToRecipe(ApiRecipe recipe, String? imageUrl) => Recipes(
+    name: recipe.title,
+    imageUrl: imageUrl,
+    mealCategory: recipe.category,
+    description: recipe.description,
+    difficulty: recipe.difficulty,
+    cuisine: recipe.cuisine,
+    tags: recipe.tags,
+    idealFor: recipe.tags.where(asanMealTimes.contains).toList(),
+    prepTime: recipe.prepTime,
+    cookTime: recipe.cookTime,
+    totalTime: recipe.totalTime > 0
+        ? recipe.totalTime
+        : recipe.prepTime + recipe.cookTime,
+    servings: recipe.servings,
+    calories: recipe.calories,
+    fats: recipe.fats,
+    cholesterol: recipe.cholesterol,
+    sodium: recipe.sodium,
+    carbohydrates: recipe.carbohydrates,
+    protein: recipe.protein,
+    dishTypes: recipe.dishTypes,
+    ingredients: recipe.ingredients,
+    ingredientAisles: recipe.ingredientAisles,
+    instructions: recipe.instructions,
+  );
 
   List<ApiRecipe> get _filteredExploreRecipes {
     final filters = _activeFilters;
@@ -1423,7 +1485,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
         'Cuisine' =>
           cuisine(item),
         'Diet' => diet(item),
-        'Meal category' => (item.mealCategory ?? 'Uncategorized').toUpperCase(),
+        'Meal category' => _capitalizeCategory(item.mealCategory ?? 'Uncategorized'),
         'Total time' => timeGroup(item),
         'Recipe name' =>
           item.name.trim().isEmpty ? '#' : item.name.trim()[0].toUpperCase(),
@@ -1436,7 +1498,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
       if (sortBy == 'Total time') {
         int bucket(String label) => label == 'Unknown time'
             ? 1 << 30
-            : int.tryParse(label.split(' ').first) ?? 0;
+            : asanTotalTimes.indexOf(label);
         final result = bucket(first.key).compareTo(bucket(second.key));
         return (filters?.sortAscending ?? true) ? result : -result;
       }
@@ -1482,7 +1544,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
         builder: (context) => RecipeDetailsScreen(
           recipe: recipe,
           headerVerticalPadding: widget.onRecipeSelected != null
-              ? AsanSpacing.md
+              ? AsanSpacing.lg
               : AsanSpacing.sm,
           ingredients: recipe.ingredients,
           ingredientAmounts: recipe.ingredientAmounts,
@@ -1516,7 +1578,14 @@ class _RecipesScreenState extends State<RecipesScreen> {
             );
           },
           onViewGroceries: widget.onViewGroceries,
-          onAddToMealPlan: () => widget.onAddToMealPlan?.call(recipe),
+          onAddToMealPlan: () {
+            if (widget.onRecipeSelected != null) {
+              Navigator.of(context).pop();
+              widget.onRecipeSelected!(recipe);
+              return;
+            }
+            widget.onAddToMealPlan?.call(recipe);
+          },
           showEditButton: true,
           onEdit: (currentRecipe) {
             return _showEditItemDialog(currentRecipe);
@@ -1532,8 +1601,6 @@ class _RecipesScreenState extends State<RecipesScreen> {
     try {
       details = await _recipeApi.getById(recipe.id);
     } on RecipeApiException {
-      // Search results already contain enough data to show the details page.
-      // Keep navigation available if the richer information request fails.
       details = recipe;
     } catch (_) {
       details = recipe;
@@ -1592,30 +1659,15 @@ class _RecipesScreenState extends State<RecipesScreen> {
             );
           },
           onViewGroceries: widget.onViewGroceries,
-          onAddToMealPlan: () => widget.onAddToMealPlan?.call(Recipes(
-            name: details.title,
-            imageUrl: imageUrl,
-            mealCategory: details.category,
-            description: details.description,
-            difficulty: details.difficulty,
-            cuisine: details.cuisine,
-            tags: details.tags,
-            idealFor: details.tags.where(asanMealTimes.contains).toList(),
-            prepTime: details.prepTime,
-            cookTime: details.cookTime,
-            totalTime: details.totalTime > 0 ? details.totalTime : details.prepTime + details.cookTime,
-            servings: details.servings,
-            calories: details.calories,
-            fats: details.fats,
-            cholesterol: details.cholesterol,
-            sodium: details.sodium,
-            carbohydrates: details.carbohydrates,
-            protein: details.protein,
-            dishTypes: details.dishTypes,
-            ingredients: details.ingredients,
-            ingredientAisles: details.ingredientAisles,
-            instructions: details.instructions,
-          )),
+          onAddToMealPlan: () {
+            final selectedRecipe = _apiRecipeToRecipe(details, imageUrl);
+            if (widget.onRecipeSelected != null) {
+              Navigator.of(context).pop();
+              widget.onRecipeSelected!(selectedRecipe);
+              return;
+            }
+            widget.onAddToMealPlan?.call(selectedRecipe);
+          },
           instructions: details.instructions,
           isSaved: isSaved,
           onToggleSaved: () => setState(() {
@@ -1630,10 +1682,20 @@ class _RecipesScreenState extends State<RecipesScreen> {
     );
   }
 
+  void _toggleSavedRecipe(String title) {
+    setState(() {
+      if (_savedRecipeTitles.contains(title)) {
+        _savedRecipeTitles.remove(title);
+      } else {
+        _savedRecipeTitles.add(title);
+      }
+    });
+  }
+
   String _capitalizeCategory(String category) {
     final trimmed = category.trim();
     if (trimmed.isEmpty) return trimmed;
-    return '${trimmed[0].toUpperCase()}${trimmed.substring(1)}';
+    return '${trimmed[0].toUpperCase()}${trimmed.substring(1).toLowerCase()}';
   }
 }
 
