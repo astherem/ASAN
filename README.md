@@ -152,7 +152,7 @@ See [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md) for the project's security re
 
 ![Built with AI assistance](https://img.shields.io/badge/built%20with-AI%20assistance-0b5fff)
 
-The app was developed with AI support for structure, UI patterns, and documentation, while the final implementation was reviewed and adjusted by the author to match project needs. See [AI-USAGE.md](AI-USAGE.md) for more details. 
+The app was developed with Codex and Copilot for code suggestions, UI structure, debugging, API integration, and documentation, while the final implementation was reviewed and adjusted by the author. See [AI-USAGE.md](AI-USAGE.md) for more details. 
 
 ## LICENSE
 

@@ -152,4 +152,4 @@ looks exactly like what it is.
 
 - **File:** `lib/screens/search_screen.dart`
 - **Commit:** https://github.com/astherem/ASAN/commit/031682e7cea1051e3c9b759b6efcd8017d5794fa
-- **What it does and why we kept it:** It presents recipe search results and lets users open a recipe or add its ingredients to groceries. I kept it because it connects the API response to existing app models and navigation.
+- **What it does and why we kept it:** This screen presents recipe search results and connects them to the rest of the app. It uses the user's search input and selected filters to show matching recipes, lets the user open a recipe's details, and provides an action for transferring recipe ingredients into the grocery list. I kept this implementation because it connects recipe discovery with existing recipe-details and grocery-list flows instead of creating separate, duplicated systems. I adapted the AI suggestions to use the app's existing recipe models, shared widgets, and navigation structure so the search feature fits the rest of the application.
