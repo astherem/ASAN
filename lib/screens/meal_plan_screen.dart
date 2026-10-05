@@ -160,6 +160,8 @@ class MealPlanScreenState extends State<MealPlanScreen> {
               initialMealTime: mealTime,
               initialDishType: dishType,
               initialRecipe: initialRecipe,
+              onAddToGroceries: widget.onAddToGroceries,
+              onViewGroceries: widget.onViewGroceries,
             ),
           ),
         ),
@@ -266,6 +268,14 @@ class MealPlanScreenState extends State<MealPlanScreen> {
     return '${trimmed[0].toUpperCase()}${trimmed.substring(1).toLowerCase()}';
   }
 
+  String _normalizeMealTime(String value) {
+    final normalized = value.trim().toLowerCase();
+    return normalized == 'morning meal' ? 'breakfast' : normalized;
+  }
+
+  String _mealTimeLabel(String value) =>
+      _normalizeMealTime(value) == 'breakfast' ? 'Breakfast' : _formatGroupTitle(value);
+
   Future<void> _editMeal(MealPlans meal) async {
     final entries = await _showMealForm(meal: meal);
     if (entries == null || !mounted) return;
@@ -319,6 +329,8 @@ class MealPlanScreenState extends State<MealPlanScreen> {
               initialRecipe: meal?.recipe,
               initialServings: meal?.servings,
               isEditing: meal != null,
+              onAddToGroceries: widget.onAddToGroceries,
+              onViewGroceries: widget.onViewGroceries,
             ),
           ),
         ),
@@ -375,7 +387,9 @@ class MealPlanScreenState extends State<MealPlanScreen> {
     for (final entry in _entries) {
       if (!entry.isOnDate(date)) continue;
       if (filters?.mealTimeCategories.isNotEmpty ?? false) {
-        if (!filters!.mealTimeCategories.contains(entry.mealTime)) continue;
+        if (!filters!.mealTimeCategories.any(
+          (mealTime) => _normalizeMealTime(mealTime) == _normalizeMealTime(entry.mealTime),
+        )) continue;
       }
       if (filters?.mealCategories.isNotEmpty ?? false) {
         if (!_dishTypesFor(entry).any(filters!.mealCategories.contains)) continue;
@@ -399,7 +413,7 @@ class MealPlanScreenState extends State<MealPlanScreen> {
         'Total time' =>
           asanTotalTimeRangeFor(entry.recipe.totalTime) ?? 'Unknown time',
         'Day' => '${_weekdayName(date)}, ${_formatDate(date)}',
-        _ => entry.mealTime,
+        _ => _mealTimeLabel(entry.mealTime),
       };
       (groups[key] ??= []).add(entry);
     }
@@ -995,12 +1009,16 @@ class _RecipePickerField extends StatelessWidget {
   final List<Recipes> recipes;
   final bool hasError;
   final ValueChanged<Recipes> onSelected;
+  final Future<bool> Function(List<GroceryItem>)? onAddToGroceries;
+  final VoidCallback? onViewGroceries;
 
   const _RecipePickerField({
     required this.selectedRecipe,
     required this.recipes,
     required this.hasError,
     required this.onSelected,
+    this.onAddToGroceries,
+    this.onViewGroceries,
   });
 
   @override
@@ -1046,10 +1064,23 @@ class _RecipePickerField extends StatelessWidget {
                     child: Navigator(
                       onGenerateRoute: (settings) => MaterialPageRoute<void>(
                         settings: settings,
-                        builder: (context) => RecipesScreen(
+                        builder: (_) => RecipesScreen(
                           incomingRecipes: recipes,
+                          onAddToGroceries: onAddToGroceries == null
+                              ? null
+                              : (items) async {
+                                  await onAddToGroceries!(items);
+                                },
+                          onViewGroceries: onViewGroceries == null
+                              ? null
+                              : () {
+                                  Navigator.of(sheetContext).pop();
+                                  Navigator.of(context).pop();
+                                  onViewGroceries!();
+                                },
                           onRecipeSelected: (recipe) =>
                               Navigator.of(sheetContext).pop(recipe),
+                          onPickerBack: () => Navigator.of(sheetContext).pop(),
                         ),
                       ),
                     ),
@@ -1103,6 +1134,8 @@ class _MealPlanForm extends StatefulWidget {
   final Recipes? initialRecipe;
   final int? initialServings;
   final bool isEditing;
+  final Future<bool> Function(List<GroceryItem>)? onAddToGroceries;
+  final VoidCallback? onViewGroceries;
 
   const _MealPlanForm({
     super.key,
@@ -1113,6 +1146,8 @@ class _MealPlanForm extends StatefulWidget {
     this.initialRecipe,
     this.initialServings,
     this.isEditing = false,
+    this.onAddToGroceries,
+    this.onViewGroceries,
   });
 
   @override
@@ -1189,6 +1224,8 @@ class _MealPlanFormState extends State<_MealPlanForm> {
             selectedRecipe: _recipe,
             recipes: widget.recipes,
             hasError: _hasError && _recipe == null,
+            onAddToGroceries: widget.onAddToGroceries,
+            onViewGroceries: widget.onViewGroceries,
             onSelected: (recipe) => setState(() {
               _recipe = recipe;
               _dishType = null;
@@ -1204,6 +1241,7 @@ class _MealPlanFormState extends State<_MealPlanForm> {
           ]),
           const SizedBox(height: AsanSpacing.sm),
           AsanDatePicker(
+            variant: AsanDatePickerVariant.field,
             initialDate: _dates.last,
             selectedDates: _dates,
             onDateToggled: (value) => setState(() {

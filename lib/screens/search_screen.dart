@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -167,8 +168,8 @@ class _SearchScreenState extends State<SearchScreen> {
           .map(normalizeMealTime)
           .toSet();
       final mealMatch = filters.mealTimes.isEmpty || filters.mealTimes.any((value) => recipeMealTimes.contains(normalizeMealTime(value)));
-      final types = [...recipe.dishTypes, recipe.category];
-      final typeMatch = filters.mealTimeCategories.isEmpty || types.any((type) => filters.mealTimeCategories.any((value) => value.toLowerCase() == type.toLowerCase()));
+      final types = [...recipe.dishTypes, recipe.category].map(normalizeMealTime);
+      final typeMatch = filters.mealTimeCategories.isEmpty || types.any((type) => filters.mealTimeCategories.any((value) => normalizeMealTime(value) == type));
       final cuisineMatch = filters.cuisines.isEmpty || filters.cuisines.any((value) => (recipe.cuisine ?? '').toLowerCase().split(',').map((part) => part.trim()).contains(value.toLowerCase()));
       return timeMatch && dietMatch && mealMatch && typeMatch && cuisineMatch;
     }).toList();
@@ -209,7 +210,7 @@ class _SearchScreenState extends State<SearchScreen> {
       instructions: details.instructions,
     );
     if (!mounted) return;
-    Navigator.push(context, MaterialPageRoute<void>(
+    await Navigator.push(context, MaterialPageRoute<void>(
       builder: (context) => RecipeDetailsScreen(
         recipe: savedRecipe,
         imageUrl: imageUrl,
@@ -248,6 +249,7 @@ class _SearchScreenState extends State<SearchScreen> {
               },
       ),
     ));
+    if (mounted) _returnToInitial();
   }
 
   GroceryItem _groceryItemFromIngredient(String ingredient, String? aisle, double multiplier) {
@@ -454,6 +456,59 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(
+            _activeFilterLabels.isEmpty
+                ? AsanSpacing.md
+                : AsanSpacing.sm + 40 + AsanSpacing.md,
+          ),
+          child: _activeFilterLabels.isEmpty
+              ? const SizedBox(height: AsanSpacing.md)
+              : Column(
+                  children: [
+                    const SizedBox(height: AsanSpacing.sm),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AsanSpacing.lg,
+                      ),
+                      child: SizedBox(
+                        height: 40,
+                        child: ScrollConfiguration(
+                          behavior: ScrollConfiguration.of(context).copyWith(
+                            dragDevices: {
+                              PointerDeviceKind.touch,
+                              PointerDeviceKind.mouse,
+                              PointerDeviceKind.trackpad,
+                            },
+                          ),
+                          child: ListView.separated(
+                            primary: false,
+                            clipBehavior: Clip.none,
+                            padding: EdgeInsets.zero,
+                            scrollDirection: Axis.horizontal,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: _activeFilterLabels.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: AsanSpacing.sm),
+                            itemBuilder: (context, index) {
+                              final label = _activeFilterLabels[index];
+                              return Align(
+                                alignment: Alignment.centerLeft,
+                                child: AsanFilterChip(
+                                  label: label,
+                                  isSelected: true,
+                                  onPressed: () => _removeFilter(label),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AsanSpacing.md),
+                  ],
+                ),
+        ),
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -461,7 +516,7 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: !_showResults
           ? ListView(
-              padding: const EdgeInsets.all(AsanSpacing.lg),
+              padding: const EdgeInsets.fromLTRB(AsanSpacing.lg, 0, AsanSpacing.lg, AsanSpacing.lg),
               children: [
                 _selectionSection('Search by Meal Time', _mealTimeSearchCards, _filters?.mealTimes ?? const {}, dishType: false),
                 _selectionSection('Search by Dish Type', _dishTypeSearchCards, _filters?.mealTimeCategories ?? const {}, dishType: true),
@@ -470,19 +525,6 @@ class _SearchScreenState extends State<SearchScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (_activeFilterLabels.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(AsanSpacing.lg, AsanSpacing.sm, AsanSpacing.lg, 0),
-                    child: Wrap(
-                      spacing: AsanSpacing.sm,
-                      runSpacing: AsanSpacing.sm,
-                      children: _activeFilterLabels.map((label) => AsanFilterChip(
-                        label: label,
-                        isSelected: true,
-                        onPressed: () => _removeFilter(label),
-                      )).toList(),
-                    ),
-                  ),
                 Expanded(child: _error != null && _recipes.isEmpty
           ? AsanEmptyState(
               icon: Symbols.error_rounded,
@@ -507,12 +549,12 @@ class _SearchScreenState extends State<SearchScreen> {
                           : 'No recipes match "${_query.trim()}".',
                     )
                   : GridView.builder(
-                      padding: const EdgeInsets.all(AsanSpacing.lg),
+                      padding: const EdgeInsets.fromLTRB(AsanSpacing.lg, 0, AsanSpacing.lg, AsanSpacing.lg),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         crossAxisSpacing: AsanSpacing.md,
                         mainAxisSpacing: AsanSpacing.lg,
-                        childAspectRatio: 0.72,
+                        childAspectRatio: 0.75,
                       ),
                       itemCount: recipes.length,
                       itemBuilder: (context, index) {

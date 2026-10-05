@@ -244,8 +244,7 @@ class ApiRecipe {
     ));
     return ApiRecipe(
       id: 'spoonacular:$id', title: text(recipe['title']).isEmpty ? 'Untitled recipe' : text(recipe['title']),
-      category: recipe['dishTypes'] is List && (recipe['dishTypes'] as List).isNotEmpty
-          ? text((recipe['dishTypes'] as List).first) : 'Recipe',
+      category: dishTypes.isNotEmpty ? dishTypes.first : 'Recipe',
       description: text(recipe['summary']).replaceAll(RegExp(r'<[^>]*>'), ''),
       difficulty: null, cuisine: cuisines.isEmpty ? null : cuisines.join(', '),
       tags: tags,

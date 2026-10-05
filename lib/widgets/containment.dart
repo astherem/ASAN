@@ -443,7 +443,7 @@ class RecipeCard extends StatelessWidget {
                 AsanTextButton(
                   label: 'View',
                   onPressed: onViewPressed,
-                  padding: const EdgeInsets.symmetric(vertical: AsanSpacing.sm),
+                  padding: const EdgeInsets.symmetric(vertical: AsanSpacing.xs),
                 ),
             ],
           ),

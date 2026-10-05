@@ -181,7 +181,7 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
                     ),
                     const SizedBox(width: 8),
                     const Icon(
-                      Icons.arrow_drop_down_rounded,
+                      Symbols.arrow_drop_down_rounded,
                       size: 24,
                       color: AsanColorScheme.inactive,
                     ),
@@ -379,7 +379,7 @@ class _DropdownListItem extends StatelessWidget {
                   width: 22,
                   height: 22,
                   child: Icon(
-                    isSelected ? Icons.check_rounded : null,
+                    isSelected ? Symbols.check_rounded : null,
                     size: 18,
                     color: AsanColorScheme.secondary,
                   ),
@@ -916,7 +916,7 @@ class _SheetHeader extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints.tightFor(width: 22, height: 22),
             onPressed: onClose,
-            icon: const Icon(Icons.close_rounded, size: 22, weight: 600),
+            icon: const Icon(Symbols.close_rounded, size: 22, weight: 600),
           ),
         ],
       ),
@@ -1026,7 +1026,7 @@ class _FilterSection extends StatelessWidget {
                           (selectedValues?.contains(entry.$2) ??
                               entry.$2 == selected)
                           ? const Icon(
-                              Icons.check_rounded,
+                              Symbols.check_rounded,
                               size: 15,
                               color: AsanColorScheme.surface,
                             )
@@ -1064,8 +1064,8 @@ class _FilterSection extends StatelessWidget {
                             color: AsanColorScheme.secondary,
                           ),
                           child: ascending
-                              ? const Icon(Icons.arrow_upward_rounded)
-                              : const Icon(Icons.arrow_downward_rounded),
+                              ? const Icon(Symbols.arrow_upward_rounded)
+                              : const Icon(Symbols.arrow_downward_rounded),
                         ),
                       ),
                   ],
@@ -1226,7 +1226,7 @@ class _AsanDateFieldState extends State<AsanDateField> {
                     child: Center(
                       child: IconTheme(
                         data: IconThemeData(size: 16, color: iconColor),
-                        child: const Icon(Icons.calendar_today_rounded),
+                        child: const Icon(Symbols.calendar_today_rounded),
                       ),
                     ),
                   ),
@@ -1240,7 +1240,10 @@ class _AsanDateFieldState extends State<AsanDateField> {
   }
 }
 
+enum AsanDatePickerVariant { standard, field }
+
 class AsanDatePicker extends StatefulWidget {
+  final AsanDatePickerVariant variant;
   final DateTime? initialDate;
   final DateTime? firstDate;
   final DateTime? lastDate;
@@ -1251,6 +1254,7 @@ class AsanDatePicker extends StatefulWidget {
 
   const AsanDatePicker({
     super.key,
+    this.variant = AsanDatePickerVariant.standard,
     this.initialDate,
     this.firstDate,
     this.lastDate,
@@ -1319,12 +1323,19 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
 
   void _selectDate(DateTime date) {
     if (date.isBefore(_firstDate) || date.isAfter(_lastDate)) return;
+    final selectedMonth = DateTime(date.year, date.month);
     if (widget.onDateToggled != null) {
       widget.onDateToggled!(date);
-      setState(() => _selectedDate = date);
+      setState(() {
+        _selectedDate = date;
+        _visibleMonth = selectedMonth;
+      });
       return;
     }
-    setState(() => _selectedDate = date);
+    setState(() {
+      _selectedDate = date;
+      _visibleMonth = selectedMonth;
+    });
   }
 
   Future<void> _selectMonth() async {
@@ -1401,7 +1412,9 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
       width: 342,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AsanColorScheme.surface,
+        color: widget.variant == AsanDatePickerVariant.field
+            ? AsanColorScheme.container
+            : AsanColorScheme.surface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -1413,10 +1426,10 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
             child: Row(
               children: [
                 _NavigationButton(
-                  icon: const Icon(Icons.chevron_left_rounded),
+                  icon: const Icon(Symbols.chevron_left_rounded, size: 24, weight: 600),
                   onPressed: () => _changeMonth(-1),
                 ),
-                const Spacer(),
+                const Spacer(), 
                 _MonthSelector(
                   label: _months[_visibleMonth.month - 1].substring(0, 3),
                   onPressed: _selectMonth,
@@ -1428,7 +1441,7 @@ class _AsanDatePickerState extends State<AsanDatePicker> {
                 ),
                 const Spacer(),
                 _NavigationButton(
-                  icon: const Icon(Icons.chevron_right_rounded),
+                  icon: const Icon(Symbols.chevron_right_rounded, size: 24, weight: 600),
                   onPressed: () => _changeMonth(1),
                 ),
               ],
@@ -1520,7 +1533,7 @@ class _MonthSelector extends StatelessWidget {
                   ),
                 ),
                 const Icon(
-                  Icons.arrow_drop_down_rounded,
+                  Symbols.arrow_drop_down_rounded,
                   size: 24,
                   color: AsanColorScheme.inactive,
                 ),
@@ -1553,21 +1566,12 @@ class _CalendarGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstDay = DateTime(month.year, month.month, 1);
-    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     final leadingEmpty = firstDay.weekday % 7;
-    final dates = <DateTime?>[];
-
-    for (var i = 0; i < leadingEmpty; i++) {
-      dates.add(null);
-    }
-
-    for (var day = 1; day <= daysInMonth; day++) {
-      dates.add(DateTime(month.year, month.month, day));
-    }
-
-    while (dates.length < 42) {
-      dates.add(null);
-    }
+    final gridStart = DateTime(month.year, month.month, 1 - leadingEmpty);
+    final dates = List<DateTime>.generate(
+      42,
+      (index) => DateTime(gridStart.year, gridStart.month, gridStart.day + index),
+    );
 
     final today = DateUtils.dateOnly(DateTime.now());
     final rows = <Widget>[];
@@ -1579,10 +1583,7 @@ class _CalendarGrid extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: rowDates.map((date) {
-              if (date == null) {
-                return const SizedBox(width: 40, height: 40);
-              }
-
+              final isCurrentMonth = date.month == month.month && date.year == month.year;
               final isSelected = selectedDates?.contains(DateUtils.dateOnly(date)) ?? DateUtils.isSameDay(date, selectedDate);
               final isToday = DateUtils.isSameDay(date, today);
               final isOutsideRange =
@@ -1608,6 +1609,8 @@ class _CalendarGrid extends StatelessWidget {
                           ? AsanColorScheme.onPrimary
                           : isToday
                           ? AsanColorScheme.primary
+                          : !isCurrentMonth
+                          ? AsanColorScheme.inactive
                           : isOutsideRange
                           ? AsanColorScheme.inactive
                           : AsanColorScheme.secondary,

@@ -180,7 +180,7 @@ class _AsanSearchBarState extends State<AsanSearchBar> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
-  bool get _isActive => _focusNode.hasFocus || _controller.text.isNotEmpty;
+  bool get _isActive => _focusNode.hasFocus;
 
   @override
   void initState() {
@@ -190,6 +190,18 @@ class _AsanSearchBarState extends State<AsanSearchBar> {
 
     _focusNode.addListener(_updateState);
     _controller.addListener(_updateState);
+  }
+
+  @override
+  void didUpdateWidget(covariant AsanSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialQuery != widget.initialQuery &&
+        _controller.text != widget.initialQuery) {
+      _controller.value = TextEditingValue(
+        text: widget.initialQuery,
+        selection: TextSelection.collapsed(offset: widget.initialQuery.length),
+      );
+    }
   }
 
   void _updateState() {
@@ -261,9 +273,11 @@ class _AsanSearchBarState extends State<AsanSearchBar> {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 icon: IconTheme(
-                  data: const IconThemeData(
+                  data: IconThemeData(
                     size: 22,
-                    color: AsanColorScheme.primary,
+                    color: isActive
+                        ? AsanColorScheme.primary
+                        : AsanColorScheme.inactive,
                   ),
                   child: const Icon(Symbols.close_rounded),
                 ),

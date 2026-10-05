@@ -149,6 +149,7 @@ class RecipesScreen extends StatefulWidget {
   final AsanFilterSelection? initialFilters;
   final String initialQuery;
   final ValueChanged<Recipes>? onRecipeSelected;
+  final VoidCallback? onPickerBack;
 
   const RecipesScreen({
     super.key,
@@ -158,6 +159,7 @@ class RecipesScreen extends StatefulWidget {
     this.initialFilters,
     this.initialQuery = '',
     this.onRecipeSelected,
+    this.onPickerBack,
     this.onAddToGroceries,
     this.onViewGroceries,
   });
@@ -197,7 +199,6 @@ class _RecipesScreenState extends State<RecipesScreen> {
       ..addListener(_handleContentScroll);
     _filterScrollController = ScrollController();
     _items.addAll(widget.incomingRecipes);
-    if (widget.onRecipeSelected != null) _selectedView = 2;
     _receivedItemCount = widget.incomingRecipes.length;
     _activeFilters = widget.initialFilters;
     _searchQuery = widget.initialQuery;
@@ -484,7 +485,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
               delegate: _RecipePickerSearchHeaderDelegate(
                 filterCount: _activeFilterLabels.length,
                 labels: _activeFilterLabels,
-                onBack: () => Navigator.of(context).maybePop(),
+                onBack: widget.onPickerBack ?? () => Navigator.of(context).maybePop(),
                 onFilter: _showFilters,
                 onRemoveFilter: _removeFilter,
                 searchBar: _buildSearchBar(context),
@@ -633,7 +634,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                               children: group.value.map((recipe) {
                                 return SizedBox(
                                   width: width,
-                                  height: width * (widget.onRecipeSelected == null ? 220 : 252) / 163,
+                                  height: width * (widget.onRecipeSelected == null ? 218 : 246) / 163,
                                   child: RecipeCard(
                                     recipeName: recipe.name,
                                     mealCategory: _cardDishType([
@@ -847,7 +848,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: AsanSpacing.md,
                 mainAxisSpacing: AsanSpacing.sm,
-                childAspectRatio: 163 / (widget.onRecipeSelected != null ? 252 : 220),
+                childAspectRatio: 163 / (widget.onRecipeSelected != null ? 246 : 218),
               ),
             ),
           ],
@@ -897,7 +898,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                               AsanSpacing.md) /
                           2;
                       return SizedBox(
-                        height: cardWidth + (widget.onRecipeSelected != null ? 88 : 56),
+                        height: cardWidth + (widget.onRecipeSelected != null ? 80 : 52),
                         child: ScrollConfiguration(
                           behavior: ScrollConfiguration.of(context).copyWith(
                             dragDevices: {
@@ -967,8 +968,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: AsanSpacing.md,
-              mainAxisSpacing: AsanSpacing.sm,
-              childAspectRatio: 163 / (widget.onRecipeSelected != null ? 252 : 220),
+              mainAxisSpacing: AsanSpacing.md,
+              childAspectRatio: 163 / (widget.onRecipeSelected != null ? 246 : 218),
             ),
           ),
         ),
@@ -1111,7 +1112,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: AsanSpacing.md,
                 mainAxisSpacing: AsanSpacing.md,
-                childAspectRatio: 163 / (widget.onRecipeSelected != null ? 252 : 220),
+                childAspectRatio: 163 / (widget.onRecipeSelected != null ? 246 : 218),
               ),
             ),
           ],
@@ -1162,7 +1163,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                             AsanSpacing.md) /
                         2;
                     return SizedBox(
-                      height: width + (widget.onRecipeSelected != null ? 88 : 56),
+                      height: width + (widget.onRecipeSelected != null ? 80 : 52),
                       child: ScrollConfiguration(
                         behavior: ScrollConfiguration.of(context).copyWith(
                           dragDevices: {
@@ -1792,11 +1793,11 @@ class _RecipePickerSearchHeaderDelegate extends SliverPersistentHeaderDelegate {
                 children: [
                   IconButton(
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints.tightFor(width: 32, height: 38),
-                    icon: const Icon(Symbols.chevron_left_rounded),
+                    constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                    icon: const Icon(Symbols.chevron_left_rounded, size: 34, weight: 600),
                     onPressed: onBack,
                   ),
-                  const SizedBox(width: AsanSpacing.xs),
+                  const SizedBox(width: AsanSpacing.sm),
                   searchBar,
                   const SizedBox(width: AsanSpacing.sm),
                   FilledIconButton(
