@@ -55,3 +55,40 @@ class AsanFilterSelection {
 }
 
 enum AsanFilterMenuType { pantry, groceries, recipes, meals }
+
+const asanAisles = [
+  'Produce', 'Spices and Seasonings', 'Milk, Eggs, Other Dairy', 'Meat', 'Seafood',
+  'Bakery/Bread', 'Pasta and Rice', 'Canned and Jarred', 'Frozen', 'Condiments', 'Beverages',
+  'Baking', 'Nuts', 'Oil, Vinegar, Salad Dressing', 'Cereal', 'Snacks', 'Other',
+];
+
+const asanMealTimes = ['Breakfast', 'Brunch', 'Lunch', 'Snack', 'Dinner'];
+
+const asanTotalTimes = [
+  '15 minutes or less', '30 minutes or less', '1 hour or less', 'More than 1 hour',
+];
+
+String? asanTotalTimeRangeFor(int minutes) {
+  if (minutes <= 0) return null;
+  if (minutes <= 15) return asanTotalTimes[0];
+  if (minutes <= 30) return asanTotalTimes[1];
+  if (minutes <= 60) return asanTotalTimes[2];
+  return asanTotalTimes[3];
+}
+
+const asanDiets = [
+  'Gluten Free', 'Ketogenic', 'Vegetarian', 'Lacto-Vegetarian', 'Ovo-Vegetarian',
+  'Vegan', 'Pescetarian', 'Paleo', 'Primal', 'Low FODMAP', 'Whole30',
+];
+
+const asanDishTypes = [
+  'Main Course', 'Side Dish', 'Dessert', 'Appetizer', 'Salad', 'Bread',
+  'Soup', 'Beverage', 'Sauce', 'Marinade', 'Fingerfood', 'Snack', 'Drink',
+];
+
+const asanCuisines = [
+  'African', 'Asian', 'American', 'British', 'Cajun', 'Caribbean', 'Chinese',
+  'Eastern European', 'European', 'French', 'German', 'Greek', 'Indian', 'Irish',
+  'Italian', 'Japanese', 'Jewish', 'Korean', 'Latin American', 'Mediterranean',
+  'Mexican', 'Middle Eastern', 'Nordic', 'Southern', 'Spanish', 'Thai', 'Vietnamese',
+];

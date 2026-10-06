@@ -5,7 +5,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:asan/styles/theme.dart';
 import 'package:asan/models/grocery_item.dart';
 import 'package:asan/models/pantry_item.dart';
-import 'package:asan/models/filter_selection.dart';
 
 import 'package:asan/widgets/buttons.dart';
 import 'package:asan/widgets/communication.dart';

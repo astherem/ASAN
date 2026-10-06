@@ -2,453 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/styles/theme.dart';
-import 'package:asan/models/filter_selection.dart';
+import 'package:asan/models/filters.dart';
+export 'package:asan/models/filters.dart';
 
 import 'package:asan/widgets/buttons.dart';
-import 'package:asan/widgets/communication.dart';
 import 'package:asan/widgets/containment.dart';
 import 'package:asan/widgets/inputs.dart';
 
-// DROPDOWN MENU
-List<String> uniqueStrings(Iterable<String> values) {
-  final seen = <String>{};
-  final result = <String>[];
-  for (final value in values) {
-    final trimmed = value.trim();
-    if (trimmed.isNotEmpty && seen.add(trimmed.toLowerCase())) {
-      result.add(trimmed);
-    }
-  }
-  return result;
-}
-
-double dropdownSheetInitialSize(
-  BuildContext context, {
-  required int itemCount,
-  required bool showSearch,
-}) {
-  const minimumSize = 0.5;
-  const maximumSize = 0.9;
-  const itemHeight = 38.0;
-  const itemGap = 8.0;
-  const fixedHeight = 122.0;
-  final contentHeight =
-      fixedHeight +
-      (showSearch ? 70 : 0) +
-      itemCount * itemHeight +
-      (itemCount > 0 ? (itemCount - 1) * itemGap : 0);
-  final availableHeight = MediaQuery.sizeOf(context).height;
-  final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-
-  return ((contentHeight + bottomInset) / availableHeight)
-      .clamp(minimumSize, maximumSize)
-      .toDouble();
-}
-
-class AsanDropdownMenu extends StatefulWidget {
-  final String label;
-  final List<String> items;
-  final String? value;
-  final String? hintText;
-  final String? searchHint;
-  final ValueChanged<String?>? onChanged;
-  final bool hasError;
-  final String? errorText;
-  final bool required;
-  final Color? labelColor;
-
-  const AsanDropdownMenu({
-    super.key,
-    required this.label,
-    required this.items,
-    this.value,
-    this.hintText,
-    this.searchHint,
-    this.onChanged,
-    this.hasError = false,
-    this.errorText,
-    this.required = false,
-    this.labelColor,
-  });
-
-  @override
-  State<AsanDropdownMenu> createState() => _AsanDropdownMenuState();
-}
-
-class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
-  bool _isOpen = false;
-
-  Future<void> _openList() async {
-    setState(() => _isOpen = true);
-    final items = uniqueStrings(widget.items);
-    final selectedValue = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AsanColorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: dropdownSheetInitialSize(
-          context,
-          itemCount: items.length,
-          showSearch: true,
-        ),
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        builder: (context, scrollController) => AsanDropdownList(
-          title: widget.label == 'Food Group'
-              ? 'Select Food Group'
-              : widget.label == 'Aisle'
-              ? 'Select Aisle'
-              : widget.label == 'Dish Type'
-              ? 'Select Dish Type'
-              : widget.label,
-          items: items,
-          selectedValue: widget.value,
-          searchHint: widget.searchHint ?? 'Search ${widget.label.toLowerCase()}...',
-          scrollController: scrollController,
-        ),
-      ),
-    );
-    if (!mounted) return;
-    setState(() => _isOpen = false);
-    if (selectedValue != null) widget.onChanged?.call(selectedValue);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasBorder = _isOpen || widget.hasError;
-    final textColor = widget.value == null
-        ? AsanColorScheme.inactive
-        : AsanColorScheme.onSurface;
-
-    return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Text(
-                widget.label,
-                style: AsanTextTheme.labelSmall.copyWith(
-                  color: widget.labelColor ?? AsanColorScheme.secondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (widget.required) ...[
-                const SizedBox(width: AsanSpacing.xs),
-                Text(
-                  '(Required)',
-                  style: AsanTextTheme.labelSmall.copyWith(
-                    color: AsanColorScheme.inactive,
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-            height: 38,
-            decoration: BoxDecoration(
-              color: hasBorder
-                  ? AsanColorScheme.surface
-                  : AsanColorScheme.container,
-              borderRadius: BorderRadius.circular(8),
-              border: hasBorder
-                  ? Border.all(
-                      color: _isOpen
-                          ? AsanColorScheme.primary
-                          : AsanColorScheme.error,
-                    )
-                  : null,
-            ),
-            child: InkWell(
-              onTap: _openList,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.value ?? widget.hintText ?? '',
-                        style: AsanTextTheme.bodyMedium.copyWith(
-                          color: textColor,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Symbols.arrow_drop_down_rounded,
-                      size: 24,
-                      color: AsanColorScheme.inactive,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        if (widget.hasError && widget.errorText != null) ...[
-          const SizedBox(height: AsanSpacing.xs),
-          Text(
-            widget.errorText!,
-            style: AsanTextTheme.labelSmall.copyWith(color: AsanColorScheme.error),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class AsanDropdownList extends StatefulWidget {
-  final String title;
-  final List<String> items;
-  final String? selectedValue;
-  final String searchHint;
-  final bool showSearch;
-  final ScrollController? scrollController;
-
-  const AsanDropdownList({
-    super.key,
-    required this.title,
-    required this.items,
-    this.selectedValue,
-    this.searchHint = 'Search food group...',
-    this.showSearch = true,
-    this.scrollController,
-  });
-
-  @override
-  State<AsanDropdownList> createState() => _AsanDropdownListState();
-}
-
-class _AsanDropdownListState extends State<AsanDropdownList> {
-  String _searchQuery = '';
-  late final ScrollController _scrollController;
-
-  @override
-  void initState() {
-    super.initState();
-    final selectedIndex = widget.items.indexOf(widget.selectedValue ?? '');
-    _scrollController = ScrollController(
-      initialScrollOffset: selectedIndex < 0
-          ? 0
-          : selectedIndex * (38 + AsanSpacing.sm),
-    );
-    if (widget.scrollController != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final controller = widget.scrollController!;
-        final selectedIndex = widget.items.indexOf(widget.selectedValue ?? '');
-        if (!controller.hasClients || selectedIndex < 0) return;
-
-        final offset = selectedIndex * (38 + AsanSpacing.sm);
-        controller.jumpTo(
-          offset.clamp(0, controller.position.maxScrollExtent).toDouble(),
-        );
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final query = _searchQuery.toLowerCase();
-    final filteredItems = uniqueStrings(widget.items)
-        .where((item) => item.toLowerCase().contains(query))
-        .toList();
-
-    return SafeArea(
-      top: false,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Container(
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AsanColorScheme.inactive,
-                borderRadius: BorderRadius.circular(100),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AsanSpacing.lg,
-              vertical: AsanSpacing.md,
-            ),
-            child: _SheetHeader(
-              title: widget.title,
-              onClose: () => Navigator.pop(context),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AsanSpacing.lg,
-                0,
-                AsanSpacing.lg,
-                AsanSpacing.md,
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: AsanSpacing.sm),
-                  if (widget.showSearch) ...[
-                    AsanSearchBar(
-                      hintText: widget.searchHint,
-                      onChanged: (value) =>
-                          setState(() => _searchQuery = value),
-                    ),
-                    const SizedBox(height: AsanSpacing.md),
-                  ],
-                  Expanded(
-                    child: filteredItems.isEmpty
-                        ? AsanEmptyState(
-                            icon: Symbols.search_off_rounded,
-                            title: _searchQuery.trim().isEmpty
-                                ? 'No options available'
-                                : 'No results found',
-                            message: _searchQuery.trim().isEmpty
-                                ? 'There are no options to choose from.'
-                                : 'Try a different search.',
-                          )
-                        : ListView.separated(
-                            controller:
-                                widget.scrollController ?? _scrollController,
-                            padding: EdgeInsets.zero,
-                            itemCount: filteredItems.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(height: AsanSpacing.sm),
-                            itemBuilder: (context, index) {
-                              final item = filteredItems[index];
-                              final isSelected =
-                                  item == widget.selectedValue;
-                              return _DropdownListItem(
-                                label: item,
-                                isSelected: isSelected,
-                                onPressed: () =>
-                                    Navigator.pop(context, item),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DropdownListItem extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onPressed;
-
-  const _DropdownListItem({
-    required this.label,
-    required this.isSelected,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: isSelected ? AsanColorScheme.primary : Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          height: 38,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: Icon(
-                    isSelected ? Symbols.check_rounded : null,
-                    size: 18,
-                    color: AsanColorScheme.secondary,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: AsanTextTheme.bodyMedium.copyWith(
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // FILTER MENU
-const asanFoodGroups = [
-  'Beverages', 'Baking', 'Bread & Bakery', 'Cans & Jars', 'Condiments & Sauces', 
-  'Dairy', 'Deli', 'Frozen Foods', 'Fruit', 'Grains & Pasta', 'Herbs & Spices', 
-  'Meat', 'Nuts & Seeds', 'Oils & Vinegars', 'Poultry', 'Seafood', 'Snacks', 
-  'Spices & Seasonings', 'Soups & Broths', 'Vegetables', 'Others',
-];
-
-const asanAisles = [
-  'Produce', 'Spices and Seasonings', 'Milk, Eggs, Other Dairy', 'Meat', 'Seafood', 
-  'Bakery/Bread', 'Pasta and Rice', 'Canned and Jarred', 'Frozen', 'Condiments', 'Beverages', 
-  'Baking', 'Nuts', 'Oil, Vinegar, Salad Dressing', 'Cereal', 'Snacks', 'Other',
-];
-
-const asanMealTimes = [
-  'Breakfast', 'Brunch', 'Lunch', 'Snack', 'Dinner',
-];
-
-const asanTotalTimes = [
-  '15 minutes or less', '30 minutes or less', '1 hour or less', 'More than 1 hour',
-];
-
-String? asanTotalTimeRangeFor(int minutes) {
-  if (minutes <= 0) return null;
-  if (minutes <= 15) return asanTotalTimes[0];
-  if (minutes <= 30) return asanTotalTimes[1];
-  if (minutes <= 60) return asanTotalTimes[2];
-  return asanTotalTimes[3];
-}
-
-const asanDiets = [
-  'Gluten Free', 'Ketogenic', 'Vegetarian', 'Lacto-Vegetarian', 'Ovo-Vegetarian', 
-  'Vegan', 'Pescetarian', 'Paleo', 'Primal', 'Low FODMAP', 'Whole30',
-];
-
-const asanDishTypes = [
-  'Main Course', 'Side Dish', 'Dessert', 'Appetizer', 'Salad', 'Bread',
-  'Soup', 'Beverage', 'Sauce', 'Marinade', 'Fingerfood', 'Snack', 'Drink',
-];
-
-const asanCuisines = [
-  'African', 'Asian', 'American', 'British', 'Cajun', 'Caribbean', 'Chinese', 
-  'Eastern European', 'European', 'French', 'German', 'Greek', 'Indian', 'Irish', 
-  'Italian', 'Japanese', 'Jewish', 'Korean', 'Latin American', 'Mediterranean', 
-  'Mexican', 'Middle Eastern', 'Nordic', 'Southern', 'Spanish', 'Thai', 'Vietnamese',
-];
-
 double filterSheetInitialSize(
   BuildContext context, {
   AsanFilterMenuType menuType = AsanFilterMenuType.pantry,
@@ -596,7 +157,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                 horizontal: AsanSpacing.lg,
                 vertical: AsanSpacing.md,
               ),
-              child: _SheetHeader(
+              child: AsanSheetHeader(
                 title: 'Select Filters',
                 onClose: () => Navigator.pop(context),
               ),
@@ -707,7 +268,8 @@ class _AsanFilterListState extends State<AsanFilterList> {
                       const SizedBox(height: AsanSpacing.md),
                       const AsanDivider(),
                       const SizedBox(height: AsanSpacing.md),
-                    ] else if (_statusOptions.isNotEmpty && widget.menuType != AsanFilterMenuType.meals) ...[
+                    ] else if (widget.menuType == AsanFilterMenuType.pantry ||
+                        widget.menuType == AsanFilterMenuType.groceries) ...[
                       _FilterSection(
                         title: _statusTitle,
                         options: _statusOptions,
@@ -775,7 +337,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                     if (widget.menuType != AsanFilterMenuType.meals) Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        _isRecipes ? 'Diet' : widget.menuType == AsanFilterMenuType.meals ? 'Recipe Category' : 'Aisle',
+                        _isRecipes ? 'Diet' : 'Aisle',
                         style: AsanTextTheme.labelSmall.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -789,9 +351,9 @@ class _AsanFilterListState extends State<AsanFilterList> {
                         spacing: AsanSpacing.sm,
                         runSpacing: AsanSpacing.sm,
                         children:
-                            (_isRecipes ? asanDiets : widget.menuType == AsanFilterMenuType.meals ? asanDiets : asanAisles)
+                            (_isRecipes ? asanDiets : asanAisles)
                                 .map((group) {
-                                  final selectedSet = _isRecipes || widget.menuType == AsanFilterMenuType.meals
+                                  final selectedSet = _isRecipes
                                       ? _mealCategories
                                       : _foodGroups;
                                   final selected = selectedSet.contains(group);
@@ -892,11 +454,12 @@ class _AsanFilterListState extends State<AsanFilterList> {
   }
 }
 
-class _SheetHeader extends StatelessWidget {
+
+class AsanSheetHeader extends StatelessWidget {
   final String title;
   final VoidCallback onClose;
 
-  const _SheetHeader({required this.title, required this.onClose});
+  const AsanSheetHeader({required this.title, required this.onClose});
 
   @override
   Widget build(BuildContext context) {
@@ -938,9 +501,7 @@ class _FilterChipSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: double.infinity,
-    child: Column(
+  Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(title, style: AsanTextTheme.labelSmall.copyWith(fontWeight: FontWeight.bold)),
@@ -957,7 +518,7 @@ class _FilterChipSection extends StatelessWidget {
         )).toList(),
       ),
     ],
-  ));
+  );
 }
 
 class _FilterSection extends StatelessWidget {
@@ -1080,166 +641,6 @@ class _FilterSection extends StatelessWidget {
 }
 
 // DATE PICKER
-class AsanDateField extends StatefulWidget {
-  final String label;
-  final String? hintText;
-  final DateTime? initialDate;
-  final DateTime? firstDate;
-  final DateTime? lastDate;
-  final ValueChanged<DateTime>? onChanged;
-  final bool hasError;
-
-  const AsanDateField({
-    super.key,
-    required this.label,
-    this.hintText,
-    this.initialDate,
-    this.firstDate,
-    this.lastDate,
-    this.onChanged,
-    this.hasError = false,
-  });
-
-  @override
-  State<AsanDateField> createState() => _AsanDateFieldState();
-}
-
-class _AsanDateFieldState extends State<AsanDateField> {
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  DateTime? _selectedDate;
-  bool _isActive = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedDate = widget.initialDate;
-  }
-
-  Future<void> _openPicker() async {
-    setState(() => _isActive = true);
-
-    final selectedDate = await showDialog<DateTime>(
-      context: context,
-      builder: (dialogContext) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.zero,
-        child: AsanDatePicker(
-          initialDate: _selectedDate,
-          firstDate: widget.firstDate,
-          lastDate: widget.lastDate,
-          onDateSelected: (date) => Navigator.of(dialogContext).pop(date),
-          onCancel: () => Navigator.of(dialogContext).pop(),
-        ),
-      ),
-    );
-
-    if (!mounted) return;
-    setState(() {
-      _isActive = false;
-      if (selectedDate != null) {
-        _selectedDate = selectedDate;
-      }
-    });
-    if (selectedDate != null) {
-      widget.onChanged?.call(selectedDate);
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${_months[date.month - 1]} ${date.day}, ${date.year}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasBorder = _isActive || widget.hasError;
-    final hasValue = _selectedDate != null;
-    final iconColor = widget.hasError
-        ? AsanColorScheme.inactive
-        : (_isActive ? AsanColorScheme.primary : AsanColorScheme.inactive);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          widget.label,
-          style: AsanTextTheme.labelSmall.copyWith(
-            color: AsanColorScheme.secondary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Material(
-          color: hasBorder
-              ? AsanColorScheme.surface
-              : AsanColorScheme.container,
-          borderRadius: BorderRadius.circular(8),
-          child: InkWell(
-            onTap: _openPicker,
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              height: 38,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: hasBorder
-                    ? Border.all(
-                        color: widget.hasError
-                            ? AsanColorScheme.error
-                            : AsanColorScheme.primary,
-                      )
-                    : null,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _selectedDate == null
-                          ? widget.hintText ?? ''
-                          : _formatDate(_selectedDate!),
-                      style: AsanTextTheme.bodyMedium.copyWith(
-                        color: hasValue
-                            ? AsanColorScheme.onSurface
-                            : AsanColorScheme.inactive,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: Center(
-                      child: IconTheme(
-                        data: IconThemeData(size: 16, color: iconColor),
-                        child: const Icon(Symbols.calendar_today_rounded),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 enum AsanDatePickerVariant { standard, field }
 
 class AsanDatePicker extends StatefulWidget {
