@@ -347,7 +347,8 @@ class AsanImagePicker extends StatelessWidget {
               bottom: 8,
               right: 8,
               child: TonalIconButton.round(
-                icon: const Icon(Symbols.edit_rounded, size: 16),
+                size: 42,
+                icon: const Icon(Symbols.edit_rounded, size: 20),
                 onPressed: onTap,
               ),
             ),

@@ -72,6 +72,7 @@ class Recipes {
   Recipes copyWith({
     String? name,
     Uint8List? imageBytes,
+    bool clearImage = false,
     String? imageUrl,
     String? description,
     String? mealCategory,
@@ -105,8 +106,8 @@ class Recipes {
   }) {
     return Recipes(
       name: name ?? this.name,
-      imageBytes: imageBytes ?? this.imageBytes,
-      imageUrl: imageUrl ?? this.imageUrl,
+      imageBytes: clearImage ? null : imageBytes ?? this.imageBytes,
+      imageUrl: clearImage ? null : imageUrl ?? this.imageUrl,
       description: description ?? this.description,
       mealCategory: mealCategory ?? this.mealCategory,
       difficulty: difficulty ?? this.difficulty,

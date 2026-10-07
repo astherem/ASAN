@@ -176,14 +176,28 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
 
   int get _cookTimeMinutes => int.tryParse(_cookTimeController.text) ?? 0;
 
+  bool get _imageHasChanged {
+    final initialBytes = widget.initialItem?.imageBytes;
+    if (initialBytes == null || _imageBytes == null) {
+      return initialBytes != _imageBytes;
+    }
+    if (initialBytes.length != _imageBytes!.length) return true;
+    for (var i = 0; i < initialBytes.length; i++) {
+      if (initialBytes[i] != _imageBytes![i]) return true;
+    }
+    return false;
+  }
+
   bool get hasChanges => widget.initialItem == null
-      ? _itemController.text.isNotEmpty ||
+      ? _imageBytes != null ||
+            _itemController.text.isNotEmpty ||
             _notesController.text.isNotEmpty ||
             _mealCategory != null ||
             _descriptionController.text.isNotEmpty ||
             _prepTimeController.text.isNotEmpty ||
             _cookTimeController.text.isNotEmpty
-      : _itemController.text.trim() != widget.initialItem!.name ||
+      : _imageHasChanged ||
+            _itemController.text.trim() != widget.initialItem!.name ||
             _notesController.text.trim() != widget.initialItem!.notes ||
             _mealCategory != widget.initialItem!.mealCategory ||
             _descriptionController.text.trim() !=
@@ -325,13 +339,19 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
                   Symbols.photo_camera_rounded,
                   size: 22,
                   weight: 600,
+                  fill: 1,
                 ),
                 onPressed: () => Navigator.pop(context, ImageSource.camera),
               ),
               const SizedBox(height: AsanSpacing.md),
               SecondaryButton(
                 label: 'Choose from Gallery',
-                icon: const Icon(Symbols.image_rounded, size: 22, weight: 600),
+                icon: const Icon(
+                  Symbols.image_rounded,
+                  size: 22,
+                  weight: 600,
+                  fill: 1,
+                ),
                 onPressed: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
@@ -342,6 +362,53 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
 
     if (source != null) {
       await _pickImage(source);
+    }
+  }
+
+  Future<void> _showImageActions() async {
+    final changePhoto = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: AsanColorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AsanSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Symbols.edit_rounded, fill: 1),
+                title: Text('Change photo', style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                onTap: () => Navigator.pop(context, true),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Symbols.delete_rounded,
+                  fill: 1,
+                  color: AsanColorScheme.error,
+                ),
+                title: Text(
+                  'Remove photo',
+                  style: AsanTextTheme.bodyMedium.copyWith(
+                    color: AsanColorScheme.error,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                onTap: () => Navigator.pop(context, false),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted || changePhoto == null) return;
+    if (changePhoto) {
+      await _showImageSourcePicker();
+    } else {
+      setState(() => _imageBytes = null);
     }
   }
 
@@ -506,7 +573,12 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
   Widget _buildBasicInformationStep() {
     return _StepBody(
       children: [
-        AsanImagePicker(imageBytes: _imageBytes, onTap: _showImageSourcePicker),
+        AsanImagePicker(
+          imageBytes: _imageBytes,
+          onTap: _imageBytes == null
+              ? _showImageSourcePicker
+              : _showImageActions,
+        ),
         const SizedBox(height: AsanSpacing.md),
         AsanTextField(
           label: 'Recipe Name',
@@ -1254,6 +1326,8 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
         widget.initialItem?.copyWith(
           name: name,
           imageBytes: _imageBytes,
+          clearImage:
+              widget.initialItem!.imageBytes != null && _imageBytes == null,
           description: _descriptionController.text.trim(),
           mealCategory: _mealCategory,
           notes: _notesController.text.trim(),
