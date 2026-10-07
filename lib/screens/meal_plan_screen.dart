@@ -19,11 +19,12 @@ import 'package:asan/widgets/inputs.dart';
 class MealPlanScreen extends StatefulWidget {
   final List<MealPlans> incomingEntries;
   final List<Recipes> recipes;
+  final ValueChanged<List<MealPlans>>? onEntriesChanged;
   final VoidCallback? onViewMealPlan;
   final VoidCallback? onViewGroceries;
   final Future<bool> Function(List<GroceryItem>)? onAddToGroceries;
 
-  const MealPlanScreen({super.key, this.incomingEntries = const [], this.recipes = const [], this.onViewMealPlan, this.onViewGroceries, this.onAddToGroceries});
+  const MealPlanScreen({super.key, this.incomingEntries = const [], this.recipes = const [], this.onEntriesChanged, this.onViewMealPlan, this.onViewGroceries, this.onAddToGroceries});
 
   @override
   State<MealPlanScreen> createState() => MealPlanScreenState();
@@ -49,6 +50,8 @@ class MealPlanScreenState extends State<MealPlanScreen> {
 
   final List<MealPlans> _entries = [];
   int _receivedEntryCount = 0;
+
+  void _notifyEntriesChanged() => widget.onEntriesChanged?.call(List.unmodifiable(_entries));
   int _selectedRange = 0;
   DateTime _selectedDate = DateTime.now();
   AsanFilterSelection? _dayFilters;
@@ -116,7 +119,10 @@ class MealPlanScreenState extends State<MealPlanScreen> {
         changed = true;
       }
     }
-    if (changed && mounted) setState(() {});
+    if (changed) {
+      _notifyEntriesChanged();
+      if (mounted) setState(() {});
+    }
   }
 
   Future<void> _addMeal({String? mealTime, String? dishType, DateTime? initialDate, Recipes? initialRecipe}) async {
@@ -168,6 +174,7 @@ class MealPlanScreenState extends State<MealPlanScreen> {
     );
     if (entries != null && mounted) {
       setState(() => _entries.addAll(entries));
+      _notifyEntriesChanged();
       AsanSnackBar.show(
         context,
         message: entries.length == 1
@@ -284,6 +291,7 @@ class MealPlanScreenState extends State<MealPlanScreen> {
       _entries.removeAt(index);
       _entries.insertAll(index, entries);
     });
+    _notifyEntriesChanged();
   }
 
   Future<List<MealPlans>?> _showMealForm({MealPlans? meal}) async {
@@ -339,6 +347,7 @@ class MealPlanScreenState extends State<MealPlanScreen> {
 
   void _deleteMeal(MealPlans meal) {
     setState(() => _entries.remove(meal));
+    _notifyEntriesChanged();
     AsanSnackBar.show(context, message: '${meal.recipe.name} removed from plan');
   }
 

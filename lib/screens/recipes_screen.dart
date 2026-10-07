@@ -144,6 +144,9 @@ class RecipesScreen extends StatefulWidget {
   final Future<void> Function(List<GroceryItem>)? onAddToGroceries;
   final VoidCallback? onViewGroceries;
   final List<Recipes> incomingRecipes;
+  final List<String> initialSavedRecipeTitles;
+  final List<ApiRecipe> initialSavedRecipes;
+  final ValueChanged<Set<ApiRecipe>>? onSavedRecipesChanged;
   final ValueChanged<List<Recipes>>? onRecipesChanged;
   final ValueChanged<Recipes>? onAddToMealPlan;
   final AsanFilterSelection? initialFilters;
@@ -154,6 +157,9 @@ class RecipesScreen extends StatefulWidget {
   const RecipesScreen({
     super.key,
     this.incomingRecipes = const [],
+    this.initialSavedRecipeTitles = const [],
+    this.initialSavedRecipes = const [],
+    this.onSavedRecipesChanged,
     this.onRecipesChanged,
     this.onAddToMealPlan,
     this.initialFilters,
@@ -188,6 +194,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
   bool _isContentScrolled = false;
   int _receivedItemCount = 0;
   final Set<String> _savedRecipeTitles = {};
+  final Map<String, ApiRecipe> _savedRecipes = {};
   String? _exploreCategory;
   String? _savedCategory;
 
@@ -200,6 +207,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
     _filterScrollController = ScrollController();
     _items.addAll(widget.incomingRecipes);
     _receivedItemCount = widget.incomingRecipes.length;
+    _savedRecipeTitles.addAll(widget.initialSavedRecipeTitles);
+    for (final recipe in widget.initialSavedRecipes) {
+      _savedRecipeTitles.add(recipe.title);
+      _savedRecipes[recipe.title] = recipe;
+    }
     _activeFilters = widget.initialFilters;
     _searchQuery = widget.initialQuery;
     _loadExploreRecipes(_searchQuery);
@@ -366,151 +378,156 @@ class _RecipesScreenState extends State<RecipesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: widget.onRecipeSelected != null ? null : AsanAppBar(
-        backgroundColor: AsanColorScheme.primary,
-        screenTitle: 'Recipes',
-        icon: const Icon(Symbols.add_rounded),
-        onIconPressed: () {
-          _showAddRecipeDialog(context);
-        },
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(
-            38 +
-                AsanSpacing.sm +
-                (_activeFilterLabels.isEmpty ? 0 : 40 + AsanSpacing.md) +
-                AsanSpacing.lg,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.only(
-              top: AsanSpacing.sm,
-              bottom: AsanSpacing.lg,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => SearchScreen(
-                              initialFilters: _activeFilters,
-                              onAddToGroceries: widget.onAddToGroceries,
-                              onViewGroceries: widget.onViewGroceries,
-                              onAddToMealPlan: widget.onAddToMealPlan,
-                              onRecipeSelected: widget.onRecipeSelected,
-                              isRecipeSaved: (title) => _savedRecipeTitles.contains(title),
-                              onToggleSaved: _toggleSavedRecipe,
-                            ),
-                          ),
-                        ),
-                        child: AbsorbPointer(
-                          child: AsanSearchBar(
-                            hintText: 'Search recipes...',
-                            initialQuery: _searchQuery,
-                            onChanged: (query) {
-                              setState(() => _searchQuery = query);
-                              if (_selectedView < 2) {
-                                _searchDebounce?.cancel();
-                                _searchDebounce = Timer(
-                                  const Duration(milliseconds: 350),
-                                  () => _loadExploreRecipes(query),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AsanSpacing.sm),
-                    FilledIconButton(
-                      icon: const Icon(Symbols.tune_rounded),
-                      isActive: _activeFilterLabels.isNotEmpty,
-                      badgeCount: _activeFilterLabels.length,
-                      onPressed: _showFilters,
-                    ),
-                  ],
+      appBar: widget.onRecipeSelected != null
+          ? null
+          : AsanAppBar(
+              backgroundColor: AsanColorScheme.primary,
+              screenTitle: 'Recipes',
+              icon: const Icon(Symbols.add_rounded),
+              onIconPressed: () {
+                _showAddRecipeDialog(context);
+              },
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(
+                  38 +
+                      AsanSpacing.sm +
+                      (_activeFilterLabels.isEmpty ? 0 : 40 + AsanSpacing.md) +
+                      AsanSpacing.lg,
                 ),
-                if (_activeFilterLabels.isNotEmpty) ...[
-                  const SizedBox(height: AsanSpacing.md),
-                  SizedBox(
-                    height: 40,
-                    child: ScrollConfiguration(
-                      behavior: ScrollConfiguration.of(context).copyWith(
-                        dragDevices: {
-                          PointerDeviceKind.touch,
-                          PointerDeviceKind.mouse,
-                          PointerDeviceKind.trackpad,
-                        },
-                      ),
-                      child: ListView.separated(
-                        controller: _filterScrollController,
-                        primary: false,
-                        clipBehavior: Clip.none,
-                        padding: EdgeInsets.zero,
-                        scrollDirection: Axis.horizontal,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        itemCount: _activeFilterLabels.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(width: AsanSpacing.sm),
-                        itemBuilder: (context, index) {
-                          final label = _activeFilterLabels[index];
-                          return Align(
-                            alignment: Alignment.centerLeft,
-                            child: AsanFilterChip(
-                              label: label,
-                              isSelected: true,
-                              onPressed: () => _removeFilter(label),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    top: AsanSpacing.sm,
+                    bottom: AsanSpacing.lg,
                   ),
-                ],
-              ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => SearchScreen(
+                                    initialFilters: _activeFilters,
+                                    onAddToGroceries: widget.onAddToGroceries,
+                                    onViewGroceries: widget.onViewGroceries,
+                                    onAddToMealPlan: widget.onAddToMealPlan,
+                                    onRecipeSelected: widget.onRecipeSelected,
+                                    isRecipeSaved: (title) =>
+                                        _savedRecipeTitles.contains(title),
+                                    onToggleSaved: _toggleSavedRecipe,
+                                  ),
+                                ),
+                              ),
+                              child: AbsorbPointer(
+                                child: AsanSearchBar(
+                                  hintText: 'Search recipes...',
+                                  initialQuery: _searchQuery,
+                                  onChanged: (query) {
+                                    setState(() => _searchQuery = query);
+                                    if (_selectedView < 2) {
+                                      _searchDebounce?.cancel();
+                                      _searchDebounce = Timer(
+                                        const Duration(milliseconds: 350),
+                                        () => _loadExploreRecipes(query),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AsanSpacing.sm),
+                          FilledIconButton(
+                            icon: const Icon(Symbols.tune_rounded),
+                            isActive: _activeFilterLabels.isNotEmpty,
+                            badgeCount: _activeFilterLabels.length,
+                            onPressed: _showFilters,
+                          ),
+                        ],
+                      ),
+                      if (_activeFilterLabels.isNotEmpty) ...[
+                        const SizedBox(height: AsanSpacing.md),
+                        SizedBox(
+                          height: 40,
+                          child: ScrollConfiguration(
+                            behavior: ScrollConfiguration.of(context).copyWith(
+                              dragDevices: {
+                                PointerDeviceKind.touch,
+                                PointerDeviceKind.mouse,
+                                PointerDeviceKind.trackpad,
+                              },
+                            ),
+                            child: ListView.separated(
+                              controller: _filterScrollController,
+                              primary: false,
+                              clipBehavior: Clip.none,
+                              padding: EdgeInsets.zero,
+                              scrollDirection: Axis.horizontal,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: _activeFilterLabels.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: AsanSpacing.sm),
+                              itemBuilder: (context, index) {
+                                final label = _activeFilterLabels[index];
+                                return Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: AsanFilterChip(
+                                    label: label,
+                                    isSelected: true,
+                                    onPressed: () => _removeFilter(label),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
       body: SafeArea(
         top: widget.onRecipeSelected != null,
         child: CustomScrollView(
           controller: _contentScrollController,
           slivers: [
-          if (widget.onRecipeSelected != null)
+            if (widget.onRecipeSelected != null)
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _RecipePickerSearchHeaderDelegate(
+                  filterCount: _activeFilterLabels.length,
+                  labels: _activeFilterLabels,
+                  onBack:
+                      widget.onPickerBack ??
+                      () => Navigator.of(context).maybePop(),
+                  onFilter: _showFilters,
+                  onRemoveFilter: _removeFilter,
+                  searchBar: _buildSearchBar(context),
+                ),
+              ),
             SliverPersistentHeader(
               pinned: true,
-              delegate: _RecipePickerSearchHeaderDelegate(
-                filterCount: _activeFilterLabels.length,
-                labels: _activeFilterLabels,
-                onBack: widget.onPickerBack ?? () => Navigator.of(context).maybePop(),
-                onFilter: _showFilters,
-                onRemoveFilter: _removeFilter,
-                searchBar: _buildSearchBar(context),
+              delegate: _SegmentedButtonHeaderDelegate(
+                selectedIndex: _selectedView,
+                views: _views,
+                onChanged: (index) {
+                  final shouldReloadExplore = _selectedView >= 2 && index < 2;
+                  setState(() {
+                    _selectedView = index;
+                    if (shouldReloadExplore) _exploreCategory = null;
+                    if (index != 1) _savedCategory = null;
+                  });
+                  if (shouldReloadExplore) {
+                    _searchDebounce?.cancel();
+                    _loadExploreRecipes(_searchQuery);
+                  }
+                },
               ),
             ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _SegmentedButtonHeaderDelegate(
-              selectedIndex: _selectedView,
-              views: _views,
-              onChanged: (index) {
-                final shouldReloadExplore = _selectedView >= 2 && index < 2;
-                setState(() {
-                  _selectedView = index;
-                  if (shouldReloadExplore) _exploreCategory = null;
-                  if (index != 1) _savedCategory = null;
-                });
-                if (shouldReloadExplore) {
-                  _searchDebounce?.cancel();
-                  _loadExploreRecipes(_searchQuery);
-                }
-              },
-            ),
-          ),
-          ..._buildSelectedView(),
+            ..._buildSelectedView(),
           ],
         ),
       ),
@@ -540,7 +557,10 @@ class _RecipesScreenState extends State<RecipesScreen> {
             setState(() => _searchQuery = query);
             if (_selectedView < 2) {
               _searchDebounce?.cancel();
-              _searchDebounce = Timer(const Duration(milliseconds: 350), () => _loadExploreRecipes(query));
+              _searchDebounce = Timer(
+                const Duration(milliseconds: 350),
+                () => _loadExploreRecipes(query),
+              );
             }
           },
         ),
@@ -552,9 +572,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
     if (_selectedView < 2) {
       final recipes = _selectedView == 0
           ? _filteredExploreRecipes
-          : _filteredExploreRecipes
-                .where((recipe) => _savedRecipeTitles.contains(recipe.title))
-                .toList();
+          : _savedRecipes.values.toList();
       return [_buildExploreView(recipes)];
     }
 
@@ -634,7 +652,12 @@ class _RecipesScreenState extends State<RecipesScreen> {
                               children: group.value.map((recipe) {
                                 return SizedBox(
                                   width: width,
-                                  height: width * (widget.onRecipeSelected == null ? 218 : 246) / 163,
+                                  height:
+                                      width *
+                                      (widget.onRecipeSelected == null
+                                          ? 218
+                                          : 246) /
+                                      163,
                                   child: RecipeCard(
                                     recipeName: recipe.name,
                                     mealCategory: _cardDishType([
@@ -644,7 +667,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
                                     imageBytes: recipe.imageBytes,
                                     totalTime: recipe.formattedTotalTime,
                                     showBookmark: false,
-                                    onViewPressed: widget.onRecipeSelected != null
+                                    onViewPressed:
+                                        widget.onRecipeSelected != null
                                         ? () => _showRecipeDetails(recipe)
                                         : null,
                                     onTap: () => widget.onRecipeSelected != null
@@ -848,7 +872,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: AsanSpacing.md,
                 mainAxisSpacing: AsanSpacing.sm,
-                childAspectRatio: 163 / (widget.onRecipeSelected != null ? 246 : 218),
+                childAspectRatio:
+                    163 / (widget.onRecipeSelected != null ? 246 : 218),
               ),
             ),
           ],
@@ -898,7 +923,9 @@ class _RecipesScreenState extends State<RecipesScreen> {
                               AsanSpacing.md) /
                           2;
                       return SizedBox(
-                        height: cardWidth + (widget.onRecipeSelected != null ? 80 : 52),
+                        height:
+                            cardWidth +
+                            (widget.onRecipeSelected != null ? 80 : 52),
                         child: ScrollConfiguration(
                           behavior: ScrollConfiguration.of(context).copyWith(
                             dragDevices: {
@@ -969,7 +996,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: AsanSpacing.md,
               mainAxisSpacing: AsanSpacing.md,
-              childAspectRatio: 163 / (widget.onRecipeSelected != null ? 246 : 218),
+              childAspectRatio:
+                  163 / (widget.onRecipeSelected != null ? 246 : 218),
             ),
           ),
         ),
@@ -1112,7 +1140,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: AsanSpacing.md,
                 mainAxisSpacing: AsanSpacing.md,
-                childAspectRatio: 163 / (widget.onRecipeSelected != null ? 246 : 218),
+                childAspectRatio:
+                    163 / (widget.onRecipeSelected != null ? 246 : 218),
               ),
             ),
           ],
@@ -1163,7 +1192,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
                             AsanSpacing.md) /
                         2;
                     return SizedBox(
-                      height: width + (widget.onRecipeSelected != null ? 80 : 52),
+                      height:
+                          width + (widget.onRecipeSelected != null ? 80 : 52),
                       child: ScrollConfiguration(
                         behavior: ScrollConfiguration.of(context).copyWith(
                           dragDevices: {
@@ -1221,18 +1251,14 @@ class _RecipesScreenState extends State<RecipesScreen> {
       onViewPressed: widget.onRecipeSelected != null
           ? () => _showExploreRecipeDetails(recipe)
           : null,
-      onIconPressed: () => setState(() {
-        if (isSaved) {
-          _savedRecipeTitles.remove(recipe.title);
-        } else {
-          _savedRecipeTitles.add(recipe.title);
-        }
-      }),
+      onIconPressed: () => _toggleSavedRecipe(recipe.title, recipe),
       onTap: () => widget.onRecipeSelected != null
-          ? widget.onRecipeSelected!(_apiRecipeToRecipe(
-              recipe,
-              _recipeImages[recipe.title] ?? recipe.imageUrl,
-            ))
+          ? widget.onRecipeSelected!(
+              _apiRecipeToRecipe(
+                recipe,
+                _recipeImages[recipe.title] ?? recipe.imageUrl,
+              ),
+            )
           : _showExploreRecipeDetails(recipe),
     );
   }
@@ -1404,16 +1430,18 @@ class _RecipesScreenState extends State<RecipesScreen> {
         .where(
           (item) => filters?.cuisines.isEmpty ?? true
               ? true
-          : filters!.cuisines.any(
-              (cuisine) => (item.cuisine ?? '')
-                      .toLowerCase()
-                      .split(',')
-                      .map((part) => part.trim())
-                      .contains(cuisine.toLowerCase()) ||
-                  item.tags.any(
-                    (tag) => tag.trim().toLowerCase() == cuisine.toLowerCase(),
-                  ),
-            ),
+              : filters!.cuisines.any(
+                  (cuisine) =>
+                      (item.cuisine ?? '')
+                          .toLowerCase()
+                          .split(',')
+                          .map((part) => part.trim())
+                          .contains(cuisine.toLowerCase()) ||
+                      item.tags.any(
+                        (tag) =>
+                            tag.trim().toLowerCase() == cuisine.toLowerCase(),
+                      ),
+                ),
         )
         .toList();
     final sortBy = filters?.sortBy ?? 'Meal category';
@@ -1423,13 +1451,13 @@ class _RecipesScreenState extends State<RecipesScreen> {
 
     String firstDishType(Recipes recipe) {
       final type = recipe.dishTypes
-        .map((type) => type.trim())
-        .firstWhere(
-          (type) => type.isNotEmpty,
-          orElse: () => recipe.mealCategory?.trim().isNotEmpty == true
-              ? recipe.mealCategory!.trim()
-              : 'Uncategorized',
-        );
+          .map((type) => type.trim())
+          .firstWhere(
+            (type) => type.isNotEmpty,
+            orElse: () => recipe.mealCategory?.trim().isNotEmpty == true
+                ? recipe.mealCategory!.trim()
+                : 'Uncategorized',
+          );
       return type.isEmpty
           ? type
           : '${type[0].toUpperCase()}${type.substring(1).toLowerCase()}';
@@ -1463,13 +1491,16 @@ class _RecipesScreenState extends State<RecipesScreen> {
         'Dish type' => firstDishType(
           first,
         ).toLowerCase().compareTo(firstDishType(second).toLowerCase()),
-        'Cuisine' => cuisine(first).toLowerCase().compareTo(
-          cuisine(second).toLowerCase(),
-        ),
-        'Diet' => diet(first).toLowerCase().compareTo(diet(second).toLowerCase()),
-        'Meal category' => (first.mealCategory ?? 'Uncategorized')
-            .toLowerCase()
-            .compareTo((second.mealCategory ?? 'Uncategorized').toLowerCase()),
+        'Cuisine' => cuisine(
+          first,
+        ).toLowerCase().compareTo(cuisine(second).toLowerCase()),
+        'Diet' => diet(
+          first,
+        ).toLowerCase().compareTo(diet(second).toLowerCase()),
+        'Meal category' =>
+          (first.mealCategory ?? 'Uncategorized').toLowerCase().compareTo(
+            (second.mealCategory ?? 'Uncategorized').toLowerCase(),
+          ),
         'Recipe name' => first.name.toLowerCase().compareTo(
           second.name.toLowerCase(),
         ),
@@ -1483,10 +1514,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
     for (final item in items) {
       final label = switch (sortBy) {
         'Dish type' => firstDishType(item),
-        'Cuisine' =>
-          cuisine(item),
+        'Cuisine' => cuisine(item),
         'Diet' => diet(item),
-        'Meal category' => _capitalizeCategory(item.mealCategory ?? 'Uncategorized'),
+        'Meal category' => _capitalizeCategory(
+          item.mealCategory ?? 'Uncategorized',
+        ),
         'Total time' => timeGroup(item),
         'Recipe name' =>
           item.name.trim().isEmpty ? '#' : item.name.trim()[0].toUpperCase(),
@@ -1497,9 +1529,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
     final entries = groups.entries.toList();
     entries.sort((first, second) {
       if (sortBy == 'Total time') {
-        int bucket(String label) => label == 'Unknown time'
-            ? 1 << 30
-            : asanTotalTimes.indexOf(label);
+        int bucket(String label) =>
+            label == 'Unknown time' ? 1 << 30 : asanTotalTimes.indexOf(label);
         final result = bucket(first.key).compareTo(bucket(second.key));
         return (filters?.sortAscending ?? true) ? result : -result;
       }
@@ -1671,26 +1702,31 @@ class _RecipesScreenState extends State<RecipesScreen> {
           },
           instructions: details.instructions,
           isSaved: isSaved,
-          onToggleSaved: () => setState(() {
-            if (_savedRecipeTitles.contains(recipe.title)) {
-              _savedRecipeTitles.remove(recipe.title);
-            } else {
-              _savedRecipeTitles.add(recipe.title);
-            }
-          }),
+          onToggleSaved: () => _toggleSavedRecipe(recipe.title, recipe),
         ),
       ),
     );
   }
 
-  void _toggleSavedRecipe(String title) {
+  void _toggleSavedRecipe(String title, [ApiRecipe? recipe]) {
     setState(() {
       if (_savedRecipeTitles.contains(title)) {
         _savedRecipeTitles.remove(title);
+        _savedRecipes.remove(title);
       } else {
         _savedRecipeTitles.add(title);
+        final savedRecipe =
+            recipe ??
+            _exploreRecipes
+                .where((item) => item.title == title)
+                .cast<ApiRecipe?>()
+                .firstWhere((item) => item != null, orElse: () => null);
+        if (savedRecipe != null) _savedRecipes[title] = savedRecipe;
       }
     });
+    widget.onSavedRecipesChanged?.call(
+      Set.unmodifiable(_savedRecipes.values.toSet()),
+    );
   }
 
   String _capitalizeCategory(String category) {
@@ -1765,8 +1801,8 @@ class _RecipePickerSearchHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.searchBar,
   });
 
-  double get _height => 38 + AsanSpacing.lg +
-      (labels.isEmpty ? 0 : 40 + AsanSpacing.md);
+  double get _height =>
+      38 + AsanSpacing.lg + (labels.isEmpty ? 0 : 40 + AsanSpacing.md);
 
   @override
   double get minExtent => _height;
@@ -1775,7 +1811,11 @@ class _RecipePickerSearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => _height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return ColoredBox(
       color: AsanColorScheme.surface,
       child: Padding(
@@ -1793,8 +1833,15 @@ class _RecipePickerSearchHeaderDelegate extends SliverPersistentHeaderDelegate {
                 children: [
                   IconButton(
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints.tightFor(width: 34, height: 34),
-                    icon: const Icon(Symbols.chevron_left_rounded, size: 34, weight: 600),
+                    constraints: const BoxConstraints.tightFor(
+                      width: 34,
+                      height: 34,
+                    ),
+                    icon: const Icon(
+                      Symbols.chevron_left_rounded,
+                      size: 34,
+                      weight: 600,
+                    ),
                     onPressed: onBack,
                   ),
                   const SizedBox(width: AsanSpacing.sm),
@@ -1817,7 +1864,8 @@ class _RecipePickerSearchHeaderDelegate extends SliverPersistentHeaderDelegate {
                   padding: EdgeInsets.zero,
                   scrollDirection: Axis.horizontal,
                   itemCount: labels.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: AsanSpacing.sm),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(width: AsanSpacing.sm),
                   itemBuilder: (context, index) => AsanFilterChip(
                     label: labels[index],
                     isSelected: true,

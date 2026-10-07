@@ -161,6 +161,7 @@ class ApiRecipe {
           final value = text(step['step']);
           if (value.isNotEmpty) instructions.add(value);
         }
+
       }
     }
     if (instructions.isEmpty) {
@@ -225,6 +226,67 @@ class ApiRecipe {
       calories: nutrient('Calories'), fats: nutrient('Fat'), cholesterol: nutrient('Cholesterol'),
       sodium: nutrient('Sodium'), carbohydrates: nutrient('Carbohydrates'), protein: nutrient('Protein'),
       dishTypes: dishTypes,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'category': category,
+        'description': description,
+        'difficulty': difficulty,
+        'cuisine': cuisine,
+        'tags': tags,
+        'imageUrl': imageUrl,
+        'instructions': instructions,
+        'ingredients': ingredients,
+        'ingredientAisles': ingredientAisles,
+        'prepTime': prepTime,
+        'cookTime': cookTime,
+        'totalTime': totalTime,
+        'servings': servings,
+        'calories': calories,
+        'fats': fats,
+        'cholesterol': cholesterol,
+        'sodium': sodium,
+        'carbohydrates': carbohydrates,
+        'protein': protein,
+        'dishTypes': dishTypes,
+      };
+
+  factory ApiRecipe.fromJson(Map<String, dynamic> json) {
+    List<String> strings(Object? value) => value is List
+        ? value.whereType<String>().toList()
+        : const <String>[];
+    List<String?> nullableStrings(Object? value) => value is List
+        ? value.map((item) => item is String ? item : null).toList()
+        : const <String?>[];
+    int integer(Object? value) => value is num ? value.round() : 0;
+    String text(Object? value) => value is String ? value : '';
+
+    return ApiRecipe(
+      id: text(json['id']),
+      title: text(json['title']),
+      category: text(json['category']),
+      description: text(json['description']),
+      difficulty: json['difficulty'] as String?,
+      cuisine: json['cuisine'] as String?,
+      tags: strings(json['tags']),
+      imageUrl: text(json['imageUrl']),
+      instructions: strings(json['instructions']),
+      ingredients: strings(json['ingredients']),
+      ingredientAisles: nullableStrings(json['ingredientAisles']),
+      prepTime: integer(json['prepTime']),
+      cookTime: integer(json['cookTime']),
+      totalTime: integer(json['totalTime']),
+      servings: integer(json['servings']),
+      calories: integer(json['calories']),
+      fats: integer(json['fats']),
+      cholesterol: integer(json['cholesterol']),
+      sodium: integer(json['sodium']),
+      carbohydrates: integer(json['carbohydrates']),
+      protein: integer(json['protein']),
+      dishTypes: strings(json['dishTypes']),
     );
   }
 }

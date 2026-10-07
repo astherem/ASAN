@@ -14,11 +14,15 @@ import 'package:asan/widgets/navigations.dart';
 import 'package:asan/widgets/selections.dart';
 
 class GroceriesScreen extends StatefulWidget {
+  final List<GroceryItem> initialItems;
+  final ValueChanged<List<GroceryItem>>? onItemsChanged;
   final ValueChanged<int>? onItemCountChanged;
   final ValueChanged<PantryItem>? onItemChecked;
 
   const GroceriesScreen({
     super.key,
+    this.initialItems = const [],
+    this.onItemsChanged,
     this.onItemCountChanged,
     this.onItemChecked,
   });
@@ -32,6 +36,9 @@ class GroceriesScreenState extends State<GroceriesScreen> {
   String _searchQuery = '';
   AsanFilterSelection? _activeFilters;
   late final ScrollController _filterScrollController;
+
+  void _notifyItemsChanged() =>
+      widget.onItemsChanged?.call(List.unmodifiable(_items));
 
   Future<bool> addItems(List<GroceryItem> items) async {
     if (items.isEmpty || !mounted) return false;
@@ -89,6 +96,7 @@ class GroceriesScreenState extends State<GroceriesScreen> {
       }
     });
     widget.onItemCountChanged?.call(_items.length);
+    _notifyItemsChanged();
     return true;
   }
 
@@ -106,6 +114,8 @@ class GroceriesScreenState extends State<GroceriesScreen> {
   void initState() {
     super.initState();
     _filterScrollController = ScrollController();
+    _items.addAll(widget.initialItems);
+    _notifyItemsChanged();
   }
 
   @override
@@ -195,6 +205,7 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     if (item != null && mounted) {
       setState(() => _items.add(item));
       widget.onItemCountChanged?.call(_items.length);
+      _notifyItemsChanged();
     }
   }
 
@@ -390,6 +401,7 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     final checkedDate = DateTime.now();
     setState(() => _items.remove(item));
     widget.onItemCountChanged?.call(_items.length);
+    _notifyItemsChanged();
     widget.onItemChecked?.call(
       PantryItem(
         name: item.name,
@@ -407,6 +419,7 @@ class GroceriesScreenState extends State<GroceriesScreen> {
       onAction: () {
         setState(() => _items.add(item));
         widget.onItemCountChanged?.call(_items.length);
+        _notifyItemsChanged();
       },
     );
   }
@@ -480,7 +493,10 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     );
     if (updatedItem != null && mounted) {
       final index = _items.indexOf(item);
-      if (index != -1) setState(() => _items[index] = updatedItem);
+      if (index != -1) {
+        setState(() => _items[index] = updatedItem);
+        _notifyItemsChanged();
+      }
     }
   }
 }

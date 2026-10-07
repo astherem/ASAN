@@ -15,8 +15,9 @@ import 'package:asan/widgets/selections.dart';
 
 class PantryScreen extends StatefulWidget {
   final List<PantryItem> incomingItems;
+  final ValueChanged<List<PantryItem>>? onItemsChanged;
 
-  const PantryScreen({super.key, this.incomingItems = const []});
+  const PantryScreen({super.key, this.incomingItems = const [], this.onItemsChanged});
 
   @override
   State<PantryScreen> createState() => _PantryScreenState();
@@ -28,6 +29,11 @@ class _PantryScreenState extends State<PantryScreen> {
   AsanFilterSelection? _activeFilters;
   late final ScrollController _filterScrollController;
   int _receivedItemCount = 0;
+
+  void _notifyItemsChanged() {
+    _receivedItemCount = _items.length;
+    widget.onItemsChanged?.call(List.unmodifiable(_items));
+  }
 
   @override
   void initState() {
@@ -132,12 +138,16 @@ class _PantryScreenState extends State<PantryScreen> {
     );
     if (item != null && mounted) {
       setState(() => _items.add(item));
+      _notifyItemsChanged();
       AsanSnackBar.show(
         context,
         message: '${item.name} added to Pantry',
         actionLabel: 'Undo',
         onAction: () {
-          if (mounted) setState(() => _items.remove(item));
+          if (mounted) {
+            setState(() => _items.remove(item));
+            _notifyItemsChanged();
+          }
         },
       );
     }
@@ -390,6 +400,7 @@ class _PantryScreenState extends State<PantryScreen> {
               consumed: !checked,
               consumedDate: item.consumedDate,
             ));
+            _notifyItemsChanged();
           },
         );
       }
@@ -428,6 +439,7 @@ class _PantryScreenState extends State<PantryScreen> {
                   if (confirmed == true && context.mounted) {
                     Navigator.pop(context);
                     setState(() => _items.remove(item));
+                    _notifyItemsChanged();
                   }
                 },
               ),
@@ -459,7 +471,10 @@ class _PantryScreenState extends State<PantryScreen> {
     );
     if (updatedItem != null && mounted) {
       final index = _items.indexOf(item);
-      if (index != -1) setState(() => _items[index] = updatedItem);
+      if (index != -1) {
+        setState(() => _items[index] = updatedItem);
+        _notifyItemsChanged();
+      }
     }
   }
 
