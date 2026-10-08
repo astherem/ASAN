@@ -391,16 +391,24 @@ class MealPlanScreenState extends State<MealPlanScreen> {
     final sortBy = _selectedRange == 0 && filters?.sortBy == 'Day'
         ? 'Meal time'
         : filters?.sortBy ?? (_selectedRange == 1 ? 'Day' : 'Meal time');
-    if (_selectedRange == 1 && filters?.days.isNotEmpty == true && !filters!.days.contains(_weekdayName(date))) return groups;
+    if (_selectedRange == 1 && filters?.days.isNotEmpty == true && !filters!.days.contains(_weekdayName(date))) {
+      return groups;
+    }
     for (final entry in _entries) {
-      if (!entry.isOnDate(date)) continue;
+      if (!entry.isOnDate(date)) {
+        continue;
+      }
       if (filters?.mealTimeCategories.isNotEmpty ?? false) {
         if (!filters!.mealTimeCategories.any(
           (mealTime) => _normalizeMealTime(mealTime) == _normalizeMealTime(entry.mealTime),
-        )) continue;
+        )) {
+          continue;
+        }
       }
       if (filters?.mealCategories.isNotEmpty ?? false) {
-        if (!_dishTypesFor(entry).any(filters!.mealCategories.contains)) continue;
+        if (!_dishTypesFor(entry).any(filters!.mealCategories.contains)) {
+          continue;
+        }
       }
       if (filters?.cuisines.isNotEmpty ?? false) {
         final recipeCuisines = _cuisinesFor(entry.recipe)
@@ -408,11 +416,15 @@ class MealPlanScreenState extends State<MealPlanScreen> {
             .toSet();
         if (!filters!.cuisines.any(
           (cuisine) => recipeCuisines.contains(cuisine.trim().toLowerCase()),
-        )) continue;
+        )) {
+          continue;
+        }
       }
       if (filters?.totalTimeRanges.isNotEmpty ?? false) {
         final range = asanTotalTimeRangeFor(entry.recipe.totalTime);
-        if (range == null || !filters!.totalTimeRanges.contains(range)) continue;
+        if (range == null || !filters!.totalTimeRanges.contains(range)) {
+          continue;
+        }
       }
       final key = switch (sortBy) {
         'Dish type' => _formatGroupTitle(_primaryDishType(entry).isEmpty ? 'Uncategorized' : _primaryDishType(entry)),

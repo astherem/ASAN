@@ -10,7 +10,6 @@ import 'package:asan/models/pantry_item.dart';
 import 'package:asan/models/grocery_item.dart';
 import 'package:asan/models/meal_plans.dart';
 import 'package:asan/models/recipes.dart';
-import 'package:asan/models/api_recipe.dart';
 import 'package:asan/services/api/recipe_api.dart';
 import 'package:asan/data/local_storage.dart';
 import 'package:asan/styles/theme.dart';

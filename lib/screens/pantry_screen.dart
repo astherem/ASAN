@@ -4,7 +4,6 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/styles/theme.dart';
 import 'package:asan/models/pantry_item.dart';
-import 'package:asan/models/filters.dart';
 
 import 'package:asan/widgets/buttons.dart';
 import 'package:asan/widgets/communication.dart';
@@ -136,7 +135,7 @@ class _PantryScreenState extends State<PantryScreen> {
         );
       },
     );
-    if (item != null && mounted) {
+    if (item != null && mounted && context.mounted) {
       setState(() => _items.add(item));
       _notifyItemsChanged();
       AsanSnackBar.show(

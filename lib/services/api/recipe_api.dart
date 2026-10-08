@@ -154,7 +154,9 @@ class RecipeApi {
     try {
       final body = jsonDecode(response.body);
       if (body is Map<String, dynamic>) return body;
-    } on FormatException {}
+    } on FormatException {
+      // Fall through to the invalid-data exception below.
+    }
     throw const RecipeApiException('Recipe service returned invalid data.');
   }
 

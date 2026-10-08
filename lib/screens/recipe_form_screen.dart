@@ -47,7 +47,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       cancelText: 'Cancel',
       destructiveText: 'Discard',
     );
-    if (shouldDiscard == true && context.mounted) {
+    if (shouldDiscard == true && mounted) {
       Navigator.pop(context);
     }
   }
@@ -465,7 +465,9 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
           prepTimeInvalid ||
           cookTimeInvalid ||
           servingsInvalid)
+      {
         return;
+      }
     }
 
     if (_currentStep == 1) {

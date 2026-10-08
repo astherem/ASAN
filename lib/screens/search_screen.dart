@@ -4,7 +4,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import 'package:asan/models/filters.dart';
 import 'package:asan/models/recipes.dart';
 import 'package:asan/models/grocery_item.dart';
 

@@ -6,7 +6,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:asan/styles/theme.dart';
 import 'package:asan/models/recipes.dart';
 import 'package:asan/models/grocery_item.dart';
-import 'package:asan/models/filters.dart';
 import 'package:asan/services/api/recipe_api.dart';
 
 import 'package:asan/screens/recipe_form_screen.dart';
@@ -1370,8 +1369,9 @@ class _RecipesScreenState extends State<RecipesScreen> {
   }
 
   void _loadRecipeImage(String title, [String? imageUrl]) {
-    if (_recipeImages.containsKey(title) || !_pendingRecipeImages.add(title))
+    if (_recipeImages.containsKey(title) || !_pendingRecipeImages.add(title)) {
       return;
+    }
     _recipeApi.imageFor(title, imageUrl: imageUrl).then((imageUrl) {
       _pendingRecipeImages.remove(title);
       if (!mounted) return;

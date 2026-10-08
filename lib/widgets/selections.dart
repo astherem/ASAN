@@ -459,7 +459,7 @@ class AsanSheetHeader extends StatelessWidget {
   final String title;
   final VoidCallback onClose;
 
-  const AsanSheetHeader({required this.title, required this.onClose});
+  const AsanSheetHeader({super.key, required this.title, required this.onClose});
 
   @override
   Widget build(BuildContext context) {
