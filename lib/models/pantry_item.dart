@@ -1,4 +1,6 @@
 class PantryItem {
+  final String id;
+  final DateTime updatedAt;
   final String name;
   final String amount;
   final String unit;
@@ -10,6 +12,8 @@ class PantryItem {
   final DateTime? consumedDate;
 
   const PantryItem({
+    required this.id,
+    required this.updatedAt,
     required this.name,
     required this.amount,
     required this.unit,
@@ -21,8 +25,15 @@ class PantryItem {
     this.consumedDate,
   });
 
-  PantryItem copyWith({String? name, bool? consumed, DateTime? consumedDate}) =>
+  PantryItem copyWith({
+    String? name,
+    bool? consumed,
+    DateTime? consumedDate,
+    DateTime? updatedAt,
+  }) =>
       PantryItem(
+        id: id,
+        updatedAt: updatedAt ?? this.updatedAt,
         name: name ?? this.name,
         amount: amount,
         unit: unit,
@@ -33,5 +44,4 @@ class PantryItem {
         consumed: consumed ?? this.consumed,
         consumedDate: consumedDate ?? this.consumedDate,
       );
-
 }

@@ -11,6 +11,7 @@ import 'package:asan/widgets/containment.dart';
 import 'package:asan/widgets/inputs.dart';
 import 'package:asan/widgets/navigations.dart';
 import 'package:asan/widgets/selections.dart';
+import 'package:uuid/uuid.dart';
 
 class PantryScreen extends StatefulWidget {
   final List<PantryItem> incomingItems;
@@ -720,6 +721,8 @@ class _AddPantryItemFormState extends State<AddPantryItemForm> {
     Navigator.pop(
       context,
       PantryItem(
+        id: widget.initialItem?.id ?? const Uuid().v4(),
+        updatedAt: DateTime.now().toUtc(),
         name: name,
         amount: _amountController.text.trim(),
         unit: _unitController.text.trim(),

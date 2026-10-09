@@ -235,6 +235,15 @@ class AsanSnackBar {
     VoidCallback? onAction,
   }) {
     final messenger = ScaffoldMessenger.of(context);
+    showOn(messenger, message: message, actionLabel: actionLabel, onAction: onAction);
+  }
+
+  static void showOn(
+    ScaffoldMessengerState messenger, {
+    required String message,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(

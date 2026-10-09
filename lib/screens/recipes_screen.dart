@@ -6,7 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:asan/styles/theme.dart';
 import 'package:asan/models/recipes.dart';
 import 'package:asan/models/grocery_item.dart';
-import 'package:asan/services/api/recipe_api.dart';
+import 'package:asan/services/recipe_api.dart';
 
 import 'package:asan/screens/recipe_form_screen.dart';
 import 'package:asan/screens/recipe_details_screen.dart';

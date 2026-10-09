@@ -31,10 +31,7 @@ Students and busy individuals often forget what food they have at home, causing 
 
 ## Out of scope, and why
 
-- **Accounts and cross-device sync:** The app stores data locally, but
-  authentication, a shared database, conflict handling, account recovery, and
-  synchronization between devices would expand the project beyond validating
-  the core workflows.
+
 - **Barcode scanning, automatic receipt importing, and automatic expiry
   detection:** These require device-specific integrations or external data
   sources and are not necessary to test manual pantry and grocery tracking.
@@ -64,9 +61,17 @@ storage layer covers:
 This data is serialized with Hive and saved in the app's private local storage
 on the user's device. It is loaded during startup and written when the user
 adds, edits, checks, consumes, saves, or deletes an item. Writes are queued per
-storage box so quick successive changes are persisted in order. The data is
-not uploaded to a shared database in this version, and there is no account or
-cross-device synchronization.
+storage box so quick successive changes are persisted in order. Email accounts
+and password recovery are provided through Supabase Auth. When Supabase is
+configured and the user is signed in, data is synchronized through one
+`user_data` table with a collection type and JSON payload for Pantry,
+Groceries, Recipes, Saved Recipes, and Meal Plan entries. The shared table
+keeps `amount` and `unit` nullable for data types where those fields do not
+apply. On first sync, existing local data is uploaded; subsequent syncs merge
+records by collection-specific identity, prefer the local copy when an
+identity exists in both places, retain records created elsewhere, and upload
+the merged collection. Without a configured service or signed-in account, the
+app remains usable with local Hive storage only.
 
 The Supabase URL and publishable key continue to come from local `env.json` or
 build-time environment defines. The Spoonacular API key remains in the
@@ -79,7 +84,8 @@ that function and will not be used as a user-data archive.
 - **Data loss:** Local storage reduces loss after an app restart, but clearing
   app data, uninstalling the app, storage corruption, or an interrupted write
   could still remove locally stored pantry, grocery, recipe, or meal-plan
-  changes. There is no remote backup.
+  changes. Signed-in users have a cloud copy, but it is not a versioned backup
+  and sync does not yet provide automatic record-level conflict resolution.
 - **Service availability and quota:** Explore depends on network access, valid
   Supabase configuration, a deployed Edge Function, Spoonacular availability,
   and the provider's quota and rate limits. The rest of the local prototype can
@@ -96,9 +102,10 @@ that function and will not be used as a user-data archive.
   responsive layouts, and some validation paths still need broader testing
   across browsers and devices.
 - **Third-party content and privacy:** Explore results come from an external
-  provider. The current prototype has no user accounts or personal-data
-  backend, but any future sync feature would need explicit access controls,
-  retention rules, and privacy documentation.
+  provider. Account email addresses and signed-in app data are processed by
+  Supabase, while recipe searches pass through the Supabase Edge Function to
+  Spoonacular. The public recipe proxy needs usage monitoring and does not
+  provide user-data authorization.
 
 ## Changes since the last version
 
@@ -128,7 +135,7 @@ that function and will not be used as a user-data archive.
 - Added local Supabase configuration support and documented deployment and
   security limitations.
 
-### September 28–October 7, 2026
+### September 28–October 3, 2026
 
 - Added Hive-backed local persistence for groceries, pantry items, custom
   recipes, saved Explore recipes, and meal-plan entries.
@@ -138,3 +145,14 @@ that function and will not be used as a user-data archive.
   not overwrite one another out of order.
 - Completed meal-plan creation, editing, deletion, and adding planned
   ingredients to Groceries.
+
+### October 4–9, 2026
+
+- Added Supabase email sign-up, sign-in, and password-reset entry points.
+- Added Hive-backed local copies and cloud synchronization for Pantry,
+  Groceries, Recipes, Saved Recipes, and Meal Plans.
+- Added one RLS-protected `user_data` table with per-user collection payloads,
+  stable collection-specific identities, and deletion tombstones.
+- Added bidirectional collection merging so local changes are uploaded while
+  records from another device are retained; local records take precedence when
+  the same identity exists in both collections.

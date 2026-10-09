@@ -6,7 +6,9 @@ class MealPlanBox {
   MealPlanBox(this._box);
   final StorageBox _box;
 
-  List<MealPlans> read() => _box.readMaps().map((json) {
+  List<MealPlans> read() => _box.readMaps().map(fromJson).toList();
+
+  static MealPlans fromJson(Map<String, dynamic> json) {
     final recipeJson = json['recipe'];
     if (recipeJson is! Map) {
       throw const FormatException('Meal plan entry has no recipe');
@@ -18,17 +20,16 @@ class MealPlanBox {
       dishType: json['dishType'] as String?,
       servingsOverride: (json['servingsOverride'] as num?)?.toInt(),
     );
-  }).toList();
+  }
 
-  Future<void> write(Iterable<MealPlans> entries) => _box.writeMaps(
-    entries.map(
-      (entry) => {
-        'date': entry.date.toIso8601String(),
-        'mealTime': entry.mealTime,
-        'recipe': RecipeBox.toJson(entry.recipe),
-        'dishType': entry.dishType,
-        'servingsOverride': entry.servingsOverride,
-      },
-    ),
-  );
+  Future<void> write(Iterable<MealPlans> entries) =>
+      _box.writeMaps(entries.map(toJson));
+
+  static Map<String, dynamic> toJson(MealPlans entry) => {
+    'date': entry.date.toIso8601String(),
+    'mealTime': entry.mealTime,
+    'recipe': RecipeBox.toJson(entry.recipe),
+    'dishType': entry.dishType,
+    'servingsOverride': entry.servingsOverride,
+  };
 }

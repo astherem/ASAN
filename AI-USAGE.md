@@ -133,7 +133,7 @@ looks exactly like what it is.
 ### Written by astherem
 
 - **Commit:** https://github.com/astherem/ASAN/commit/a73391b21e72f2f0b7b2a88850e999ff7e7f3c52
-- **Files:** `lib/services/api/recipe_api.dart`, `supabase/functions/spoonacular/index.ts`, and `lib/screens/meal_plan_screen.dart`.
+- **Files:** `lib/services/recipe_api.dart`, `supabase/functions/spoonacular/index.ts`, and `lib/screens/meal_plan_screen.dart`.
 - **What I wrote:** I connected external recipe data to the app and expanded meal planning around those recipes.
 
 ### Written by astherem
@@ -145,7 +145,7 @@ looks exactly like what it is.
 ### Written by astherem
 
 - **Commit:** https://github.com/astherem/ASAN/commit/031682e7cea1051e3c9b759b6efcd8017d5794fa
-- **Files:** `lib/screens/search_screen.dart`, `lib/screens/recipe_details_screen.dart`, `lib/screens/recipe_form_screen.dart`, `lib/screens/groceries_screen.dart`, `lib/models/`, `lib/services/api/recipe_api.dart`, and `lib/widgets/`.
+- **Files:** `lib/screens/search_screen.dart`, `lib/screens/recipe_details_screen.dart`, `lib/screens/recipe_form_screen.dart`, `lib/screens/groceries_screen.dart`, `lib/models/`, `lib/services/recipe_api.dart`, and `lib/widgets/`.
 - **What I wrote:** I integrated recipe search with grocery-list actions and connected the final pieces of the recipe flow.
 
 ### The AI-written part I understand best

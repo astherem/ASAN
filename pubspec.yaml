@@ -19,6 +19,8 @@ dependencies:
   image_picker: ^1.2.3
   http: ^1.6.0
   hive_flutter: ^1.1.0
+  supabase_flutter: ^2.9.1
+  uuid: ^4.6.0
 
 dev_dependencies:
   flutter_test:
@@ -29,6 +31,8 @@ flutter:
   uses-material-design: true
   assets:
     - env.json
+    - docs/assets/logos/black_logo.png
+    - docs/assets/logos/green_filled_black_logo.png
   fonts:
     - family: BricolageGrotesque
       fonts:

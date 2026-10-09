@@ -12,6 +12,7 @@ import 'package:asan/widgets/containment.dart';
 import 'package:asan/widgets/inputs.dart';
 import 'package:asan/widgets/navigations.dart';
 import 'package:asan/widgets/selections.dart';
+import 'package:uuid/uuid.dart';
 
 class GroceriesScreen extends StatefulWidget {
   final List<GroceryItem> initialItems;
@@ -404,6 +405,8 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     _notifyItemsChanged();
     widget.onItemChecked?.call(
       PantryItem(
+        id: const Uuid().v4(),
+        updatedAt: DateTime.now().toUtc(),
         name: item.name,
         amount: item.amount,
         unit: item.unit,

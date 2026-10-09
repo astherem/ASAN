@@ -14,6 +14,10 @@ class SavedRecipeBox {
       .where((recipe) => recipe.title.isNotEmpty)
       .toList();
 
+  static Map<String, dynamic> toJson(ApiRecipe recipe) => recipe.toJson();
+  static ApiRecipe fromJson(Map<String, dynamic> json) =>
+      ApiRecipe.fromJson(json);
+
   Future<void> writeRecipes(Iterable<ApiRecipe> recipes) =>
       _box.writeMaps(recipes.map((recipe) => recipe.toJson()));
 }

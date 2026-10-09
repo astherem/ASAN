@@ -16,12 +16,15 @@ class AsanTextField extends StatefulWidget {
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final TextInputType? keyboardType;
+  final Iterable<String>? autofillHints;
+  final bool obscureText;
   final bool hasError;
   final String? errorText;
   final bool required;
   final bool expandsWithContent;
   final Widget? labelAction;
   final double horizontalPadding;
+  final TextStyle? labelStyle;
 
   const AsanTextField({
     super.key,
@@ -30,12 +33,15 @@ class AsanTextField extends StatefulWidget {
     this.controller,
     this.onChanged,
     this.keyboardType,
+    this.autofillHints,
+    this.obscureText = false,
     this.hasError = false,
     this.errorText,
     this.required = false,
     this.expandsWithContent = false,
     this.labelAction,
     this.horizontalPadding = AsanSpacing.sm,
+    this.labelStyle,
   });
 
   @override
@@ -43,16 +49,31 @@ class AsanTextField extends StatefulWidget {
 }
 
 class _AsanTextFieldState extends State<AsanTextField> {
-  late final TextEditingController _controller;
+  late TextEditingController _controller;
   late final FocusNode _focusNode;
-  late final bool _ownsController;
+  late bool _ownsController;
+  bool _isObscured = false;
 
   @override
   void initState() {
     super.initState();
     _ownsController = widget.controller == null;
+    _isObscured = widget.obscureText;
     _controller = widget.controller ?? TextEditingController();
     _focusNode = FocusNode()..addListener(_updateState);
+    _controller.addListener(_updateState);
+  }
+
+  @override
+  void didUpdateWidget(covariant AsanTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller == oldWidget.controller) return;
+
+    _controller.removeListener(_updateState);
+    if (_ownsController) _controller.dispose();
+
+    _ownsController = widget.controller == null;
+    _controller = widget.controller ?? TextEditingController();
     _controller.addListener(_updateState);
   }
 
@@ -87,10 +108,11 @@ class _AsanTextFieldState extends State<AsanTextField> {
           children: [
             Text(
               widget.label,
-              style: AsanTextTheme.labelSmall.copyWith(
-                color: AsanColorScheme.secondary,
-                fontWeight: FontWeight.bold,
-              ),
+              style: widget.labelStyle ??
+                  AsanTextTheme.labelSmall.copyWith(
+                    color: AsanColorScheme.secondary,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             if (widget.required) ...[
               const SizedBox(width: AsanSpacing.xs),
@@ -129,24 +151,46 @@ class _AsanTextFieldState extends State<AsanTextField> {
                   )
                 : null,
           ),
-          child: TextField(
-            controller: _controller,
-            focusNode: _focusNode,
-            onChanged: widget.onChanged,
-            keyboardType: widget.keyboardType,
-            minLines: widget.expandsWithContent ? 1 : 1,
-            maxLines: widget.expandsWithContent ? null : 1,
-            style: AsanTextTheme.bodyMedium.copyWith(color: textColor),
-            decoration: InputDecoration(
-              hintText: widget.hintText,
-              hintStyle: AsanTextTheme.bodyMedium.copyWith(
-                color: AsanColorScheme.inactive,
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  onChanged: widget.onChanged,
+                  keyboardType: widget.keyboardType,
+                  autofillHints: widget.autofillHints,
+                  obscureText: _isObscured,
+                  minLines: widget.expandsWithContent ? 1 : 1,
+                  maxLines: widget.expandsWithContent ? null : 1,
+                  style: AsanTextTheme.bodyMedium.copyWith(color: textColor),
+                  decoration: InputDecoration(
+                    hintText: widget.hintText,
+                    hintStyle: AsanTextTheme.bodyMedium.copyWith(
+                      color: AsanColorScheme.inactive,
+                    ),
+                    border: InputBorder.none,
+                    isCollapsed: true,
+                  ),
+                  cursorColor: AsanColorScheme.primary,
+                  textAlignVertical: TextAlignVertical.center,
+                ),
               ),
-              border: InputBorder.none,
-              isCollapsed: true,
-            ),
-            cursorColor: AsanColorScheme.primary,
-            textAlignVertical: TextAlignVertical.center,
+              if (widget.obscureText)
+                IconButton(
+                  onPressed: () => setState(() => _isObscured = !_isObscured),
+                  icon: Icon(
+                    _isObscured ? Symbols.visibility_rounded : Symbols.visibility_off_rounded,
+                    size: 20,
+                    weight: 600,
+                    color: _isObscured
+                        ? AsanColorScheme.inactive
+                        : AsanColorScheme.secondary,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 22),
+                ),
+            ],
           ),
         ),
         if (widget.hasError && widget.errorText != null) ...[
