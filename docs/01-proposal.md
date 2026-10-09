@@ -135,7 +135,7 @@ that function and will not be used as a user-data archive.
 - Added local Supabase configuration support and documented deployment and
   security limitations.
 
-### September 28–October 3, 2026
+### September 28–October 4, 2026
 
 - Added Hive-backed local persistence for groceries, pantry items, custom
   recipes, saved Explore recipes, and meal-plan entries.
@@ -146,7 +146,7 @@ that function and will not be used as a user-data archive.
 - Completed meal-plan creation, editing, deletion, and adding planned
   ingredients to Groceries.
 
-### October 4–9, 2026
+### October 5–9, 2026
 
 - Added Supabase email sign-up, sign-in, and password-reset entry points.
 - Added Hive-backed local copies and cloud synchronization for Pantry,

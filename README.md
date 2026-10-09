@@ -94,7 +94,11 @@ Function; the other screens can be explored without that service.
 ### Meal Plan
 
 - Switch between Day and Week views, navigate by day or week, select a date, and filter the displayed meal entries by meal time or recipe category. The screen groups entries into Breakfast, Lunch, and Dinner.
-- Meal entries can be displayed when supplied to the screen, but creating/editing entries, opening their recipe details, and sending ingredients to Groceries are not implemented yet.
+- Add meals from a saved or Explore recipe, choose the date, meal time, serving
+  count, and optional dish type, then edit or delete planned entries.
+- Open a planned recipe's details and send its ingredients to Groceries. The
+  app keeps the planned meal and grocery collections connected when data is
+  saved locally or synchronized after sign-in.
 
 ### Pantry
 
@@ -107,6 +111,14 @@ Function; the other screens can be explored without that service.
 - Add and edit grocery items; search, filter by aisle, and sort or group the list.
 - Checking an item removes it from Groceries and adds it to Pantry with its purchase date. The navigation badge tracks the grocery item count.
 
+### Settings
+
+- Edit the local profile name, email display value, and profile image.
+- Set preferred cuisines, dietary restrictions, the first day of the week, and
+  the default serving size.
+- Preferences are stored locally and, when an account is available, mirrored to
+  the signed-in user's Supabase metadata.
+
 
 ## 5. Project structure
 
@@ -115,9 +127,9 @@ The project is organised by app responsibility:
 ```text
 lib/
 ├── main.dart                       app startup, device preview, and bottom navigation
-├── data/                            Hive-backed local storage and collection serializers
+├── data/                           Hive-backed local storage and collection serializers
 ├── models/                         recipe, meal plan, pantry, grocery, and filter data
-├── screens/                        Recipes, recipe details/form, Meal Plan, Pantry, Groceries
+├── screens/                        Recipes, recipe details/form, Meal Plan, Pantry, Groceries, Settings
 ├── services/                       authentication, local/cloud sync, Supabase configuration, and recipe API
 ├── styles/                         color palette, spacing, and typography
 └── widgets/                        shared buttons, cards, dialogs, filters, inputs, and navigation
@@ -151,19 +163,22 @@ docs/                               project documentation, screenshots, and font
 **Current known limitations:**
 
 - Explore tab depends on the Supabase Edge Function and the Spoonacular service/quota. Configure and deploy the function before expecting Explore results.
-- Meal Plan supports browsing dates and filtering entries, but adding meals, editing them, opening their recipe details, and transferring planned ingredients to Groceries are unfinished.
 - Cloud sync requires a configured Supabase project, the `user_data` migration,
   email authentication, and a signed-in user. Local Hive storage remains
   available when Supabase is not configured.
+- Sync currently merges collections by record identity and prefers the local
+  record when the same identity exists in both places; it does not resolve
+  concurrent field-level edits.
 
 - Form validation exists for required item and recipe fields, but duplicate prevention and broader edge-case handling remain limited.
 
 **Planned next steps:**
 
-1. Finish Meal Plan creation, editing, recipe navigation, and the planned-meals-to-Groceries flow.
-2. Improve validation and edge-case handling, including duplicate items and state updates.
-3. Add conflict resolution and more granular sync feedback for multi-device edits.
-4. Refresh screenshots and finish the demo and presentation materials.
+1. Improve validation and edge-case handling, including duplicate items and
+   state updates.
+2. Add conflict resolution and more granular sync feedback for multi-device
+   edits.
+3. Refresh screenshots and finish the demo and presentation materials.
 
 ## Security checklist
 
@@ -177,9 +192,9 @@ See [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md) for the project's security re
 
 ## AI usage
 
-[![Built with AI assistance](https://img.shields.io/badge/built%20with-AI%20assistance-0b5fff)](AI-USAGE.md)
+[![Built with AI assistance](https://img.shields.io/badge/Built%20with-AI%20assistance-0b5fff)](AI-USAGE.md)
 
-The app was developed with Codex and Copilot for code suggestions, UI structure, debugging, API integration, and documentation, while the final implementation was reviewed and adjusted by the author. See [AI-USAGE.md](AI-USAGE.md) for more details. 
+The app was developed with Codex and Copilot for code suggestions, debugging, API integration, and documentation, while the final implementation was reviewed and adjusted by the author. See [AI-USAGE.md](AI-USAGE.md) for more details. 
 
 ## LICENSE
 
