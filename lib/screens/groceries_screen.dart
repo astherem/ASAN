@@ -120,6 +120,18 @@ class GroceriesScreenState extends State<GroceriesScreen> {
   }
 
   @override
+  void didUpdateWidget(covariant GroceriesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (identical(oldWidget.initialItems, widget.initialItems)) return;
+
+    // The parent owns the persisted/synced collection and can replace it after
+    // this screen has already been created (for example, after cloud sync).
+    _items
+      ..clear()
+      ..addAll(widget.initialItems);
+  }
+
+  @override
   void dispose() {
     _filterScrollController.dispose();
     super.dispose();

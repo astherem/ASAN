@@ -17,6 +17,8 @@ import 'package:asan/widgets/selections.dart';
 import 'package:asan/widgets/inputs.dart';
 
 class MealPlanScreen extends StatefulWidget {
+  final int defaultServings;
+  final String firstDayOfWeek;
   final List<MealPlans> incomingEntries;
   final List<Recipes> recipes;
   final ValueChanged<List<MealPlans>>? onEntriesChanged;
@@ -24,7 +26,7 @@ class MealPlanScreen extends StatefulWidget {
   final VoidCallback? onViewGroceries;
   final Future<bool> Function(List<GroceryItem>)? onAddToGroceries;
 
-  const MealPlanScreen({super.key, this.incomingEntries = const [], this.recipes = const [], this.onEntriesChanged, this.onViewMealPlan, this.onViewGroceries, this.onAddToGroceries});
+  const MealPlanScreen({super.key, this.defaultServings = 1, this.firstDayOfWeek = 'Sunday', this.incomingEntries = const [], this.recipes = const [], this.onEntriesChanged, this.onViewMealPlan, this.onViewGroceries, this.onAddToGroceries});
 
   @override
   State<MealPlanScreen> createState() => MealPlanScreenState();
@@ -223,7 +225,18 @@ class MealPlanScreenState extends State<MealPlanScreen> {
       _selectedDate.month,
       _selectedDate.day,
     );
-    return date.subtract(Duration(days: date.weekday % 7));
+    const weekdayNumbers = {
+      'Monday': DateTime.monday,
+      'Tuesday': DateTime.tuesday,
+      'Wednesday': DateTime.wednesday,
+      'Thursday': DateTime.thursday,
+      'Friday': DateTime.friday,
+      'Saturday': DateTime.saturday,
+      'Sunday': DateTime.sunday,
+    };
+    final firstWeekday = weekdayNumbers[widget.firstDayOfWeek] ?? DateTime.sunday;
+    final daysSinceWeekStart = (date.weekday - firstWeekday + 7) % 7;
+    return date.subtract(Duration(days: daysSinceWeekStart));
   }
 
   Future<void> _addVisibleMealsToGroceries() async {
@@ -718,6 +731,7 @@ class MealPlanScreenState extends State<MealPlanScreen> {
                   _MealTimeSection(
                     title: weekGroupTitles[i],
                     entries: weekGroups[weekGroupTitles[i]]!,
+                    defaultServings: widget.defaultServings,
                     showAdd: sortBy == 'Day' || sortBy == 'Meal time' || sortBy == 'Dish type',
                     showMealTimeTag: true,
                     showEmptyMessage: false,
@@ -767,6 +781,7 @@ class MealPlanScreenState extends State<MealPlanScreen> {
             _MealTimeSection(
               title: groupTitles[i],
               entries: groups[groupTitles[i]]!,
+              defaultServings: widget.defaultServings,
               onEdit: _editMeal,
               onDelete: _deleteMeal,
               showAdd: sortBy == 'Meal time' || sortBy == 'Dish type',
@@ -936,6 +951,7 @@ class _SwipeableMealCardState extends State<_SwipeableMealCard> {
 class _MealTimeSection extends StatelessWidget {
   final String title;
   final List<MealPlans> entries;
+  final int defaultServings;
   final VoidCallback onAdd;
   final bool showAdd;
   final bool showMealTimeTag;
@@ -943,7 +959,7 @@ class _MealTimeSection extends StatelessWidget {
   final ValueChanged<MealPlans> onEdit;
   final ValueChanged<MealPlans> onDelete;
 
-  const _MealTimeSection({required this.title, required this.entries, required this.onAdd, required this.showAdd, required this.onEdit, required this.onDelete, this.showMealTimeTag = false, this.showEmptyMessage = true});
+  const _MealTimeSection({required this.title, required this.entries, required this.defaultServings, required this.onAdd, required this.showAdd, required this.onEdit, required this.onDelete, this.showMealTimeTag = false, this.showEmptyMessage = true});
 
   @override
   Widget build(BuildContext context) {
@@ -1005,6 +1021,7 @@ class _MealTimeSection extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => RecipeDetailsScreen(
                       recipe: recipe,
+                      defaultServings: defaultServings,
                       servingsOverride: entries[i].servings,
                       imageUrl: recipe.imageUrl,
                       ingredients: recipe.ingredients,

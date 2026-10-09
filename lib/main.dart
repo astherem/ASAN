@@ -8,6 +8,7 @@ import 'package:asan/screens/groceries_screen.dart';
 import 'package:asan/screens/meal_plan_screen.dart';
 import 'package:asan/screens/pantry_screen.dart';
 import 'package:asan/screens/recipes_screen.dart';
+import 'package:asan/screens/settings_screen.dart';
 
 import 'package:asan/models/pantry_item.dart';
 import 'package:asan/models/grocery_item.dart';
@@ -83,13 +84,16 @@ class _AsanState extends State<Asan> {
   final _groceriesKey = GlobalKey<GroceriesScreenState>();
   final _mealPlanKey = GlobalKey<MealPlanScreenState>();
   int _selectedIndex = 0;
+  bool _isLoadingData = false;
   int _groceriesItemCount = 0;
+  int _defaultServings = 1;
+  String _firstDayOfWeek = 'Sunday';
+  Map<String, List<String>> _foodPreferences = {'cuisines': [], 'diets': []};
   final List<PantryItem> _receivedPantryItems = [];
   final List<Recipes> _recipes = [];
   List<GroceryItem> _groceries = [];
   List<MealPlans> _mealPlans = [];
   List<ApiRecipe> _savedRecipes = [];
-  bool _loaded = false;
   String? _pendingSyncError;
   final Map<String, List<Map<String, dynamic>>> _syncBaselines = {};
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -97,14 +101,33 @@ class _AsanState extends State<Asan> {
   @override
   void initState() {
     super.initState();
-    if (widget.storage == null) {
-      _loaded = true;
-    } else {
+    if (widget.storage != null) {
+      _isLoadingData = true;
+      final preferences = widget.storage!.loadProfilePreferences();
+      final metadata = widget.client?.auth.currentUser?.userMetadata?['preferences'];
+      final saved = metadata is Map ? metadata : preferences;
+      _foodPreferences = {
+        for (final key in ['cuisines', 'diets'])
+          key: (saved[key] is List ? saved[key] as List : const []).whereType<String>().toList(),
+      };
+      final firstDay = saved['first_day_of_week'];
+      if (firstDay is List && firstDay.isNotEmpty && firstDay.first is String) {
+        _firstDayOfWeek = firstDay.first as String;
+      }
       _loadStoredData();
     }
   }
 
   Future<void> _loadStoredData() async {
+    final localPreferences = widget.storage!.loadProfilePreferences();
+    final metadataPreferences = widget.client?.auth.currentUser?.userMetadata?['preferences'];
+    final profilePreferences = metadataPreferences is Map
+        ? metadataPreferences
+        : localPreferences;
+    final servingValues = profilePreferences['serving_size'];
+    if (servingValues is List && servingValues.isNotEmpty) {
+      _defaultServings = (int.tryParse('${servingValues.first}') ?? 1).clamp(1, 100);
+    }
     final results = await Future.wait([
       widget.storage!.loadGroceries(),
       widget.storage!.loadPantry(),
@@ -161,7 +184,7 @@ class _AsanState extends State<Asan> {
       _recipes.addAll(recipes);
       _mealPlans = mealPlans;
       _savedRecipes = savedRecipes;
-      _loaded = true;
+      _isLoadingData = false;
     });
     final syncError = _pendingSyncError;
     if (syncError != null) {
@@ -220,11 +243,6 @@ class _AsanState extends State<Asan> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_loaded) {
-      return const MaterialApp(
-        home: Scaffold(body: Center(child: CircularProgressIndicator())),
-      );
-    }
     return MaterialApp(
       scaffoldMessengerKey: _messengerKey,
       title: 'Asan',
@@ -260,10 +278,14 @@ class _AsanState extends State<Asan> {
         body: Column(
           children: [
             Expanded(
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: [
+              child: _isLoadingData
+                  ? const Center(child: CircularProgressIndicator())
+                  : IndexedStack(
+                      index: _selectedIndex,
+                      children: [
                   RecipesScreen(
+                    defaultServings: _defaultServings,
+                    foodPreferences: _foodPreferences,
                     incomingRecipes: _recipes,
                     initialSavedRecipes: _savedRecipes,
                     onSavedRecipesChanged: (recipes) {
@@ -310,6 +332,8 @@ class _AsanState extends State<Asan> {
                     },
                   ),
                   MealPlanScreen(
+                    defaultServings: _defaultServings,
+                    firstDayOfWeek: _firstDayOfWeek,
                     key: _mealPlanKey,
                     recipes: _recipes,
                     incomingEntries: _mealPlans,
@@ -360,8 +384,16 @@ class _AsanState extends State<Asan> {
                       );
                     },
                   ),
-                ],
-              ),
+                  SettingsScreen(
+                    client: widget.client,
+                    storage: widget.storage,
+                    onDefaultServingsChanged: (value) =>
+                        setState(() => _defaultServings = value),
+                    onFoodPreferencesChanged: (preferences) => setState(() => _foodPreferences = preferences),
+                    onFirstDayOfWeekChanged: (day) => setState(() => _firstDayOfWeek = day),
+                  ),
+                      ],
+                    ),
             ),
           ],
         ),

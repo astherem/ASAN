@@ -152,6 +152,8 @@ class RecipesScreen extends StatefulWidget {
   final String initialQuery;
   final ValueChanged<Recipes>? onRecipeSelected;
   final VoidCallback? onPickerBack;
+  final int defaultServings;
+  final Map<String, List<String>> foodPreferences;
 
   const RecipesScreen({
     super.key,
@@ -165,6 +167,8 @@ class RecipesScreen extends StatefulWidget {
     this.initialQuery = '',
     this.onRecipeSelected,
     this.onPickerBack,
+    this.defaultServings = 1,
+    this.foodPreferences = const {},
     this.onAddToGroceries,
     this.onViewGroceries,
   });
@@ -355,6 +359,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
           onRecipeSelected: widget.onRecipeSelected,
           isRecipeSaved: (title) => _savedRecipeTitles.contains(title),
           onToggleSaved: _toggleSavedRecipe,
+          defaultServings: widget.defaultServings,
+          foodPreferences: widget.foodPreferences,
         ),
       ),
     );
@@ -416,6 +422,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
                                     isRecipeSaved: (title) =>
                                         _savedRecipeTitles.contains(title),
                                     onToggleSaved: _toggleSavedRecipe,
+                                    defaultServings: widget.defaultServings,
+                                    foodPreferences: widget.foodPreferences,
                                   ),
                                 ),
                               ),
@@ -545,6 +553,8 @@ class _RecipesScreenState extends State<RecipesScreen> {
             onRecipeSelected: widget.onRecipeSelected,
             isRecipeSaved: (title) => _savedRecipeTitles.contains(title),
             onToggleSaved: _toggleSavedRecipe,
+            defaultServings: widget.defaultServings,
+            foodPreferences: widget.foodPreferences,
           ),
         ),
       ),
@@ -905,11 +915,12 @@ class _RecipesScreenState extends State<RecipesScreen> {
                             ),
                           ),
                         ),
-                        AsanTextButton(
-                          label: 'View all',
-                          onPressed: () =>
-                              _openExploreCategoryInSearch(category),
-                        ),
+                        if (categoryRecipes.length > 4)
+                          AsanTextButton(
+                            label: 'View all',
+                            onPressed: () =>
+                                _openExploreCategoryInSearch(category),
+                          ),
                       ],
                     ),
                   ),
@@ -1174,11 +1185,12 @@ class _RecipesScreenState extends State<RecipesScreen> {
                           ),
                         ),
                       ),
-                      AsanTextButton(
-                        label: 'View all',
-                        onPressed: () =>
-                            setState(() => _savedCategory = group.key),
-                      ),
+                      if (group.value.length > 4)
+                        AsanTextButton(
+                          label: 'View all',
+                          onPressed: () =>
+                              setState(() => _savedCategory = group.key),
+                        ),
                     ],
                   ),
                 ),
@@ -1320,7 +1332,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 (selected) => type.toLowerCase() == selected.toLowerCase(),
               ),
             );
-      final cuisineMatch = filters?.cuisines.isEmpty ?? true
+      final selectedCuisineMatch = filters?.cuisines.isEmpty ?? true
           ? true
           : filters!.cuisines.any(
               (cuisine) => (recipe.cuisine ?? '')
@@ -1329,12 +1341,24 @@ class _RecipesScreenState extends State<RecipesScreen> {
                   .map((part) => part.trim())
                   .contains(cuisine.toLowerCase()),
             );
+      final cuisineMatch = selectedCuisineMatch && _matchesPreferredCuisine(recipe);
+      final preferenceDiets = widget.foodPreferences['diets'] ?? const <String>[];
+      final preferenceDietMatch = preferenceDiets.isEmpty || recipe.tags.any(
+        (tag) => preferenceDiets.any((diet) => tag.toLowerCase() == diet.toLowerCase()),
+      );
       return totalTimeMatch &&
           dietMatch &&
           mealTimeMatch &&
           dishTypeMatch &&
-          cuisineMatch;
+          cuisineMatch && preferenceDietMatch;
     }).toList();
+  }
+
+  bool _matchesPreferredCuisine(ApiRecipe recipe) {
+    final cuisines = widget.foodPreferences['cuisines'] ?? const <String>[];
+    if (cuisines.isEmpty) return true;
+    final recipeCuisines = (recipe.cuisine ?? '').toLowerCase().split(',').map((part) => part.trim());
+    return cuisines.any((cuisine) => recipeCuisines.contains(cuisine.toLowerCase()));
   }
 
   Future<void> _loadExploreRecipes([String query = '']) async {

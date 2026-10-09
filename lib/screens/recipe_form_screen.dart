@@ -53,15 +53,13 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   }
 
   Future<void> _handleDelete() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AsanAlertDialog(
-        title: 'Delete Recipe?',
-        content:
-            'This recipe will be permanently removed from your collection and meal plans. Are you sure you want to delete it?',
-        cancelText: 'Cancel',
-        destructiveText: 'Delete Recipe',
-      ),
+    final confirmed = await AsanAlertDialog.show(
+      context,
+      title: 'Delete Recipe?',
+      content:
+          'This recipe will be permanently removed from your collection and meal plans. Are you sure you want to delete it?',
+      cancelText: 'Cancel',
+      destructiveText: 'Delete Recipe',
     );
 
     if (!mounted) return;
@@ -379,7 +377,7 @@ class _AddRecipeFormState extends State<AddRecipeForm> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Symbols.edit_rounded, fill: 1),
+                leading: const Icon(Symbols.photo_camera_rounded, fill: 1),
                 title: Text('Change photo', style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                 onTap: () => Navigator.pop(context, true),
               ),

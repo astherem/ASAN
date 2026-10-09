@@ -167,6 +167,7 @@ class _AsanFilterListState extends State<AsanFilterList> {
                 controller: widget.scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.lg),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _FilterSection(
                       title: 'Sort By',
@@ -625,8 +626,14 @@ class _FilterSection extends StatelessWidget {
                             color: AsanColorScheme.secondary,
                           ),
                           child: ascending
-                              ? const Icon(Symbols.arrow_upward_rounded)
-                              : const Icon(Symbols.arrow_downward_rounded),
+                              ? const Icon(
+                                  Symbols.arrow_upward_rounded,
+                                  weight: 600,
+                                )
+                              : const Icon(
+                                  Symbols.arrow_downward_rounded,
+                                  weight: 600,
+                                ),
                         ),
                       ),
                   ],

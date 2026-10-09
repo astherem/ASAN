@@ -58,6 +58,8 @@ class SearchScreen extends StatefulWidget {
   final ValueChanged<Recipes>? onRecipeSelected;
   final bool Function(String title)? isRecipeSaved;
   final ValueChanged<String>? onToggleSaved;
+  final int defaultServings;
+  final Map<String, List<String>> foodPreferences;
 
   const SearchScreen({
     super.key,
@@ -68,6 +70,8 @@ class SearchScreen extends StatefulWidget {
     this.onRecipeSelected,
     this.isRecipeSaved,
     this.onToggleSaved,
+    this.defaultServings = 1,
+    this.foodPreferences = const {},
   });
 
   @override
@@ -149,8 +153,13 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   List<ApiRecipe> get _filteredRecipes {
-    final filters = _filters;
-    if (filters == null) return _recipes;
+    final filters = _filters ?? const AsanFilterSelection(
+      sortBy: 'Dish type',
+      sortAscending: true,
+      purchaseStatuses: {},
+      expirationStatuses: {},
+      foodGroups: {},
+    );
     return _recipes.where((recipe) {
       // Spoonacular exposes meal times as dish types (for example,
       // "morning meal"), while user recipes and other providers may expose
@@ -170,7 +179,11 @@ class _SearchScreenState extends State<SearchScreen> {
       final types = [...recipe.dishTypes, recipe.category].map(normalizeMealTime);
       final typeMatch = filters.mealTimeCategories.isEmpty || types.any((type) => filters.mealTimeCategories.any((value) => normalizeMealTime(value) == type));
       final cuisineMatch = filters.cuisines.isEmpty || filters.cuisines.any((value) => (recipe.cuisine ?? '').toLowerCase().split(',').map((part) => part.trim()).contains(value.toLowerCase()));
-      return timeMatch && dietMatch && mealMatch && typeMatch && cuisineMatch;
+      final preferredCuisines = widget.foodPreferences['cuisines'] ?? const <String>[];
+      final preferredCuisineMatch = preferredCuisines.isEmpty || preferredCuisines.any((value) => (recipe.cuisine ?? '').toLowerCase().split(',').map((part) => part.trim()).contains(value.toLowerCase()));
+      final preferredDiets = widget.foodPreferences['diets'] ?? const <String>[];
+      final preferredDietMatch = preferredDiets.isEmpty || recipe.tags.any((tag) => preferredDiets.any((value) => value.toLowerCase() == tag.toLowerCase()));
+      return timeMatch && dietMatch && mealMatch && typeMatch && cuisineMatch && preferredCuisineMatch && preferredDietMatch;
     }).toList();
   }
 
@@ -211,6 +224,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (!mounted) return;
     await Navigator.push(context, MaterialPageRoute<void>(
       builder: (context) => RecipeDetailsScreen(
+        defaultServings: widget.defaultServings,
         recipe: savedRecipe,
         imageUrl: imageUrl,
         ingredients: details.ingredients,

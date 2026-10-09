@@ -18,6 +18,7 @@ class AuthService extends StatefulWidget {
 }
 
 class _AuthServiceState extends State<AuthService> {
+  final _signUpUsernameController = TextEditingController();
   final _signUpEmailController = TextEditingController();
   final _signUpPasswordController = TextEditingController();
   final _signInEmailController = TextEditingController();
@@ -29,6 +30,7 @@ class _AuthServiceState extends State<AuthService> {
   String? _message;
   bool _isError = false;
   String? _emailError;
+  String? _usernameError;
   String? _passwordError;
 
 
@@ -47,6 +49,7 @@ class _AuthServiceState extends State<AuthService> {
 
   @override
   void dispose() {
+    _signUpUsernameController.dispose();
     _signUpEmailController.dispose();
     _signUpPasswordController.dispose();
     _signInEmailController.dispose();
@@ -56,15 +59,19 @@ class _AuthServiceState extends State<AuthService> {
   }
 
   Future<void> _submit() async {
+    final username = _signUpUsernameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     setState(() {
+      _usernameError = !_isSignUp || username.isNotEmpty
+          ? null
+          : 'Enter a username.';
       _emailError = email.contains('@') ? null : 'Enter a valid email address.';
       _passwordError = password.length >= 6
           ? null
           : 'Password must be at least 6 characters.';
     });
-    if (_emailError != null || _passwordError != null) return;
+    if (_usernameError != null || _emailError != null || _passwordError != null) return;
     setState(() {
       _isLoading = true;
       _message = null;
@@ -74,6 +81,7 @@ class _AuthServiceState extends State<AuthService> {
         final response = await widget.client.auth.signUp(
           email: email,
           password: password,
+          data: {'username': username},
         );
         if (!mounted) return;
         setState(() {
@@ -134,6 +142,7 @@ class _AuthServiceState extends State<AuthService> {
     setState(() {
       _page = page;
       _message = null;
+      _usernameError = null;
       _emailError = null;
       _passwordError = null;
     });
@@ -287,6 +296,25 @@ class _AuthServiceState extends State<AuthService> {
           style: AsanTextTheme.bodyMedium,
         ),
         const SizedBox(height: AsanSpacing.lg),
+        if (_isSignUp) ...[
+          AsanTextField(
+            label: 'Username',
+            hintText: 'Choose a username',
+            key: const ValueKey('sign-up-username'),
+            labelStyle: AsanTextTheme.labelSmall.copyWith(
+              color: AsanColorScheme.inactive,
+              fontWeight: FontWeight.normal,
+            ),
+            controller: _signUpUsernameController,
+            autofillHints: const [AutofillHints.username],
+            hasError: _usernameError != null,
+            errorText: _usernameError,
+            onChanged: (_) {
+              if (_usernameError != null) setState(() => _usernameError = null);
+            },
+          ),
+          const SizedBox(height: AsanSpacing.md),
+        ],
         AsanTextField(
           label: 'Email',
           hintText: 'you@example.com',

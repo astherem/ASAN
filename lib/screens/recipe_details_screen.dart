@@ -16,6 +16,7 @@ class RecipeDetailsScreen extends StatefulWidget {
   final String? imageUrl;
   final bool isSaved;
   final int? servingsOverride;
+  final int defaultServings;
   final Set<String> idealFor;
   final List<String> ingredients;
   final List<String> ingredientAmounts;
@@ -36,6 +37,7 @@ class RecipeDetailsScreen extends StatefulWidget {
     this.imageUrl,
     this.isSaved = false,
     this.servingsOverride,
+    this.defaultServings = 1,
     this.idealFor = const {},
     this.ingredients = const [],
     this.ingredientAmounts = const [],
@@ -67,7 +69,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _ingredientServings = widget.servingsOverride ?? 1;
+    _ingredientServings = widget.servingsOverride ?? widget.defaultServings;
     _isSaved = widget.isSaved;
     _recipe = widget.recipe;
   }

@@ -1,10 +1,12 @@
 import 'package:hive_flutter/hive_flutter.dart';
+
 import 'package:asan/data/grocery_box.dart';
 import 'package:asan/data/meal_plan_box.dart';
 import 'package:asan/data/pantry_box.dart';
 import 'package:asan/data/recipe_box.dart';
 import 'package:asan/data/saved_recipe_box.dart';
 import 'package:asan/data/storage_box.dart';
+
 import 'package:asan/models/grocery_item.dart';
 import 'package:asan/models/api_recipe.dart';
 import 'package:asan/models/meal_plans.dart';
@@ -18,11 +20,13 @@ class LocalStorage {
     Box<dynamic> recipesBox,
     Box<dynamic> mealPlansBox,
     Box<dynamic> savedRecipesBox,
+    Box<dynamic> profilePreferencesBox,
   ) : groceries = GroceryBox(StorageBox(groceriesBox)),
       pantry = PantryBox(StorageBox(pantryBox)),
       recipes = RecipeBox(StorageBox(recipesBox)),
       mealPlans = MealPlanBox(StorageBox(mealPlansBox)),
-      savedRecipes = SavedRecipeBox(StorageBox(savedRecipesBox));
+      savedRecipes = SavedRecipeBox(StorageBox(savedRecipesBox)),
+      profilePreferences = StorageBox(profilePreferencesBox);
 
   static Future<LocalStorage> create() async {
     await Hive.initFlutter();
@@ -32,6 +36,7 @@ class LocalStorage {
       await Hive.openBox<dynamic>('recipes'),
       await Hive.openBox<dynamic>('meal_plans'),
       await Hive.openBox<dynamic>('saved_recipes'),
+      await Hive.openBox<dynamic>('profile_preferences'),
     );
   }
 
@@ -40,6 +45,15 @@ class LocalStorage {
   final RecipeBox recipes;
   final MealPlanBox mealPlans;
   final SavedRecipeBox savedRecipes;
+  final StorageBox profilePreferences;
+
+  Map<String, dynamic> loadProfilePreferences() {
+    final values = profilePreferences.readMaps();
+    return values.isEmpty ? {} : values.first;
+  }
+
+  Future<void> saveProfilePreferences(Map<String, dynamic> values) =>
+      profilePreferences.writeMaps([values]);
 
   Future<List<GroceryItem>> loadGroceries() async => groceries.read();
   Future<void> saveGroceries(Iterable<GroceryItem> items) =>

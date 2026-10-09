@@ -7,5 +7,13 @@
   "theme_color": "#6750A4",
   "description": "My 6ADET final project.",
   "orientation": "portrait-primary",
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "../docs/assets/logos/green_filled_black_logo.png",
+      "sizes": "4000x4000",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }

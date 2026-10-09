@@ -192,15 +192,17 @@ class AsanNavigationBar extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         boxShadow: [BoxShadow(color: AsanColorScheme.shadow, blurRadius: 4)],
       ),
-      child: Row(
-        children: [
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.md),
+        child: Row(
+          children: [
           Expanded(
             child: _NavigationItem(
               label: 'Recipes',
-              icon: const Icon(Symbols.import_contacts_rounded, size: 30),
+              icon: const Icon(Symbols.import_contacts_rounded, size: 28, weight: 600),
               activeIcon: const Icon(
                 Symbols.import_contacts_rounded,
-                size: 30,
+                size: 28,
                 fill: 1,
               ),
               isSelected: selectedIndex == 0,
@@ -210,7 +212,7 @@ class AsanNavigationBar extends StatelessWidget {
           Expanded(
             child: _NavigationItem(
               label: 'Meals',
-              icon: const Icon(Symbols.calendar_today_rounded),
+              icon: const Icon(Symbols.calendar_today_rounded, weight: 600),
               activeIcon: const Icon(Symbols.calendar_today_rounded, fill: 1),
               isSelected: selectedIndex == 1,
               onPressed: () => onDestinationSelected(1),
@@ -219,7 +221,7 @@ class AsanNavigationBar extends StatelessWidget {
           Expanded(
             child: _NavigationItem(
               label: 'Pantry',
-              icon: const Icon(Symbols.inventory_2_rounded),
+              icon: const Icon(Symbols.inventory_2_rounded, weight: 600),
               activeIcon: const Icon(Symbols.inventory_2_rounded, fill: 1),
               isSelected: selectedIndex == 2,
               onPressed: () => onDestinationSelected(2),
@@ -228,14 +230,24 @@ class AsanNavigationBar extends StatelessWidget {
           Expanded(
             child: _NavigationItem(
               label: 'Groceries',
-              icon: const Icon(Symbols.shopping_cart_rounded),
+              icon: const Icon(Symbols.shopping_cart_rounded, weight: 600),
               activeIcon: const Icon(Symbols.shopping_cart_rounded, fill: 1),
               isSelected: selectedIndex == 3,
               badgeCount: groceriesBadgeCount,
               onPressed: () => onDestinationSelected(3),
             ),
           ),
-        ],
+          Expanded(
+            child: _NavigationItem(
+              label: 'Settings',
+              icon: const Icon(Symbols.settings_rounded, weight: 600),
+              activeIcon: const Icon(Symbols.settings_rounded, fill: 1),
+              isSelected: selectedIndex == 4,
+              onPressed: () => onDestinationSelected(4),
+            ),
+          ),
+          ],
+        ),
       ),
     );
   }
