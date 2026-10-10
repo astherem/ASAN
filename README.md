@@ -126,41 +126,55 @@ Function; the other screens can be explored without that service.
 
 ## 5. Project structure
 
-The project is organised by app responsibility:
+The project is organised by app responsibility. The main folders and files are:
 
 ```text
-lib/
-├── main.dart                       app startup, device preview, and bottom navigation
-├── data/                           Hive-backed local storage and collection serializers
-├── models/                         recipe, meal plan, pantry, grocery, and filter data
-├── screens/                        Recipes, recipe details/form, Meal Plan, Pantry, Groceries, Settings
-├── services/                       authentication, local/cloud sync, Supabase configuration, and recipe API
-├── styles/                         color palette, spacing, and typography
-└── widgets/                        shared buttons, cards, dialogs, filters, inputs, and navigation
-supabase/functions/spoonacular/     server-side Spoonacular proxy Edge Function
-supabase/migrations/                Supabase schema and row-level security policies
-web/                                Flutter web entry point and manifest
-docs/                               project documentation, screenshots, and fonts
-.github/workflows/                  GitHub Pages build and deployment
+├── .github/workflows/deploy-web.yml    GitHub Pages build and deployment
+├── docs/                               Proposal, design, reports, and app assets
+│   └── assets/                         Screenshots, logos, and fonts
+├── lib/                                Flutter application source
+│   ├── data/                           Hive-backed storage and collection boxes
+│   ├── models/                         Recipe, meal, pantry, grocery, and filter models
+│   ├── screens/                        App screens and recipe forms/details
+│   ├── services/                       Auth, sync, Supabase, and recipe API services
+│   ├── styles/                         App theme
+│   ├── widgets/                        Shared controls and navigation
+│   └── main.dart                       App startup and root navigation
+├── supabase/
+│   ├── functions\spoonacular/          Server-side Spoonacular proxy Edge Function
+│   └── migrations/                     Database schema and row-level security policies
+├── test/                               Widget tests
+├── web/                                Flutter web entry point and manifest
+├── .env.example                        Example environment configuration
+├── pubspec.yaml                        Flutter dependencies and project metadata
+└── README.md                           Project overview and setup guide
 ```
 
 ## 6. Screenshots
 
+| Onboarding | Sign Up | Log In |
+| --- | --- | --- |
+| <img src="docs/assets/screenshots/onboarding.jpg" alt="Onboarding" width="220"> | <img src="docs/assets/screenshots/sign_up.jpg" alt="Sign Up" width="220"> | <img src="docs/assets/screenshots/log_in.jpg" alt="Log In" width="220"> |
+
 | Recipes (Explore) | Recipes (Saved) | Recipes (My Recipes) |
 | --- | --- | --- |
-| ![Recipes (Explore)](docs/assets/screenshots/recipes_explore.png) | ![Recipes (Saved)](docs/assets/screenshots/recipes_saved.png) | ![Recipes (My Recipes)](docs/assets/screenshots/recipes_my_recipes.png) |
+| <img src="docs/assets/screenshots/recipes_explore.jpg" alt="Recipes (Explore)" width="220"> | <img src="docs/assets/screenshots/recipes_saved.jpg" alt="Recipes (Saved)" width="220"> | <img src="docs/assets/screenshots/recipes_my_recipes.jpg" alt="Recipes (My Recipes)" width="220"> |
 
-| Recipe Details | Add Recipe | Meal Plan (Day) |
+| Recipe Details | Search Recipes | Add Recipe |
 | --- | --- | --- |
-| ![Recipe Details](docs/assets/screenshots/recipe_details.png) | ![Add Recipe](docs/assets/screenshots/add_recipe.PNG) | ![Meal Plan (Week)](docs/assets/screenshots/meal_plan_day.png) |
+| <img src="docs/assets/screenshots/recipe_details.jpg" alt="Recipe Details" width="220"> | <img src="docs/assets/screenshots/search_recipes.jpg" alt="Search Recipes" width="220"> | <img src="docs/assets/screenshots/add_recipe.jpg" alt="Add Recipe" width="220"> |
 
-| Meal Plan (Week) | Pantry | Add Pantry Item |
+| Meal Plan (Day) | Meal Plan (Week) | Add Meal to Plan |
 | --- | --- | --- |
-| ![Meal Plan (Week)](docs/assets/screenshots/meal_plan_week.png) | ![Pantry](docs/assets/screenshots/pantry.PNG) | ![Add Pantry Item](docs/assets/screenshots/add_pantry_item.PNG) |
+| <img src="docs/assets/screenshots/meal_plan_day.jpg" alt="Meal Plan (Day)" width="220"> | <img src="docs/assets/screenshots/meal_plan_week.jpg" alt="Meal Plan (Week)" width="220"> | <img src="docs/assets/screenshots/add_meal_to_plan.jpg" alt="Add Meal to Plan" width="220"> |
 
-| Groceries | Add Grocery Item |  |
+| Pantry | Add Pantry Item | Groceries |
 | --- | --- | --- |
-| ![Groceries](docs/assets/screenshots/groceries.PNG) | ![Add Grocery Item](docs/assets/screenshots/add_grocery_item.png) | ![]() |
+| <img src="docs/assets/screenshots/pantry.jpg" alt="Pantry" width="220"> | <img src="docs/assets/screenshots/add_pantry_item.jpg" alt="Add Pantry Item" width="220"> | <img src="docs/assets/screenshots/groceries.jpg" alt="Groceries" width="220"> |
+
+| Add Grocery Item | Settings |
+| --- | --- |
+| <img src="docs/assets/screenshots/add_grocery_item.jpg" alt="Add Grocery Item" width="220"> | <img src="docs/assets/screenshots/settings.png" alt="Settings" width="220"> |
 
 ## 7. Known issues and next steps
 
@@ -190,13 +204,13 @@ See [Security Checklist](SECURITY-CHECKLIST.md) for the project's security revie
 
 ## Credits
 
-- **Packages:** see `pubspec.yaml`
+- **Packages:** see [pubspec.yaml](pubspec.yaml)
 - **Fonts:** Bricolage Grotesque by Mathieu Triay, licensed under the [SIL Open Font License, Version 1.1](https://openfontlicense.org/open-font-license-official-text/)
 - **Icons:** Material Symbols and Icons by Google and Tim Maffett, licensed under the [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## AI usage
 
-[![Built with AI assistance](https://img.shields.io/badge/Built%20with-AI%20assistance-0b5fff)](AI-USAGE.md)
+[![Built with AI assistance](https://img.shields.io/badge/Built%20with-AI%20assistance-28B873)](AI-USAGE.md)
 
 The app was developed with Codex and Copilot for code suggestions, debugging, API integration, and documentation, while the final implementation was reviewed and adjusted by the author. See [AI Usage](AI-USAGE.md) for more details. 
 
