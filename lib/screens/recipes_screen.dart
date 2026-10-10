@@ -250,17 +250,18 @@ class _RecipesScreenState extends State<RecipesScreen> {
   }
 
   String _cardDishType(Iterable<String> values, {String? fallback}) {
-    final dishType = values
+    final dishType = [...values, ?fallback]
         .map((value) => value.trim())
         .firstWhere(
           (value) =>
               value.isNotEmpty &&
+              value.toLowerCase() != 'morning meal' &&
               !asanMealTimes.any(
                 (mealTime) => mealTime.toLowerCase() == value.toLowerCase(),
               ),
           orElse: () => '',
         );
-    return dishType.isNotEmpty ? dishType : (fallback ?? '');
+    return dishType;
   }
 
   List<String> get _activeFilterLabels => [
@@ -1020,17 +1021,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
     final ascending = _activeFilters?.sortAscending ?? true;
 
     String dishType(ApiRecipe recipe) {
-      final type = recipe.dishTypes
-          .map((type) => type.trim())
-          .firstWhere(
-            (type) => type.isNotEmpty,
-            orElse: () => recipe.category.trim().isEmpty
-                ? 'Unknown dish type'
-                : recipe.category.trim(),
-          );
-      return type.isEmpty
-          ? type
-          : '${type[0].toUpperCase()}${type.substring(1).toLowerCase()}';
+      final type = _cardDishType(
+        [...recipe.dishTypes, recipe.category],
+        fallback: 'Unknown dish type',
+      );
+      return '${type[0].toUpperCase()}${type.substring(1).toLowerCase()}';
     }
 
     String cuisine(ApiRecipe recipe) {
@@ -1474,17 +1469,11 @@ class _RecipesScreenState extends State<RecipesScreen> {
         : recipe.prepTime + recipe.cookTime;
 
     String firstDishType(Recipes recipe) {
-      final type = recipe.dishTypes
-          .map((type) => type.trim())
-          .firstWhere(
-            (type) => type.isNotEmpty,
-            orElse: () => recipe.mealCategory?.trim().isNotEmpty == true
-                ? recipe.mealCategory!.trim()
-                : 'Uncategorized',
-          );
-      return type.isEmpty
-          ? type
-          : '${type[0].toUpperCase()}${type.substring(1).toLowerCase()}';
+      final type = _cardDishType(
+        [...recipe.dishTypes, recipe.mealCategory ?? ''],
+        fallback: 'Uncategorized',
+      );
+      return '${type[0].toUpperCase()}${type.substring(1).toLowerCase()}';
     }
 
     String cuisine(Recipes recipe) {
@@ -1599,6 +1588,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
       MaterialPageRoute(
         builder: (context) => RecipeDetailsScreen(
           recipe: recipe,
+          defaultServings: widget.defaultServings,
           headerVerticalPadding: widget.onRecipeSelected != null
               ? AsanSpacing.lg
               : AsanSpacing.sm,
@@ -1697,6 +1687,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
             ingredientAisles: details.ingredientAisles,
             instructions: details.instructions,
           ),
+          defaultServings: widget.defaultServings,
           imageUrl: imageUrl,
           ingredients: details.ingredients,
           onAddToGroceries: (servings) async {

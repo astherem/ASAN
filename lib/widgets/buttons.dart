@@ -443,24 +443,32 @@ import 'package:flutter/material.dart';
           children: List.generate(views.length, (index) {
             final isSelected = index == selectedIndex;
             return Expanded(
-              child: Material(
-                color: isSelected ? AsanColorScheme.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(50),
-                child: InkWell(
-                  onTap: onChanged == null ? null : () => onChanged!(index),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  color: isSelected ? AsanColorScheme.primary : Colors.transparent,
                   borderRadius: BorderRadius.circular(50),
-                  child: SizedBox(
-                    height: 32,
-                    child: Center(
-                      child: Text(
-                        views[index],
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AsanTextTheme.labelSmall.copyWith(
-                          color: isSelected
-                              ? AsanColorScheme.onPrimary
-                              : AsanColorScheme.inactive,
-                          fontWeight: FontWeight.bold,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(50),
+                  child: InkWell(
+                    onTap: onChanged == null ? null : () => onChanged!(index),
+                    borderRadius: BorderRadius.circular(50),
+                    child: SizedBox(
+                      height: 32,
+                      child: Center(
+                        child: Text(
+                          views[index],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AsanTextTheme.labelSmall.copyWith(
+                            color: isSelected
+                                ? AsanColorScheme.onPrimary
+                                : AsanColorScheme.inactive,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),

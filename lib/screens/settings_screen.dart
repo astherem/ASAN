@@ -30,6 +30,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  static const _profilePhotosBucket = 'profile-photos';
   final Map<String, Set<String>> _preferences = {
     'cuisines': <String>{},
     'diets': <String>{},
@@ -74,6 +75,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _profileImage = base64Decode(encodedImage);
       } catch (_) {
         _profileImage = null;
+      }
+    }
+    final user = widget.client?.auth.currentUser;
+    if (user != null) {
+      try {
+        final cloudImage = await widget.client!.storage
+            .from(_profilePhotosBucket)
+            .download('${user.id}/profile.jpg');
+        _profileImage = cloudImage;
+        local['profile_image'] = base64Encode(cloudImage);
+        await widget.storage?.saveProfilePreferences(local);
+      } catch (_) {
+        // Keep showing the cached photo when cloud storage is unavailable.
       }
     }
     if (mounted) setState(() {});
@@ -148,16 +162,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
     if (update == null) return;
+    final imageChanged = !_sameImage(update.image, _profileImage);
     final local = widget.storage?.loadProfilePreferences() ?? {};
     local['profile_username'] = update.username;
     local['profile_email'] = update.email;
     if (update.image != null) {
       local['profile_image'] = base64Encode(update.image!);
+    } else {
+      local.remove('profile_image');
     }
     await widget.storage?.saveProfilePreferences(local);
     _localUsername = update.username;
     _localEmail = update.email;
     if (widget.client != null) {
+      final userId = user?.id;
+      if (userId != null && imageChanged) {
+        final photos = widget.client!.storage.from(_profilePhotosBucket);
+        try {
+          if (update.image == null) {
+            await photos.remove(['$userId/profile.jpg']);
+            local.remove('profile_image');
+          } else {
+            await photos.uploadBinary(
+              '$userId/profile.jpg',
+              update.image!,
+              fileOptions: const FileOptions(
+                upsert: true,
+                contentType: 'image/jpeg',
+              ),
+            );
+          }
+          await widget.storage?.saveProfilePreferences(local);
+        } catch (_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Photo saved on this device, but could not sync to your account.')),
+            );
+          }
+        }
+      }
       await widget.client!.auth.updateUser(
         UserAttributes(
           email: update.email == user?.email ? null : update.email,
@@ -172,8 +215,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
     if (mounted) {
-      setState(() => _profileImage = update.image ?? _profileImage);
+      setState(() => _profileImage = update.image);
     }
+  }
+
+  bool _sameImage(Uint8List? first, Uint8List? second) {
+    if (identical(first, second)) return true;
+    if (first == null || second == null || first.length != second.length) {
+      return false;
+    }
+    for (var i = 0; i < first.length; i++) {
+      if (first[i] != second[i]) return false;
+    }
+    return true;
   }
 
   @override
@@ -338,10 +392,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
         if (isExpanded) ...[
-          const SizedBox(height: AsanSpacing.sm),
+          if (key != 'first_day_of_week')
+            const SizedBox(height: AsanSpacing.sm),
           if (key == 'first_day_of_week')
             AsanDropdownMenu(
               label: 'First day of the week',
+              showLabel: false,
               items: options,
               value: selected.isEmpty ? null : selected.first,
               hintText: 'Select a day',
@@ -369,7 +425,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: AsanSpacing.sm),
                   child: Text(
                     '$_servingCount ${_servingCount == 1 ? 'serving' : 'servings'}',
-                    style: AsanTextTheme.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                    style: AsanTextTheme.bodyMedium,
                   ),
                 ),
                 const SizedBox(width: AsanSpacing.xs),
@@ -396,10 +452,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   int get _servingCount {
     final values = _preferences['serving_size']!;
-    return int.tryParse(values.isEmpty ? '' : values.first) ?? 1;
+    return (int.tryParse(values.isEmpty ? '' : values.first) ?? 1).clamp(1, 100);
   }
 
   void _setServingCount(int value) {
+    value = value.clamp(1, 100);
     widget.onDefaultServingsChanged?.call(value);
     _toggle('serving_size', '$value', singleSelect: true);
   }

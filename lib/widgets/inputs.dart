@@ -449,6 +449,7 @@ class AsanDropdownMenu extends StatefulWidget {
   final String? errorText;
   final bool required;
   final Color? labelColor;
+  final bool showLabel;
 
   const AsanDropdownMenu({
     super.key,
@@ -462,6 +463,7 @@ class AsanDropdownMenu extends StatefulWidget {
     this.errorText,
     this.required = false,
     this.labelColor,
+    this.showLabel = true,
   });
 
   @override
@@ -520,7 +522,7 @@ class _AsanDropdownMenuState extends State<AsanDropdownMenu> {
     return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
+          if (widget.showLabel) Row(
             children: [
               Text(
                 widget.label,

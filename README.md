@@ -39,7 +39,9 @@ For local development, put your Supabase project URL and publishable key in the 
 
 If you want accounts and cloud sync, create a Supabase project, apply
 `supabase/migrations/user_data.sql` in the Supabase SQL editor, and enable email
-authentication. The app uses the publishable key in the client; never place a
+authentication. The migration also creates a private `profile-photos` Storage
+bucket with per-user access policies. If you already applied the migration,
+run its profile photo bucket and policy statements as well. The app uses the publishable key in the client; never place a
 Supabase secret key or the Spoonacular API key in `env.json`.
 
 ## 3. How to run it
@@ -88,6 +90,8 @@ Function; the other screens can be explored without that service.
 - After sign-in, the app merges local collections with the user's Supabase
   `user_data` records and uploads later changes. Row-level security limits each
   user to their own data.
+- Profile photos are stored in a private Supabase Storage bucket under the
+  signed-in user's ID and cached locally for offline viewing.
 - If cloud sync is unavailable, the app keeps the local data and displays a
   sync error instead of silently discarding changes.
 
@@ -182,19 +186,19 @@ docs/                               project documentation, screenshots, and font
 
 ## Security checklist
 
-See [SECURITY-CHECKLIST.md](SECURITY-CHECKLIST.md) for the project's security review, including client configuration, GitHub Actions, and the server-side Spoonacular key.
+See [Security Checklist](SECURITY-CHECKLIST.md) for the project's security review, including client configuration, GitHub Actions, and the server-side Spoonacular key.
 
-## CREDITS
+## Credits
 
-- Packages: see `pubspec.yaml`
-- Fonts: Bricolage Grotesque by Mathieu Triay, licensed under the [SIL Open Font License, Version 1.1](https://openfontlicense.org/open-font-license-official-text/)
-- Icons: Material Symbols and Icons by Google and Tim Maffett, licensed under the [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- **Packages:** see `pubspec.yaml`
+- **Fonts:** Bricolage Grotesque by Mathieu Triay, licensed under the [SIL Open Font License, Version 1.1](https://openfontlicense.org/open-font-license-official-text/)
+- **Icons:** Material Symbols and Icons by Google and Tim Maffett, licensed under the [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## AI usage
 
 [![Built with AI assistance](https://img.shields.io/badge/Built%20with-AI%20assistance-0b5fff)](AI-USAGE.md)
 
-The app was developed with Codex and Copilot for code suggestions, debugging, API integration, and documentation, while the final implementation was reviewed and adjusted by the author. See [AI-USAGE.md](AI-USAGE.md) for more details. 
+The app was developed with Codex and Copilot for code suggestions, debugging, API integration, and documentation, while the final implementation was reviewed and adjusted by the author. See [AI Usage](AI-USAGE.md) for more details. 
 
 ## LICENSE
 

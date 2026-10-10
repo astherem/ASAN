@@ -6,9 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import 'package:asan/models/recipes.dart';
 import 'package:asan/models/grocery_item.dart';
-
 import 'package:asan/services/recipe_api.dart';
-
 import 'package:asan/styles/theme.dart';
 
 import 'package:asan/widgets/buttons.dart';
@@ -49,6 +47,20 @@ const _dishTypeSearchCards = <_SearchCardOption>[
   _SearchCardOption(title: 'Snack', icon: Symbols.cookie_rounded),
   _SearchCardOption(title: 'Drink', icon: Symbols.water_full_rounded),
 ];
+
+String _searchCardDishType(ApiRecipe recipe) {
+  final mealTimes = {
+    ...asanMealTimes.map((value) => value.toLowerCase()),
+    'morning meal',
+  };
+  for (final value in [...recipe.dishTypes, recipe.category]) {
+    final dishType = value.trim();
+    if (dishType.isNotEmpty && !mealTimes.contains(dishType.toLowerCase())) {
+      return dishType;
+    }
+  }
+  return '';
+}
 
 class SearchScreen extends StatefulWidget {
   final AsanFilterSelection? initialFilters;
@@ -575,7 +587,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         final image = recipe.imageUrl;
                         return RecipeCard(
                           recipeName: recipe.title,
-                          mealCategory: recipe.category,
+                          mealCategory: _searchCardDishType(recipe),
                           imageUrl: image.isEmpty ? null : image,
                           totalTime: recipe.totalTime > 0 ? '${recipe.totalTime} min' : 'Open recipe',
                           showBookmark: false,

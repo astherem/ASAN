@@ -212,8 +212,8 @@ class AsanNavigationBar extends StatelessWidget {
           Expanded(
             child: _NavigationItem(
               label: 'Meals',
-              icon: const Icon(Symbols.calendar_today_rounded, weight: 600),
-              activeIcon: const Icon(Symbols.calendar_today_rounded, fill: 1),
+              icon: const Icon(Symbols.calendar_today_rounded, size: 24, weight: 600),
+              activeIcon: const Icon(Symbols.calendar_today_rounded, size: 24, fill: 1),
               isSelected: selectedIndex == 1,
               onPressed: () => onDestinationSelected(1),
             ),
@@ -221,8 +221,8 @@ class AsanNavigationBar extends StatelessWidget {
           Expanded(
             child: _NavigationItem(
               label: 'Pantry',
-              icon: const Icon(Symbols.inventory_2_rounded, weight: 600),
-              activeIcon: const Icon(Symbols.inventory_2_rounded, fill: 1),
+              icon: const Icon(Symbols.inventory_2_rounded, size: 24, weight: 600),
+              activeIcon: const Icon(Symbols.inventory_2_rounded, size: 24, fill: 1),
               isSelected: selectedIndex == 2,
               onPressed: () => onDestinationSelected(2),
             ),
@@ -230,8 +230,8 @@ class AsanNavigationBar extends StatelessWidget {
           Expanded(
             child: _NavigationItem(
               label: 'Groceries',
-              icon: const Icon(Symbols.shopping_cart_rounded, weight: 600),
-              activeIcon: const Icon(Symbols.shopping_cart_rounded, fill: 1),
+              icon: const Icon(Symbols.shopping_cart_rounded, size: 24, weight: 600),
+              activeIcon: const Icon(Symbols.shopping_cart_rounded, size: 24, fill: 1),
               isSelected: selectedIndex == 3,
               badgeCount: groceriesBadgeCount,
               onPressed: () => onDestinationSelected(3),
@@ -240,8 +240,8 @@ class AsanNavigationBar extends StatelessWidget {
           Expanded(
             child: _NavigationItem(
               label: 'Settings',
-              icon: const Icon(Symbols.settings_rounded, weight: 600),
-              activeIcon: const Icon(Symbols.settings_rounded, fill: 1),
+              icon: const Icon(Symbols.settings_rounded, size: 24, weight: 600),
+              activeIcon: const Icon(Symbols.settings_rounded, size: 24, fill: 1),
               isSelected: selectedIndex == 4,
               onPressed: () => onDestinationSelected(4),
             ),
@@ -284,10 +284,16 @@ class _NavigationItem extends StatelessWidget {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              StandardIconButton(
-                icon: icon,
-                activeIcon: activeIcon,
-                isActive: isSelected,
+              SizedBox(
+                width: 28,
+                height: 28,
+                child: Center(
+                  child: StandardIconButton(
+                    icon: icon,
+                    activeIcon: activeIcon,
+                    isActive: isSelected,
+                  ),
+                ),
               ),
               if (badgeCount > 0)
                 Positioned(
@@ -298,12 +304,14 @@ class _NavigationItem extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 2),
-          Text(
-            label,
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
             style: AsanTextTheme.labelSmall.copyWith(
               color: color,
               fontWeight: FontWeight.bold,
             ),
+            child: Text(label),
           ),
         ],
       ),

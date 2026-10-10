@@ -253,6 +253,16 @@ class _AsanState extends State<Asan> {
 
       theme: ThemeData(
         useMaterial3: true,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: _AsanPageTransitionsBuilder(),
+            TargetPlatform.iOS: _AsanPageTransitionsBuilder(),
+            TargetPlatform.linux: _AsanPageTransitionsBuilder(),
+            TargetPlatform.macOS: _AsanPageTransitionsBuilder(),
+            TargetPlatform.windows: _AsanPageTransitionsBuilder(),
+            TargetPlatform.fuchsia: _AsanPageTransitionsBuilder(),
+          },
+        ),
         colorScheme: const ColorScheme(
           brightness: Brightness.light,
 
@@ -280,7 +290,7 @@ class _AsanState extends State<Asan> {
             Expanded(
               child: _isLoadingData
                   ? const Center(child: CircularProgressIndicator())
-                  : IndexedStack(
+                  : _AnimatedIndexedStack(
                       index: _selectedIndex,
                       children: [
                   RecipesScreen(
@@ -407,6 +417,109 @@ class _AsanState extends State<Asan> {
           },
         ),
       ),
+    );
+  }
+}
+
+class _AnimatedIndexedStack extends StatefulWidget {
+  const _AnimatedIndexedStack({
+    required this.index,
+    required this.children,
+  });
+
+  final int index;
+  final List<Widget> children;
+
+  @override
+  State<_AnimatedIndexedStack> createState() => _AnimatedIndexedStackState();
+}
+
+class _AnimatedIndexedStackState extends State<_AnimatedIndexedStack>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 280),
+  )..addStatusListener(_handleAnimationStatus);
+  late final Animation<double> _progress = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeInOutCubic,
+  );
+  int? _previousIndex;
+
+  void _handleAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed && _previousIndex != null) {
+      setState(() => _previousIndex = null);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimatedIndexedStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index != widget.index) {
+      _previousIndex = oldWidget.index;
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (var index = 0; index < widget.children.length; index++)
+          Offstage(
+            offstage: index != widget.index && index != _previousIndex,
+            child: IgnorePointer(
+              ignoring: index != widget.index,
+              child: AnimatedBuilder(
+                animation: _progress,
+                child: widget.children[index],
+                builder: (context, child) {
+                  final offset = index == widget.index
+                      ? Offset(0, 0.04 * (1 - _progress.value))
+                      : Offset(0, -0.04 * _progress.value);
+                  return FractionalTranslation(
+                    translation: offset,
+                    child: child,
+                  );
+                },
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _AsanPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _AsanPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final easedAnimation = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeInOutCubic,
+      reverseCurve: Curves.easeInOutCubic,
+    );
+
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.06),
+        end: Offset.zero,
+      ).animate(easedAnimation),
+      child: child,
     );
   }
 }

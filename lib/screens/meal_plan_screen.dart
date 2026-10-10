@@ -167,6 +167,7 @@ class MealPlanScreenState extends State<MealPlanScreen> {
               initialMealTime: mealTime,
               initialDishType: dishType,
               initialRecipe: initialRecipe,
+              defaultServings: widget.defaultServings,
               onAddToGroceries: widget.onAddToGroceries,
               onViewGroceries: widget.onViewGroceries,
             ),
@@ -176,6 +177,10 @@ class MealPlanScreenState extends State<MealPlanScreen> {
     );
     if (entries != null && mounted) {
       setState(() => _entries.addAll(entries));
+      // These entries are now part of the parent-owned list as well. Mark
+      // them as received so didUpdateWidget doesn't append them a second time
+      // when the parent later rebuilds with the updated list.
+      _receivedEntryCount += entries.length;
       _notifyEntriesChanged();
       AsanSnackBar.show(
         context,
@@ -1170,6 +1175,7 @@ class _MealPlanForm extends StatefulWidget {
   final String? initialDishType;
   final Recipes? initialRecipe;
   final int? initialServings;
+  final int defaultServings;
   final bool isEditing;
   final Future<bool> Function(List<GroceryItem>)? onAddToGroceries;
   final VoidCallback? onViewGroceries;
@@ -1182,6 +1188,7 @@ class _MealPlanForm extends StatefulWidget {
     this.initialDishType,
     this.initialRecipe,
     this.initialServings,
+    this.defaultServings = 1,
     this.isEditing = false,
     this.onAddToGroceries,
     this.onViewGroceries,
@@ -1216,7 +1223,7 @@ class _MealPlanFormState extends State<_MealPlanForm> {
         _mealTimes.length != (widget.initialMealTime == null ? 0 : 1) ||
         (widget.initialMealTime != null && !_mealTimes.contains(widget.initialMealTime)) ||
         _dishType != widget.initialDishType ||
-        _servingsController.text.isNotEmpty;
+        _servingsController.text != widget.defaultServings.toString();
   }
 
   @override
@@ -1226,9 +1233,8 @@ class _MealPlanFormState extends State<_MealPlanForm> {
     _mealTimes = {if (widget.initialMealTime != null) widget.initialMealTime!};
     _dishType = widget.initialDishType;
     _recipe = widget.initialRecipe;
-    if (widget.initialServings != null) {
-      _servingsController.text = widget.initialServings.toString();
-    }
+    _servingsController.text =
+        (widget.initialServings ?? widget.defaultServings).toString();
   }
 
   @override
@@ -1266,7 +1272,7 @@ class _MealPlanFormState extends State<_MealPlanForm> {
             onSelected: (recipe) => setState(() {
               _recipe = recipe;
               _dishType = null;
-              _servingsController.clear();
+              _servingsController.text = widget.defaultServings.toString();
               _servingsHasError = false;
             }),
           ),
