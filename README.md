@@ -35,7 +35,16 @@ flutter devices
 ```
 Recipes Explore uses Spoonacular through a Supabase Edge Function. The Spoonacular API key stays in Supabase Function secrets; the Flutter app receives only the Supabase URL and publishable key.
 
-For local development, put your Supabase project URL and publishable key in the root `env.json` file. This local config is git-ignored and loaded at app startup, so ordinary `flutter run` works without defines. Build-time `--dart-define` values remain supported for CI and deployments.
+For local development, create a root `env.json` file. Flutter bundles this asset, so the file is needed even in local-only mode. To use Supabase features, add your project URL and publishable key; to run without Supabase, use `{}`. The file is git-ignored and loaded at app startup, so ordinary `flutter run` works without defines. Build-time `--dart-define` values remain supported for CI and deployments:
+
+```json
+{
+  "SUPABASE_URL": "https://your-project.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "your-publishable-key"
+}
+```
+
+The committed `.env.example` documents the variable names; the app does not load a dotenv file.
 
 If you want accounts and cloud sync, create a Supabase project, apply
 `supabase/migrations/user_data.sql` in the Supabase SQL editor, and enable email
@@ -63,7 +72,7 @@ supabase secrets set SPOONACULAR_API_KEY=your_spoonacular_key
 supabase functions deploy spoonacular
 ```
 
-For GitHub Pages, add `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as repository secrets. The workflow passes them as Flutter `--dart-define` values. The Edge Function endpoint is callable by app clients, so monitor its usage.
+For GitHub Pages, add `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as repository secrets. The workflow creates the local config needed by Flutter and passes them as `--dart-define` values. The Edge Function endpoint is callable by app clients, so monitor its usage.
 When the app loads successfully, it opens to Recipes. With Supabase
 configured, the app shows the sign-in/onboarding flow before opening the app.
 Without Supabase configuration, it runs in local-only mode. The bottom
@@ -80,20 +89,6 @@ Function; the other screens can be explored without that service.
   signed-in users also sync it with Supabase.
 - Use My Recipes to create, view, and manage custom recipes. Recipe images can be selected with the device image picker where supported.
 - Explore requires valid Supabase client configuration and a deployed `spoonacular` Edge Function with the `SPOONACULAR_API_KEY` secret. Without these, custom recipes and the other local screens remain available, but Explore cannot fetch recipes.
-
-### Accounts and sync
-
-- Create an account, sign in, and request a password-reset email through
-  Supabase Auth.
-- Hive stores a local copy of recipes, saved recipes, pantry items, groceries,
-  and meal plans.
-- After sign-in, the app merges local collections with the user's Supabase
-  `user_data` records and uploads later changes. Row-level security limits each
-  user to their own data.
-- Profile photos are stored in a private Supabase Storage bucket under the
-  signed-in user's ID and cached locally for offline viewing.
-- If cloud sync is unavailable, the app keeps the local data and displays a
-  sync error instead of silently discarding changes.
 
 ### Meal Plan
 
@@ -123,6 +118,19 @@ Function; the other screens can be explored without that service.
 - Preferences are stored locally and, when an account is available, mirrored to
   the signed-in user's Supabase metadata.
 
+### Accounts and sync
+
+- Create an account, sign in, and request a password-reset email through
+  Supabase Auth.
+- Hive stores a local copy of recipes, saved recipes, pantry items, groceries,
+  and meal plans.
+- After sign-in, the app merges local collections with the user's Supabase
+  `user_data` records and uploads later changes. Row-level security limits each
+  user to their own data.
+- Profile photos are stored in a private Supabase Storage bucket under the
+  signed-in user's ID and cached locally for offline viewing.
+- If cloud sync is unavailable, the app keeps the local data and displays a
+  sync error instead of silently discarding changes.
 
 ## 5. Project structure
 
@@ -131,7 +139,13 @@ The project is organised by app responsibility. The main folders and files are:
 ```text
 ├── .github/workflows/deploy-web.yml    GitHub Pages build and deployment
 ├── docs/                               Proposal, design, reports, and app assets
-│   └── assets/                         Screenshots, logos, and fonts
+│   ├── 01-proposal.md                  Project scope and storage decisions
+│   ├── 02-mockup.md                    Mockups, wireframes, and screen flow
+│   ├── 03-design-system.md             Visual design specification
+│   ├── 04-weekly-reports.md            Development progress
+│   ├── 05-demo-video.md                Demo recording notes
+│   ├── 06-security-and-privacy.md      Data and security documentation
+│   └── assets/                         Screenshots, mockups, logos, and fonts
 ├── lib/                                Flutter application source
 │   ├── data/                           Hive-backed storage and collection boxes
 │   ├── models/                         Recipe, meal, pantry, grocery, and filter models
@@ -141,11 +155,11 @@ The project is organised by app responsibility. The main folders and files are:
 │   ├── widgets/                        Shared controls and navigation
 │   └── main.dart                       App startup and root navigation
 ├── supabase/
-│   ├── functions\spoonacular/          Server-side Spoonacular proxy Edge Function
+│   ├── functions/spoonacular/          Server-side Spoonacular proxy Edge Function
 │   └── migrations/                     Database schema and row-level security policies
 ├── test/                               Widget tests
 ├── web/                                Flutter web entry point and manifest
-├── .env.example                        Example environment configuration
+├── .env.example                        Supabase variable-name reference
 ├── pubspec.yaml                        Flutter dependencies and project metadata
 └── README.md                           Project overview and setup guide
 ```
@@ -196,11 +210,11 @@ The project is organised by app responsibility. The main folders and files are:
    state updates.
 2. Add conflict resolution and more granular sync feedback for multi-device
    edits.
-3. Refresh screenshots and finish the demo and presentation materials.
+3. Finish the demo and presentation materials.
 
 ## Security checklist
 
-See [Security Checklist](SECURITY-CHECKLIST.md) for the project's security review, including client configuration, GitHub Actions, and the server-side Spoonacular key.
+See the [Security Checklist](SECURITY-CHECKLIST.md) for the repository review and [Security and Privacy](docs/06-security-and-privacy.md) for stored data, service-side protections, and privacy details. The [project documentation index](docs/README.md) links the proposal, design, weekly reports, and mockups.
 
 ## Credits
 
@@ -214,6 +228,6 @@ See [Security Checklist](SECURITY-CHECKLIST.md) for the project's security revie
 
 The app was developed with Codex and Copilot for code suggestions, debugging, API integration, and documentation, while the final implementation was reviewed and adjusted by the author. See [AI Usage](AI-USAGE.md) for more details. 
 
-## LICENSE
+## License
 
 Copyright © 2026 astherem. [MIT License](LICENSE).
