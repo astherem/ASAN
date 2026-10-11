@@ -25,5 +25,5 @@ Chapters are listed in playback order:
 
 ## Presentation files
 
-**Slides:** [View the PDF](assets/presentations/asan-slides.pdf) or [open it on Google Drive](https://drive.google.com/file/d/1hYW7aTUqbAou8FPmCG1iM1RuUdHFAl7n/view?usp=drive_link) <br>
+**Slides:** [View the PDF](assets/presentations/asan-slides.pdf) or [open it on Google Drive](https://drive.google.com/file/d/17a30hVbzyL0c6Aky41o9pjQnTmtnt-oG/view?usp=drivesdk) <br>
 **Square image:** [View the PNG](assets/presentations/asan-square-image.png) or [open it on Google Drive](https://drive.google.com/file/d/1voTRPbvV34dDIIuDDFwZMTpEKE4olKpi/view?usp=sharing)
