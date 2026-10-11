@@ -1,6 +1,6 @@
 # Asan design system
 
-This document records the visual system implemented in `lib/styles/theme.dart` and the shared widgets in `lib/widgets/`. Use it as the reference when updating existing screens or adding new ones. Values below describe the current app; widget parameters can override defaults where noted.
+This document records the visual system implemented in `lib/styles/theme.dart` and the shared widgets in `lib/widgets/`. Values below describe the current app; widget parameters can override defaults where noted.
 
 ## Palette
 
