@@ -2,7 +2,7 @@
 # version it needs, and lists the packages you depend on.
 # Add a package with: flutter pub add <name>
 name: asan
-description: My 6ADET final project.
+description: A meal planning app for recipes, pantry stock, and groceries.
 publish_to: "none"
 version: 1.0.0+1
 

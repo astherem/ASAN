@@ -80,9 +80,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final user = widget.client?.auth.currentUser;
     if (user != null) {
       try {
+        final metadataPath = user.userMetadata?['avatar_path'];
+        final photoPath = metadataPath is String && metadataPath.isNotEmpty
+            ? metadataPath
+            : '${user.id}/profile.jpg';
         final cloudImage = await widget.client!.storage
             .from(_profilePhotosBucket)
-            .download('${user.id}/profile.jpg');
+            .download(photoPath);
         _profileImage = cloudImage;
         local['profile_image'] = base64Encode(cloudImage);
         await widget.storage?.saveProfilePreferences(local);
@@ -127,8 +131,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not sync preferences. They are saved on this device.')),
+        AsanSnackBar.show(
+          context,
+          message: 'Could not sync preferences. They are saved on this device.',
         );
       }
     } finally {
@@ -176,6 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _localEmail = update.email;
     if (widget.client != null) {
       final userId = user?.id;
+      Object? photoSyncError;
       if (userId != null && imageChanged) {
         final photos = widget.client!.storage.from(_profilePhotosBucket);
         try {
@@ -193,26 +199,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           }
           await widget.storage?.saveProfilePreferences(local);
-        } catch (_) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Photo saved on this device, but could not sync to your account.')),
-            );
-          }
+        } catch (error) {
+          photoSyncError = error;
         }
       }
-      await widget.client!.auth.updateUser(
-        UserAttributes(
-          email: update.email == user?.email ? null : update.email,
-          data: {
-            ...metadata,
-            'username': update.username,
-            // Clear profile keys written by older versions of the app.
-            'name': null,
-            'full_name': null,
-          },
-        ),
-      );
+      try {
+        final profileMetadata = <String, dynamic>{
+          ...metadata,
+          'username': update.username,
+          // Clear profile keys written by older versions of the app.
+          'name': null,
+          'full_name': null,
+        };
+        if (userId != null && imageChanged && photoSyncError == null) {
+          // Keep the private Storage object associated with the account.
+          profileMetadata['avatar_path'] = update.image == null
+              ? null
+              : '$userId/profile.jpg';
+        }
+        await widget.client!.auth.updateUser(
+          UserAttributes(
+            email: update.email == user?.email ? null : update.email,
+            data: profileMetadata,
+          ),
+        );
+      } catch (error) {
+        photoSyncError ??= error;
+      }
+      if (photoSyncError != null && mounted) {
+        AsanSnackBar.show(
+          context,
+          message: 'Profile saved, but account sync failed: $photoSyncError',
+        );
+      }
     }
     if (mounted) {
       setState(() => _profileImage = update.image);
@@ -641,7 +660,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
           child: Scaffold(
             resizeToAvoidBottomInset: true,
             appBar: FullScreenDialogHeader(
-              screenTitle: 'Edit profile',
+              screenTitle: 'Edit Profile',
               onBackPressed: _handleClose,
             ),
             body: Column(

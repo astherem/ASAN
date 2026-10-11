@@ -195,7 +195,6 @@ class _RecipesScreenState extends State<RecipesScreen> {
   late final ScrollController _contentScrollController;
   late final ScrollController _filterScrollController;
   bool _isContentScrolled = false;
-  int _receivedItemCount = 0;
   final Set<String> _savedRecipeTitles = {};
   final Map<String, ApiRecipe> _savedRecipes = {};
   String? _exploreCategory;
@@ -209,7 +208,6 @@ class _RecipesScreenState extends State<RecipesScreen> {
       ..addListener(_handleContentScroll);
     _filterScrollController = ScrollController();
     _items.addAll(widget.incomingRecipes);
-    _receivedItemCount = widget.incomingRecipes.length;
     _savedRecipeTitles.addAll(widget.initialSavedRecipeTitles);
     for (final recipe in widget.initialSavedRecipes) {
       _savedRecipeTitles.add(recipe.title);
@@ -223,10 +221,10 @@ class _RecipesScreenState extends State<RecipesScreen> {
   @override
   void didUpdateWidget(covariant RecipesScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.incomingRecipes.length > _receivedItemCount) {
-      _items.addAll(widget.incomingRecipes.skip(_receivedItemCount));
-      _receivedItemCount = widget.incomingRecipes.length;
-      widget.onRecipesChanged?.call(List.unmodifiable(_items));
+    if (!identical(oldWidget.incomingRecipes, widget.incomingRecipes)) {
+      _items
+        ..clear()
+        ..addAll(widget.incomingRecipes);
       setState(() {});
     }
   }
@@ -375,7 +373,6 @@ class _RecipesScreenState extends State<RecipesScreen> {
     );
     if (item != null && mounted) {
       setState(() => _items.add(item));
-      _receivedItemCount = _items.length;
       widget.onRecipesChanged?.call(List.unmodifiable(_items));
     }
   }
@@ -1566,7 +1563,6 @@ class _RecipesScreenState extends State<RecipesScreen> {
         initialItem: item,
         onDelete: () {
           setState(() => _items.remove(item));
-          _receivedItemCount = _items.length;
           widget.onRecipesChanged?.call(List.unmodifiable(_items));
         },
       ),
@@ -1575,7 +1571,6 @@ class _RecipesScreenState extends State<RecipesScreen> {
       final index = _items.indexOf(item);
       if (index != -1) {
         setState(() => _items[index] = updatedItem);
-        _receivedItemCount = _items.length;
         widget.onRecipesChanged?.call(List.unmodifiable(_items));
       }
     }

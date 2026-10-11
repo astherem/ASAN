@@ -46,8 +46,16 @@ class _PantryScreenState extends State<PantryScreen> {
   @override
   void didUpdateWidget(covariant PantryScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.incomingItems.length > _receivedItemCount) {
-      _items.addAll(widget.incomingItems.skip(_receivedItemCount));
+    if (!identical(oldWidget.incomingItems, widget.incomingItems) ||
+        widget.incomingItems.length != _receivedItemCount) {
+      if (identical(oldWidget.incomingItems, widget.incomingItems) &&
+          widget.incomingItems.length > _receivedItemCount) {
+        _items.addAll(widget.incomingItems.skip(_receivedItemCount));
+      } else {
+        _items
+          ..clear()
+          ..addAll(widget.incomingItems);
+      }
       _receivedItemCount = widget.incomingItems.length;
       setState(() {});
     }
@@ -137,6 +145,14 @@ class _PantryScreenState extends State<PantryScreen> {
       },
     );
     if (item != null && mounted && context.mounted) {
+      final duplicate = _items.any((existing) =>
+          existing.name.trim().toLowerCase() == item.name.trim().toLowerCase() &&
+          (existing.aisle ?? '').trim().toLowerCase() ==
+              (item.aisle ?? '').trim().toLowerCase());
+      if (duplicate) {
+        AsanSnackBar.show(context, message: 'An item with this name and aisle already exists.');
+        return;
+      }
       setState(() => _items.add(item));
       _notifyItemsChanged();
       AsanSnackBar.show(
@@ -360,7 +376,10 @@ class _PantryScreenState extends State<PantryScreen> {
     return '${trimmed[0].toUpperCase()}${trimmed.substring(1).toLowerCase()}';
   }
 
-  Widget _buildListTile(PantryItem item) => AsanListTile(
+  Widget _buildListTile(PantryItem item) => AsanSwipeableActions(
+    onEdit: () => _showEditItemDialog(item),
+    onDelete: () => _deleteItem(item),
+    child: AsanListTile(
     key: ValueKey(item),
     itemName: item.name,
     amount: item.amount,
@@ -406,7 +425,22 @@ class _PantryScreenState extends State<PantryScreen> {
       }
     },
     onTap: () => _showEditItemDialog(item),
+    ),
   );
+
+  Future<void> _deleteItem(PantryItem item) async {
+    final confirmed = await AsanAlertDialog.show(
+      context,
+      title: 'Delete Pantry Item?',
+      content: 'This item will be permanently removed from your pantry. Are you sure you want to delete it?',
+      cancelText: 'Cancel',
+      destructiveText: 'Delete Item',
+    );
+    if (confirmed == true && mounted) {
+      setState(() => _items.remove(item));
+      _notifyItemsChanged();
+    }
+  }
 
   Future<void> _showEditItemDialog(PantryItem item) async {
     final formKey = GlobalKey<_AddPantryItemFormState>();
@@ -472,6 +506,15 @@ class _PantryScreenState extends State<PantryScreen> {
     if (updatedItem != null && mounted) {
       final index = _items.indexOf(item);
       if (index != -1) {
+        final duplicate = _items.asMap().entries.any((entry) =>
+            entry.key != index &&
+            entry.value.name.trim().toLowerCase() == updatedItem.name.trim().toLowerCase() &&
+            (entry.value.aisle ?? '').trim().toLowerCase() ==
+                (updatedItem.aisle ?? '').trim().toLowerCase());
+        if (duplicate) {
+          AsanSnackBar.show(context, message: 'An item with this name and aisle already exists.');
+          return;
+        }
         setState(() => _items[index] = updatedItem);
         _notifyItemsChanged();
       }

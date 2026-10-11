@@ -46,10 +46,11 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     String ingredientKey(GroceryItem item) =>
         '${item.name.trim().toLowerCase()}|${item.aisle?.trim().toLowerCase() ?? ''}';
 
-    final existingIngredients = _items.map(ingredientKey).toSet();
-    final duplicates = items
-        .where((item) => existingIngredients.contains(ingredientKey(item)))
-        .toList();
+    final seenIngredients = _items.map(ingredientKey).toSet();
+    final duplicates = <GroceryItem>[];
+    for (final item in items) {
+      if (!seenIngredients.add(ingredientKey(item))) duplicates.add(item);
+    }
     if (duplicates.isNotEmpty) {
       final names = duplicates.map((item) => item.name).toSet().join(', ');
       final addAnyway = await AsanAlertDialog.show(
@@ -74,14 +75,13 @@ class GroceriesScreenState extends State<GroceriesScreen> {
           continue;
         }
         final current = _items[index];
-        final sameUnit =
-            current.unit.trim().toLowerCase() ==
+        final sameUnit = current.unit.trim().toLowerCase() ==
             incoming.unit.trim().toLowerCase();
-        final currentAmount = double.tryParse(current.amount.trim());
-        final incomingAmount = double.tryParse(incoming.amount.trim());
+        final currentAmount = _parseQuantity(current.amount);
+        final incomingAmount = _parseQuantity(incoming.amount);
         final amount =
             sameUnit && currentAmount != null && incomingAmount != null
-            ? '${currentAmount + incomingAmount}'
+            ? _formatQuantity(currentAmount + incomingAmount)
             : [
                 current.amount,
                 incoming.amount,
@@ -111,6 +111,75 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     return notes.join('; ');
   }
 
+  double? _parseQuantity(String value) {
+    final normalized = value.trim();
+    final direct = double.tryParse(normalized);
+    if (direct != null) return direct;
+
+    // Recipe amounts commonly use fractions such as "1/2" or "1 1/2".
+    final parts = normalized.split(RegExp(r'\s+'));
+    var total = 0.0;
+    var hasValue = false;
+    for (final part in parts) {
+      final fraction = part.split('/');
+      if (fraction.length == 2) {
+        final numerator = double.tryParse(fraction[0]);
+        final denominator = double.tryParse(fraction[1]);
+        if (numerator == null || denominator == null || denominator == 0) {
+          return null;
+        }
+        total += numerator / denominator;
+      } else {
+        final number = double.tryParse(part);
+        if (number == null) return null;
+        total += number;
+      }
+      hasValue = true;
+    }
+    return hasValue ? total : null;
+  }
+
+  String _formatQuantity(double value) {
+    if (value == value.roundToDouble()) return value.toInt().toString();
+
+    final whole = value.floor();
+    final fractional = value - whole;
+    const maxDenominator = 16;
+    var numerator = 0;
+    var denominator = 1;
+    var smallestError = double.infinity;
+    for (var candidateDenominator = 2;
+        candidateDenominator <= maxDenominator;
+        candidateDenominator++) {
+      final candidateNumerator =
+          (fractional * candidateDenominator).round();
+      final error =
+          (fractional - candidateNumerator / candidateDenominator).abs();
+      if (error < smallestError) {
+        numerator = candidateNumerator;
+        denominator = candidateDenominator;
+        smallestError = error;
+      }
+    }
+
+    if (numerator == denominator) return (whole + 1).toString();
+    if (numerator == 0) return whole.toString();
+    final divisor = _greatestCommonDivisor(numerator, denominator);
+    final fraction = '${numerator ~/ divisor}/${denominator ~/ divisor}';
+    return whole == 0 ? fraction : '$whole $fraction';
+  }
+
+  int _greatestCommonDivisor(int first, int second) {
+    var a = first;
+    var b = second;
+    while (b != 0) {
+      final remainder = a % b;
+      a = b;
+      b = remainder;
+    }
+    return a;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -129,6 +198,11 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     _items
       ..clear()
       ..addAll(widget.initialItems);
+    final itemCount = _items.length;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onItemCountChanged?.call(itemCount);
+    });
+    _notifyItemsChanged();
   }
 
   @override
@@ -394,7 +468,10 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     return '${trimmed[0].toUpperCase()}${trimmed.substring(1).toLowerCase()}';
   }
 
-  Widget _buildListTile(GroceryItem item) => AsanListTile(
+  Widget _buildListTile(GroceryItem item) => AsanSwipeableActions(
+    onEdit: () => _showEditItemDialog(item),
+    onDelete: () => _deleteItem(item),
+    child: AsanListTile(
     key: ValueKey(item),
     itemName: item.name,
     amount: item.amount,
@@ -408,7 +485,23 @@ class GroceriesScreenState extends State<GroceriesScreen> {
       if (checked) _completeItem(item);
     },
     onTap: () => _showEditItemDialog(item),
+    ),
   );
+
+  Future<void> _deleteItem(GroceryItem item) async {
+    final confirmed = await AsanAlertDialog.show(
+      context,
+      title: 'Delete Grocery Item?',
+      content: 'This item will be permanently removed from your groceries. Are you sure you want to delete it?',
+      cancelText: 'Cancel',
+      destructiveText: 'Delete Item',
+    );
+    if (confirmed == true && mounted) {
+      setState(() => _items.remove(item));
+      widget.onItemCountChanged?.call(_items.length);
+      _notifyItemsChanged();
+    }
+  }
 
   void _completeItem(GroceryItem item) {
     final checkedDate = DateTime.now();
@@ -475,6 +568,7 @@ class GroceriesScreenState extends State<GroceriesScreen> {
                     Navigator.pop(context);
                     setState(() => _items.remove(item));
                     widget.onItemCountChanged?.call(_items.length);
+                    _notifyItemsChanged();
                   }
                 },
               ),
@@ -509,6 +603,16 @@ class GroceriesScreenState extends State<GroceriesScreen> {
     if (updatedItem != null && mounted) {
       final index = _items.indexOf(item);
       if (index != -1) {
+        final duplicate = _items.asMap().entries.any((entry) =>
+            entry.key != index &&
+            entry.value.name.trim().toLowerCase() ==
+                updatedItem.name.trim().toLowerCase() &&
+            (entry.value.aisle ?? '').trim().toLowerCase() ==
+                (updatedItem.aisle ?? '').trim().toLowerCase());
+        if (duplicate) {
+          AsanSnackBar.show(context, message: 'An item with this name and aisle already exists.');
+          return;
+        }
         setState(() => _items[index] = updatedItem);
         _notifyItemsChanged();
       }

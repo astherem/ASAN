@@ -26,7 +26,6 @@ import 'package:asan/data/saved_recipe_box.dart';
 import 'package:asan/styles/theme.dart';
 
 import 'package:asan/widgets/navigations.dart';
-import 'package:asan/widgets/communication.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -94,9 +93,7 @@ class _AsanState extends State<Asan> {
   List<GroceryItem> _groceries = [];
   List<MealPlans> _mealPlans = [];
   List<ApiRecipe> _savedRecipes = [];
-  String? _pendingSyncError;
   final Map<String, List<Map<String, dynamic>>> _syncBaselines = {};
-  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
   void initState() {
@@ -153,17 +150,17 @@ class _AsanState extends State<Asan> {
             savedRecipes.map(SavedRecipeBox.toJson),
           ),
         ]);
-        groceries = synced[0].map(GroceryBox.fromJson).toList();
-        pantryItems = synced[1].map(PantryBox.fromJson).toList();
-        recipes = synced[2].map(RecipeBox.fromJson).toList();
-        mealPlans = synced[3].map(MealPlanBox.fromJson).toList();
-        savedRecipes = synced[4].map(SavedRecipeBox.fromJson).toList();
+        groceries = synced[0].items.map(GroceryBox.fromJson).toList();
+        pantryItems = synced[1].items.map(PantryBox.fromJson).toList();
+        recipes = synced[2].items.map(RecipeBox.fromJson).toList();
+        mealPlans = synced[3].items.map(MealPlanBox.fromJson).toList();
+        savedRecipes = synced[4].items.map(SavedRecipeBox.fromJson).toList();
         _syncBaselines.addAll({
-          'groceries': groceries.map(GroceryBox.toJson).toList(),
-          'pantry': pantryItems.map(PantryBox.toJson).toList(),
-          'recipes': recipes.map(RecipeBox.toJson).toList(),
-          'meal_plans': mealPlans.map(MealPlanBox.toJson).toList(),
-          'saved_recipes': savedRecipes.map(SavedRecipeBox.toJson).toList(),
+          'groceries': synced[0].items,
+          'pantry': synced[1].items,
+          'recipes': synced[2].items,
+          'meal_plans': synced[3].items,
+          'saved_recipes': synced[4].items,
         });
         await Future.wait([
           widget.storage!.saveGroceries(groceries),
@@ -172,8 +169,8 @@ class _AsanState extends State<Asan> {
           widget.storage!.saveMealPlans(mealPlans),
           widget.storage!.saveSavedRecipes(savedRecipes),
         ]);
-      } on Exception catch (error) {
-        _pendingSyncError = 'Cloud sync failed: $error';
+      } on Exception {
+        // Keep the local data available when cloud sync is unavailable.
       }
     }
     if (!mounted) return;
@@ -186,11 +183,6 @@ class _AsanState extends State<Asan> {
       _savedRecipes = savedRecipes;
       _isLoadingData = false;
     });
-    final syncError = _pendingSyncError;
-    if (syncError != null) {
-      _pendingSyncError = null;
-      _showSyncError(syncError);
-    }
   }
 
   void _saveCollection(String type, Iterable<Map<String, dynamic>> payload) {
@@ -203,12 +195,26 @@ class _AsanState extends State<Asan> {
     _syncBaselines[type] = current;
     if (widget.client == null) return;
     SyncService(CloudStorage(widget.client!))
-        .syncCollection(type, current, deletedKeys: deletedKeys)
-        .then((merged) => _syncBaselines[type] = merged)
-        .catchError((error) {
-          if (mounted) _showSyncError('Cloud sync failed: $error');
-          return <Map<String, dynamic>>[];
+        .syncCollection(type, _withSyncVersions(type, current, previous), deletedKeys: deletedKeys)
+        .then((result) {
+          _syncBaselines[type] = result.items;
+        })
+        .catchError((Object error) {
+          debugPrint('Failed to sync $type collection: $error');
         });
+  }
+
+  List<Map<String, dynamic>> _withSyncVersions(String type, List<Map<String, dynamic>> current, List<Map<String, dynamic>> previous) {
+    final oldByKey = {for (final item in previous) _syncKey(type, item): item};
+    return current.map((item) {
+      final old = oldByKey[_syncKey(type, item)];
+      Map<String, dynamic> comparable(Map<String, dynamic> value) => {
+        for (final e in value.entries)
+          if (!e.key.startsWith('_sync')) e.key: e.value,
+      };
+      final unchanged = old != null && comparable(old).toString() == comparable(item).toString();
+      return {...item, '_syncUpdatedAt': unchanged ? old['_syncUpdatedAt'] : DateTime.now().toUtc().toIso8601String()};
+    }).toList();
   }
 
   String _syncKey(String type, Map<String, dynamic> item) {
@@ -232,19 +238,9 @@ class _AsanState extends State<Asan> {
   String _stableValue(Map<String, dynamic> item) =>
       item.entries.map((entry) => '${entry.key}=${entry.value}').join('|');
 
-  void _showSyncError(String message) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final messenger = _messengerKey.currentState;
-      if (mounted && messenger != null) {
-        AsanSnackBar.showOn(messenger, message: message);
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      scaffoldMessengerKey: _messengerKey,
       title: 'Asan',
       debugShowCheckedModeBanner: false,
 

@@ -22,9 +22,6 @@ name: Deploy web demo
 # Whatever you do pass in, put it in Settings > Secrets and variables > Actions
 # and reference it below. Never write a key literally in this file: it is public.
 #
-# Step by step, with the Dart side and the usual mistakes: page 12 of
-# content/extending-your-app/ in your course workspace.
-
 on:
   push:
     branches: [main]
@@ -42,58 +39,29 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      ready: ${{ steps.check.outputs.ready }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      # A fresh copy of the template has no Flutter app in it yet. Skip quietly
-      # rather than failing, so your repo is not red before you have written
-      # anything. Once pubspec.yaml exists, every push deploys.
-      - id: check
-        env:
-          IS_PRIVATE: ${{ github.event.repository.private }}
-        run: |
-          if [ -f pubspec.yaml ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::No pubspec.yaml yet. Add your Flutter app and this workflow will deploy it."
-          fi
-          # GitHub Pages only publishes PUBLIC repositories on a free account.
-          # Say so loudly rather than failing the deploy with a confusing 404.
-          if [ "$IS_PRIVATE" = "true" ]; then
-            echo "::warning::This repository is private, so GitHub Pages cannot publish it and the deploy step is skipped. Make the repository public (Settings > General > Danger Zone > Change visibility) to get your live link."
-          fi
-
-      - if: steps.check.outputs.ready == 'true'
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
 
       - name: Create local Supabase config
-        if: steps.check.outputs.ready == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           python -c 'import json, os; open("env.json", "w").write(json.dumps({"SUPABASE_URL": os.environ["SUPABASE_URL"], "SUPABASE_PUBLISHABLE_KEY": os.environ["SUPABASE_PUBLISHABLE_KEY"]}))'
 
-      - if: steps.check.outputs.ready == 'true'
-        run: flutter pub get
+      - run: flutter pub get
 
-      # Neither of these blocks your deploy: a failing test should not take your
-      # live link down. They are here so you find out before your grader does.
-      - if: steps.check.outputs.ready == 'true'
-        run: flutter analyze --no-fatal-infos
+      # Report analyzer and test issues without blocking the demo deployment.
+      - run: flutter analyze --no-fatal-infos
         continue-on-error: true
 
-      - if: steps.check.outputs.ready == 'true'
-        run: flutter test
+      - run: flutter test
         continue-on-error: true
 
       - name: Build web
-        if: steps.check.outputs.ready == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
@@ -106,15 +74,13 @@ jobs:
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
 
-      - if: steps.check.outputs.ready == 'true'
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: build/web
 
   deploy:
     needs: build
-    # Skipped, not failed, when there is no app yet or the repo is private.
-    if: needs.build.outputs.ready == 'true' && github.event.repository.private == false
+    if: github.event.repository.private == false
     runs-on: ubuntu-latest
     environment:
       name: github-pages

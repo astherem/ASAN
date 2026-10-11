@@ -7,6 +7,102 @@ import 'package:asan/styles/theme.dart';
 
 import 'package:asan/widgets/buttons.dart';
 
+class AsanSwipeableActions extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const AsanSwipeableActions({super.key, required this.child, required this.onEdit, required this.onDelete});
+
+  @override
+  State<AsanSwipeableActions> createState() => _AsanSwipeableActionsState();
+}
+
+class _AsanSwipeableActionsState extends State<AsanSwipeableActions> {
+  static const _actionsWidth = 96.0 + 2 * AsanSpacing.sm;
+  bool _revealed = false;
+
+  void _closeThen(VoidCallback callback) {
+    setState(() => _revealed = false);
+    callback();
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) => GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragUpdate: (details) {
+            if (details.delta.dx < 0 && !_revealed) {
+              setState(() => _revealed = true);
+            } else if (details.delta.dx > 0 && _revealed) {
+              setState(() => _revealed = false);
+            }
+          },
+          onHorizontalDragEnd: (details) {
+            final velocity = details.primaryVelocity ?? 0;
+            if (velocity < -250 && !_revealed) {
+              setState(() => _revealed = true);
+            } else if (velocity > 250 && _revealed) {
+              setState(() => _revealed = false);
+            }
+          },
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedSlide(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                offset: Offset(
+                  _revealed && constraints.maxWidth > 0
+                      ? -_actionsWidth / constraints.maxWidth
+                      : 0,
+                  0,
+                ),
+                child: SizedBox(width: constraints.maxWidth, child: widget.child),
+              ),
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                top: 0,
+                bottom: 0,
+                right: _revealed ? 0 : -_actionsWidth,
+                width: _actionsWidth,
+                child: IgnorePointer(
+                  ignoring: !_revealed,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 180),
+                    opacity: _revealed ? 1 : 0,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: AsanSpacing.sm),
+                        _action(Symbols.edit_rounded, AsanColorScheme.secondary,
+                            () => _closeThen(widget.onEdit)),
+                        const SizedBox(width: AsanSpacing.sm),
+                        _action(Symbols.delete_rounded, AsanColorScheme.error,
+                            () => _closeThen(widget.onDelete)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            ),
+          ),
+      );
+
+  Widget _action(IconData icon, Color color, VoidCallback onPressed) => SizedBox(
+    width: 48,
+    height: 48,
+    child: Center(child: TonalIconButton.square(
+      color: color,
+      icon: Icon(icon, size: 24, weight: 600),
+      size: 48,
+      borderRadius: BorderRadius.circular(8),
+      onPressed: onPressed,
+    )),
+  );
+}
+
 // LIST TILE
 class AsanListTile extends StatefulWidget {
   final String itemName;
@@ -273,16 +369,17 @@ class _AsanExpansionTileState extends State<AsanExpansionTile> {
               ),
             ),
           ),
-        AnimatedCrossFade(
-          firstChild: const SizedBox.shrink(),
-          secondChild: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: widget.children,
-          ),
-          crossFadeState: _isExpanded
-              ? CrossFadeState.showSecond
-              : CrossFadeState.showFirst,
+        AnimatedSize(
           duration: const Duration(milliseconds: 180),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          clipBehavior: Clip.none,
+          child: _isExpanded
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: widget.children,
+                )
+              : const SizedBox.shrink(),
         ),
       ],
     );

@@ -76,8 +76,8 @@ app remains usable with local Hive storage only.
 The Supabase URL and publishable key continue to come from local `env.json` or
 build-time environment defines. The Spoonacular API key remains in the
 `SPOONACULAR_API_KEY` Supabase Edge Function secret rather than being saved in
-the Flutter client. Recipe search requests and responses will pass through
-that function and will not be used as a user-data archive.
+the Flutter client. Recipe search requests and responses pass through that
+function and are not used as a user-data archive.
 
 ## Risks
 
@@ -146,7 +146,7 @@ that function and will not be used as a user-data archive.
 - Completed meal-plan creation, editing, deletion, and adding planned
   ingredients to Groceries.
 
-### October 5–9, 2026
+### October 5–11, 2026
 
 - Added Supabase email sign-up, sign-in, and password-reset entry points.
 - Added Hive-backed local copies and cloud synchronization for Pantry,
@@ -156,3 +156,6 @@ that function and will not be used as a user-data archive.
 - Added bidirectional collection merging so local changes are uploaded while
   records from another device are retained; local records take precedence when
   the same identity exists in both collections.
+- Recorded the app walkthrough and documented its chapters in the demo guide.
+- Updated the project documentation to reflect the implemented design system
+  and current app behavior.

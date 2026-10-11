@@ -1,4 +1,4 @@
-# Security checklist template
+# Security checklist
 
 **Last checked:** 2026-10-08
 ## Secrets and credentials
@@ -12,8 +12,6 @@
 | 5 | Any credential that was ever committed has been rotated | N/A | The history search found no real credential committed, so there was no committed credential to rotate. |
 
 ## GitHub Actions
-
-If your project has no workflows, mark every row N/A and say so once.
 
 | # | Check | Yes / No / N/A | Evidence |
 | --- | --- | --- | --- |

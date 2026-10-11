@@ -1,7 +1,7 @@
 # Asan
 
 **Live demo:** https://astherem.github.io/ASAN/ <br>
-**Demo video:** To be added after recording. <br>
+**Demo video:** [`docs/assets/presentations/demo.mp4`](docs/assets/presentations/demo.mp4) <br>
 **Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University <br>
 **Author:** astherem
 
@@ -44,14 +44,18 @@ For local development, create a root `env.json` file. Flutter bundles this asset
 }
 ```
 
-The committed `.env.example` documents the variable names; the app does not load a dotenv file.
+The app does not load a dotenv file. Configure the app through `env.json` as
+shown above, or use the supported `--dart-define` values. `.env.example` is a
+reference for the Supabase setting names used by the deployment workflow; do
+not copy it to `.env` for the Flutter app.
 
 If you want accounts and cloud sync, create a Supabase project, apply
 `supabase/migrations/user_data.sql` in the Supabase SQL editor, and enable email
 authentication. The migration also creates a private `profile-photos` Storage
 bucket with per-user access policies. If you already applied the migration,
-run its profile photo bucket and policy statements as well. The app uses the publishable key in the client; never place a
-Supabase secret key or the Spoonacular API key in `env.json`.
+run its profile photo bucket and policy statements as well. The app uses the
+publishable key in the client; never place a Supabase secret key or the
+Spoonacular API key in `env.json`.
 
 ## 3. How to run it
 
@@ -72,19 +76,26 @@ supabase secrets set SPOONACULAR_API_KEY=your_spoonacular_key
 supabase functions deploy spoonacular
 ```
 
-For GitHub Pages, add `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as repository secrets. The workflow creates the local config needed by Flutter and passes them as `--dart-define` values. The Edge Function endpoint is callable by app clients, so monitor its usage.
+For GitHub Pages, add `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as
+repository secrets. The workflow creates the local `env.json` asset needed by
+Flutter and also passes the values as `--dart-define` values. It runs analysis
+and tests before building and deploying the web app, but those checks are
+configured not to block deployment when they fail. The Edge Function endpoint
+is callable by app clients, so monitor its usage.
 When the app loads successfully, it opens to Recipes. With Supabase
 configured, the app shows the sign-in/onboarding flow before opening the app.
 Without Supabase configuration, it runs in local-only mode. The bottom
-navigation contains Recipes, Meals, Pantry, and Groceries. Recipe search
-requires a configured Supabase project and a deployed `spoonacular` Edge
+navigation contains Recipes, Meals, Pantry, Groceries, and Settings. Recipe
+search requires a configured Supabase project and a deployed `spoonacular` Edge
 Function; the other screens can be explored without that service.
 
 ## 4. Features and usage
 
 ### Recipes
 
-- Explore tab loads a set of recipes from Spoonacular and supports text search and recipe filters. Select a result to view its details, ingredients, and instructions.
+- Explore tab loads recipes from Spoonacular and supports debounced text search,
+  meal-type filters, and recipe filters. Select a result to view its details,
+  ingredients, nutrition, and instructions.
 - Save Explore recipes to Saved. Local data is retained between launches, and
   signed-in users also sync it with Supabase.
 - Use My Recipes to create, view, and manage custom recipes. Recipe images can be selected with the device image picker where supported.
@@ -92,23 +103,30 @@ Function; the other screens can be explored without that service.
 
 ### Meal Plan
 
-- Switch between Day and Week views, navigate by day or week, select a date, and filter the displayed meal entries by meal time or recipe category. The screen groups entries into Breakfast, Lunch, and Dinner.
+- Switch between Day and Week views, navigate by day or week, select a date, and
+  filter or sort the displayed meal entries by meal time, dish type, cuisine, or
+  day. The screen groups entries into Breakfast, Lunch, and Dinner.
 - Add meals from a saved or Explore recipe, choose the date, meal time, serving
-  count, and optional dish type, then edit or delete planned entries.
-- Open a planned recipe's details and send its ingredients to Groceries. The
-  app keeps the planned meal and grocery collections connected when data is
+  count, and required dish type, then edit or delete planned entries.
+- Open a planned recipe's details and send its ingredients to Groceries. Recipe
+  quantities are scaled to the selected serving count.
+- The app keeps planned meals and grocery collections connected when data is
   saved locally or synchronized after sign-in.
 
 ### Pantry
 
 - Add and edit pantry items with name, quantity, purchase/expiry dates, notes, and aisle.
-- Search by item name and filter by aisle or expiry status.
+- Search by item name and filter or sort by aisle, food group, or expiry status.
 - Grouped list sections make it easier to review inventory by category.
 
 ### Groceries
 
-- Add and edit grocery items; search, filter by aisle, and sort or group the list.
-- Checking an item removes it from Groceries and adds it to Pantry with its purchase date. The navigation badge tracks the grocery item count.
+- Add and edit grocery items; search, filter by aisle or food group, and sort or
+  group the list.
+- Adding an ingredient that is already listed prompts before combining matching
+  quantities and notes. Checking an item removes it from Groceries and adds it
+  to Pantry with its purchase date. The navigation badge tracks the grocery
+  item count.
 
 ### Settings
 
@@ -125,12 +143,14 @@ Function; the other screens can be explored without that service.
 - Hive stores a local copy of recipes, saved recipes, pantry items, groceries,
   and meal plans.
 - After sign-in, the app merges local collections with the user's Supabase
-  `user_data` records and uploads later changes. Row-level security limits each
-  user to their own data.
+  `user_data` records and uploads later changes. Sync uses record keys,
+  timestamps, and deletion tombstones to preserve updates across sessions.
+  Row-level security limits each user to their own data.
 - Profile photos are stored in a private Supabase Storage bucket under the
   signed-in user's ID and cached locally for offline viewing.
-- If cloud sync is unavailable, the app keeps the local data and displays a
-  sync error instead of silently discarding changes.
+- If cloud sync is unavailable, the app keeps the local data and continues in
+  local-first mode. Background sync failures are logged and do not discard the
+  local changes.
 
 ## 5. Project structure
 
@@ -145,7 +165,7 @@ The project is organised by app responsibility. The main folders and files are:
 │   ├── 04-weekly-reports.md            Development progress
 │   ├── 05-demo-video.md                Demo recording notes
 │   ├── 06-security-and-privacy.md      Data and security documentation
-│   └── assets/                         Screenshots, mockups, logos, and fonts
+│   └── assets/                         Screenshots, mockups, logos, fonts, and demo video
 ├── lib/                                Flutter application source
 │   ├── data/                           Hive-backed storage and collection boxes
 │   ├── models/                         Recipe, meal, pantry, grocery, and filter models
@@ -159,7 +179,7 @@ The project is organised by app responsibility. The main folders and files are:
 │   └── migrations/                     Database schema and row-level security policies
 ├── test/                               Widget tests
 ├── web/                                Flutter web entry point and manifest
-├── .env.example                        Supabase variable-name reference
+├── .env.example                        Supabase setting reference for deployment
 ├── pubspec.yaml                        Flutter dependencies and project metadata
 └── README.md                           Project overview and setup guide
 ```
@@ -198,19 +218,22 @@ The project is organised by app responsibility. The main folders and files are:
 - Cloud sync requires a configured Supabase project, the `user_data` migration,
   email authentication, and a signed-in user. Local Hive storage remains
   available when Supabase is not configured.
-- Sync currently merges collections by record identity and prefers the local
-  record when the same identity exists in both places; it does not resolve
-  concurrent field-level edits.
+- Sync resolves same-record changes with timestamps and preserves deletions
+  with tombstones, but it does not resolve concurrent field-level edits or
+  provide a user-facing conflict history.
 
-- Form validation exists for required item and recipe fields, but duplicate prevention and broader edge-case handling remain limited.
+- Pantry and grocery forms reject duplicate items with the same name and aisle.
+  Other duplicate cases and broader input edge cases are not handled uniformly
+  across the app.
 
 **Planned next steps:**
 
-1. Improve validation and edge-case handling, including duplicate items and
-   state updates.
-2. Add conflict resolution and more granular sync feedback for multi-device
-   edits.
-3. Finish the demo and presentation materials.
+1. Expand validation and duplicate handling across forms, and show clearer
+   feedback when saves fail.
+2. Add field-level conflict resolution and user-facing sync status for
+   multi-device edits.
+3. Verify the deployed Explore configuration and update screenshots to match
+   the current app UI.
 
 ## Security checklist
 
@@ -218,9 +241,11 @@ See the [Security Checklist](SECURITY-CHECKLIST.md) for the repository review an
 
 ## Credits
 
-- **Packages:** see [pubspec.yaml](pubspec.yaml)
+- **Packages:** see [`pubspec.yaml`](pubspec.yaml)
 - **Fonts:** Bricolage Grotesque by Mathieu Triay, licensed under the [SIL Open Font License, Version 1.1](https://openfontlicense.org/open-font-license-official-text/)
 - **Icons:** Material Symbols and Icons by Google and Tim Maffett, licensed under the [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- **Recipe mockup images:** [Nutrient Matters](https://nutrient-matters.com/) by Sara Abdul-Aziz
+- **Shakshuka mockup recipe description:** [5-Minute High-Fiber Breakfast: Shakshuka](https://nutritionbykylie.substack.com/p/5-minute-high-fiber-breakfast-shakshuka?utm_source=publication-search) by Kylie Sakaida
 
 ## AI usage
 

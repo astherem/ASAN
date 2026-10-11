@@ -5,7 +5,7 @@ changed, what broke or remained blocked, and what was left afterward.
 
 ---
 
-## Current status: October 9, 2026
+## Current status: October 11, 2026
 
 The app now has a complete local food-management workflow across Recipes,
 Meal Plan, Pantry, Groceries, and Settings. Hive persistence keeps local data
@@ -18,14 +18,15 @@ Users can open a planned recipe and add its ingredients to Groceries. Settings
 stores profile information and food preferences locally and mirrors preferences
 to Supabase metadata when an account is signed in.
 
-The remaining work is release preparation: improve duplicate and multi-device
-conflict handling, refresh screenshots, and record the demo. Explore still
-requires a deployed Supabase `spoonacular` Edge Function and valid provider
-quota.
+The demo has been recorded and documented. Remaining work is to improve
+duplicate and multi-device conflict handling, verify the deployed Explore
+configuration, and refresh screenshots if they no longer match the current UI.
+Explore requires a deployed Supabase `spoonacular` Edge Function and available
+provider quota.
 
 ---
 
-## Week of: October 5 to October 9, 2026
+## Week of: October 5 to October 11, 2026
 
 ### What changed this week
 
@@ -35,8 +36,11 @@ quota.
   tombstones.
 - Added profile and food-preference controls in Settings, with local storage
   and signed-in Supabase metadata updates.
+- Recorded the 5-minute, 31-second app walkthrough and added its chapter list
+  to the demo documentation.
 - Updated the app documentation and security records to describe the final
-  authentication, persistence, and sync behavior.
+  authentication, persistence, and sync behavior, and replaced the design
+  system document's starter instructions with the implemented style reference.
 
 ### Why
 
@@ -56,7 +60,7 @@ single place to control the preferences used by the meal-planning experience.
 ### What is left
 
 - Improve duplicate handling and multi-device conflict feedback.
-- Capture current screenshots and record the end-to-end demo.
+- Refresh screenshots if they no longer match the current app UI.
 - Verify the final deployed Explore configuration.
 
 ---

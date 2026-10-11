@@ -896,6 +896,7 @@ class _SwipeableMealCardState extends State<_SwipeableMealCard> {
       builder: (context, constraints) => SizedBox(
           height: 88,
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 180),
@@ -918,15 +919,26 @@ class _SwipeableMealCardState extends State<_SwipeableMealCard> {
                     children: [
                       SizedBox(width: constraints.maxWidth, child: widget.child),
                       const SizedBox(width: AsanSpacing.sm),
-                      _action(Symbols.edit_rounded, AsanColorScheme.secondary, () {
-                        setState(() => _revealed = false);
-                        widget.onEdit();
-                      }),
-                      const SizedBox(width: AsanSpacing.sm),
-                      _action(Symbols.delete_rounded,  AsanColorScheme.error, () {
-                        setState(() => _revealed = false);
-                        widget.onDelete();
-                      }),
+                      IgnorePointer(
+                        ignoring: !_revealed,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 180),
+                          opacity: _revealed ? 1 : 0,
+                          child: Row(
+                            children: [
+                              _action(Symbols.edit_rounded, AsanColorScheme.secondary, () {
+                                setState(() => _revealed = false);
+                                widget.onEdit();
+                              }),
+                              const SizedBox(width: AsanSpacing.sm),
+                              _action(Symbols.delete_rounded, AsanColorScheme.error, () {
+                                setState(() => _revealed = false);
+                                widget.onDelete();
+                              }),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

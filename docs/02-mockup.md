@@ -2,23 +2,16 @@
 
 The mockups, screen flow, and wireframes show the initial design and do not represent the final app; changes were made during development.
 
+Recipe mockup images credit: [Nutrient Matters](https://nutrient-matters.com/) by Sara Abdul-Aziz <br>
+Shakshuka mockup recipe description credit: [5-Minute High-Fiber Breakfast: Shakshuka](https://nutritionbykylie.substack.com/p/5-minute-high-fiber-breakfast-shakshuka?utm_source=publication-search) by Kylie Sakaida
+
 ## Mockup
 
 <table>
-  <tr>
-    <td style="vertical-align: top;"><strong>Recipes</strong><img src="assets/mockup/mockups/recipes.png" alt="Recipes mockup" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Recipe details</strong><img src="assets/mockup/mockups/recipe_details.png" alt="Recipe details mockup" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Meal plan</strong><img src="assets/mockup/mockups/meal_plan_day.png" alt="Meal plan day mockup" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Pantry</strong><img src="assets/mockup/mockups/pantry.png" alt="Pantry mockup" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Groceries</strong><img src="assets/mockup/mockups/groceries.png" alt="Groceries mockup" width="180" style="display: block; width: 180px; height: auto;"></td>
-  </tr>
-  <tr>
-    <td style="vertical-align: top;"><strong>Add form</strong><img src="assets/mockup/mockups/add_form.png" alt="Recipe form mockup" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Filter sheet</strong><img src="assets/mockup/mockups/filter_sheet.png" alt="Filter sheet mockup" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Dropdown sheet</strong><img src="assets/mockup/mockups/dropdown_sheet.png" alt="Dropdown sheet mockup" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Date picker</strong><img src="assets/mockup/mockups/date_picker.png" alt="Date picker mockup" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Alert dialog</strong><img src="assets/mockup/mockups/alert_dialog.png" alt="Alert dialog mockup" width="180" style="display: block; width: 180px; height: auto;"></td>
-  </tr>
+  <tr><th>Recipes</th><th>Recipe details</th><th>Meal plan</th><th>Pantry</th><th>Groceries</th></tr>
+  <tr><td style="vertical-align: top;"><img src="assets/mockup/mockups/recipes.png" alt="Recipes mockup" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/mockups/recipe_details.png" alt="Recipe details mockup" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/mockups/meal_plan_day.png" alt="Meal plan day mockup" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/mockups/pantry.png" alt="Pantry mockup" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/mockups/groceries.png" alt="Groceries mockup" width="180" style="display: block; width: 180px; height: auto;"></td></tr>
+  <tr><th>Add form</th><th>Filter sheet</th><th>Dropdown sheet</th><th>Date picker</th><th>Alert dialog</th></tr>
+  <tr><td style="vertical-align: top;"><img src="assets/mockup/mockups/add_form.png" alt="Recipe form mockup" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/mockups/filter_sheet.png" alt="Filter sheet mockup" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/mockups/dropdown_sheet.png" alt="Dropdown sheet mockup" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/mockups/date_picker.png" alt="Date picker mockup" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/mockups/alert_dialog.png" alt="Alert dialog mockup" width="180" style="display: block; width: 180px; height: auto;"></td></tr>
 </table>
 
 ## Wireframes
@@ -30,76 +23,50 @@ The mockups, screen flow, and wireframes show the initial design and do not repr
 ### Log In
 
 <table>
-  <tr>
-    <td style="vertical-align: top;"><strong>Log In</strong><img src="assets/mockup/wireframes/log_in.png" alt="Log in wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-  </tr>
+  <tr><th>Log In</th></tr>
+  <tr><td style="vertical-align: top;"><img src="assets/mockup/wireframes/log_in.png" alt="Log in wireframe" width="180" style="display: block; width: 180px; height: auto;"></td></tr>
 </table>
 
 ### Pantry
 
 <table>
-  <tr>
-    <td style="vertical-align: top;"><strong>Pantry</strong><img src="assets/mockup/wireframes/pantry.png" alt="Pantry wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Add pantry item</strong><img src="assets/mockup/wireframes/add_pantry_item.png" alt="Add pantry item wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Edit pantry item</strong><img src="assets/mockup/wireframes/edit_pantry_item.png" alt="Edit pantry item wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-  </tr>
+  <tr><th>Pantry</th><th>Add pantry item</th><th>Edit pantry item</th></tr>
+  <tr><td style="vertical-align: top;"><img src="assets/mockup/wireframes/pantry.png" alt="Pantry wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/add_pantry_item.png" alt="Add pantry item wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/edit_pantry_item.png" alt="Edit pantry item wireframe" width="180" style="display: block; width: 180px; height: auto;"></td></tr>
 </table>
 
 ### Groceries
 
 <table>
-  <tr>
-    <td style="vertical-align: top;"><strong>Groceries</strong><img src="assets/mockup/wireframes/groceries.png" alt="Groceries wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Add grocery item</strong><img src="assets/mockup/wireframes/add_grocery_item.png" alt="Add grocery item wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Edit grocery item</strong><img src="assets/mockup/wireframes/edit_grocery_item.png" alt="Edit grocery item wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-  </tr>
+  <tr><th>Groceries</th><th>Add grocery item</th><th>Edit grocery item</th></tr>
+  <tr><td style="vertical-align: top;"><img src="assets/mockup/wireframes/groceries.png" alt="Groceries wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/add_grocery_item.png" alt="Add grocery item wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/edit_grocery_item.png" alt="Edit grocery item wireframe" width="180" style="display: block; width: 180px; height: auto;"></td></tr>
 </table>
 
 ### Meal plan
 
 <table>
-  <tr>
-    <td style="vertical-align: top;"><strong>Day</strong><img src="assets/mockup/wireframes/daily_meal_plan.png" alt="Daily meal plan wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Week</strong><img src="assets/mockup/wireframes/weekly_meal_plan.png" alt="Weekly meal plan wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Month</strong><img src="assets/mockup/wireframes/monthly_meal_plan.png" alt="Monthly meal plan wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Select recipe</strong><img src="assets/mockup/wireframes/add_meal_to_plan_select_recipe.png" alt="Choose a recipe for the meal plan wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Form</strong><img src="assets/mockup/wireframes/add_meal_to_plan_form.png" alt="Add meal to plan form wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-  </tr>
+  <tr><th>Day</th><th>Week</th><th>Month</th><th>Select recipe</th><th>Form</th></tr>
+  <tr><td style="vertical-align: top;"><img src="assets/mockup/wireframes/daily_meal_plan.png" alt="Daily meal plan wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/weekly_meal_plan.png" alt="Weekly meal plan wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/monthly_meal_plan.png" alt="Monthly meal plan wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/add_meal_to_plan_select_recipe.png" alt="Choose a recipe for the meal plan wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/add_meal_to_plan_form.png" alt="Add meal to plan form wireframe" width="180" style="display: block; width: 180px; height: auto;"></td></tr>
 </table>
 
 ### Recipes
 
 <table>
-  <tr>
-    <td style="vertical-align: top;"><strong>Explore recipes</strong><img src="assets/mockup/wireframes/explore_recipes.png" alt="Explore recipes wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Details</strong><img src="assets/mockup/wireframes/recipe_details.png" alt="Recipe details wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>My recipes</strong><img src="assets/mockup/wireframes/my_recipes.png" alt="My recipes wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>My recipe details</strong><img src="assets/mockup/wireframes/my_recipe_details.png" alt="My recipe details wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-  </tr>
+  <tr><th>Explore recipes</th><th>Details</th><th>My recipes</th><th>My recipe details</th></tr>
+  <tr><td style="vertical-align: top;"><img src="assets/mockup/wireframes/explore_recipes.png" alt="Explore recipes wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/recipe_details.png" alt="Recipe details wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/my_recipes.png" alt="My recipes wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/my_recipe_details.png" alt="My recipe details wireframe" width="180" style="display: block; width: 180px; height: auto;"></td></tr>
 </table>
 
 ### Add recipe
 
 <table>
-  <tr>
-    <td style="vertical-align: top;"><strong>Step 1</strong><img src="assets/mockup/wireframes/add_recipe_step_1.png" alt="Add recipe step 1 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Step 2</strong><img src="assets/mockup/wireframes/add_recipe_step_2.png" alt="Add recipe step 2 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Step 3</strong><img src="assets/mockup/wireframes/add_recipe_step_3.png" alt="Add recipe step 3 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Step 4</strong><img src="assets/mockup/wireframes/add_recipe_step_4.png" alt="Add recipe step 4 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Step 5</strong><img src="assets/mockup/wireframes/add_recipe_step_5.png" alt="Add recipe step 5 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-  </tr>
+  <tr><th>Step 1</th><th>Step 2</th><th>Step 3</th><th>Step 4</th><th>Step 5</th></tr>
+  <tr><td style="vertical-align: top;"><img src="assets/mockup/wireframes/add_recipe_step_1.png" alt="Add recipe step 1 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/add_recipe_step_2.png" alt="Add recipe step 2 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/add_recipe_step_3.png" alt="Add recipe step 3 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/add_recipe_step_4.png" alt="Add recipe step 4 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/add_recipe_step_5.png" alt="Add recipe step 5 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td></tr>
 </table>
 
 ### Edit recipe
 
 <table>
-  <tr>
-    <td style="vertical-align: top;"><strong>Step 1</strong><img src="assets/mockup/wireframes/edit_recipe_step_1.png" alt="Edit recipe step 1 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Step 2</strong><img src="assets/mockup/wireframes/edit_recipe_step_2.png" alt="Edit recipe step 2 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Step 3</strong><img src="assets/mockup/wireframes/edit_recipe_step_3.png" alt="Edit recipe step 3 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Step 4</strong><img src="assets/mockup/wireframes/edit_recipe_step_4.png" alt="Edit recipe step 4 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-    <td style="vertical-align: top;"><strong>Step 5</strong><img src="assets/mockup/wireframes/edit_recipe_step_5.png" alt="Edit recipe step 5 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td>
-  </tr>
+  <tr><th>Step 1</th><th>Step 2</th><th>Step 3</th><th>Step 4</th><th>Step 5</th></tr>
+  <tr><td style="vertical-align: top;"><img src="assets/mockup/wireframes/edit_recipe_step_1.png" alt="Edit recipe step 1 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/edit_recipe_step_2.png" alt="Edit recipe step 2 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/edit_recipe_step_3.png" alt="Edit recipe step 3 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/edit_recipe_step_4.png" alt="Edit recipe step 4 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td><td style="vertical-align: top;"><img src="assets/mockup/wireframes/edit_recipe_step_5.png" alt="Edit recipe step 5 wireframe" width="180" style="display: block; width: 180px; height: auto;"></td></tr>
 </table>
 
 ## Screens
