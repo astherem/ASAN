@@ -1,7 +1,7 @@
 # Asan
 
 **Live demo:** https://astherem.github.io/ASAN/ <br>
-**Demo video:** [`docs/assets/presentations/demo.mp4`](docs/assets/presentations/demo.mp4) <br>
+**Demo video:** [Watch the demo on Google Drive](https://drive.google.com/file/d/1Iq5K-GW5yhXUUJ7ObQfiXbg9A6WTxuAL/view?usp=drive_link) <br>
 **Course:** Applications Development and Emerging Technologies (6ADET), Holy Angel University <br>
 **Author:** astherem
 
