@@ -29,9 +29,9 @@ The bundled typeface is **Bricolage Grotesque**, registered as `BricolageGrotesq
 
 | Style | Flutter token | Size | Weight | Typical use |
 | --- | --- | ---: | --- | --- |
-| <img src="assets/design-system/Heading.png" alt="Heading style sample" width="144" height="34"> | `AsanTextTheme.headlineSmall` | 24 px | Bold (700) | Screen titles and prominent headings |
-| <img src="assets/design-system/Body.png" alt="Body style sample" width="57" height="22"> | `AsanTextTheme.bodyMedium` | 16 px | Regular (400) | Paragraphs, form values, and button labels (often bolded) |
-| <img src="assets/design-system/Caption.png" alt="Caption style sample" width="65" height="16"> | `AsanTextTheme.labelSmall` | 12 px | Regular (400) | Captions, compact labels, and text buttons (often bolded) |
+| <img src="assets/design-system/Heading.png" alt="Heading style sample" style="height:24px; width:auto;"> | `AsanTextTheme.headlineSmall` | 24 px | Bold (700) | Screen titles and prominent headings |
+| <img src="assets/design-system/Body.png" alt="Body style sample" style="height:16px; width:auto;"> | `AsanTextTheme.bodyMedium` | 16 px | Regular (400) | Paragraphs, form values, and button labels (often bolded) |
+| <img src="assets/design-system/Caption.png" alt="Caption style sample" style="height:12px; width:auto;"> | `AsanTextTheme.labelSmall` | 12 px | Regular (400) | Captions, compact labels, and text buttons (often bolded) |
 
 All three styles use a line height of 1.4. Components may set a local size or weight for hierarchy.
 
